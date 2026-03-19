@@ -10,22 +10,26 @@ const links = [
   { href: "/", label: "Accueil" },
   { href: "/admin", label: "Admin" },
   { href: "/overlay", label: "Overlay" },
-]
+  { href: "/settings", label: "Paramètres" },
+] as const
 
 export function SiteNav() {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
 
   return (
-    <header className="sticky top-0 z-30 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl" suppressHydrationWarning>
       <div className="mx-auto flex h-12 w-full max-w-5xl items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-semibold tracking-tight text-muted-foreground">
-            CoopStream
-          </span>
-        </div>
         <div className="flex items-center gap-2">
-          <nav className="flex gap-2">
+          <div className="flex items-center gap-2 rounded-full bg-primary/5 px-3 py-1 ring-1 ring-primary/25">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_10px_rgba(59,130,246,0.9)]" />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              CoopStream
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <nav className="hidden gap-1 md:flex">
             {links.map((link) => {
               const active =
                 link.href === "/"
