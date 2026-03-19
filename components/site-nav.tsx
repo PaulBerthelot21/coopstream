@@ -11,6 +11,7 @@ const links = [
   { href: "/", label: "Accueil" },
   { href: "/admin", label: "Admin" },
   { href: "/overlay", label: "Overlay" },
+  { href: "/recap", label: "Récap" },
   { href: "/skins", label: "Skins" },
   { href: "/settings", label: "Paramètres" },
 ] as const
@@ -47,9 +48,11 @@ export function SiteNav() {
                     ? LayoutDashboard
                     : link.href === "/overlay"
                       ? MonitorPlay
-                      : link.href === "/skins"
-                        ? MonitorPlay
-                        : Settings2
+                      : link.href === "/recap"
+                        ? LayoutDashboard
+                        : link.href === "/skins"
+                          ? MonitorPlay
+                          : Settings2
 
               const Icon = icon
 
