@@ -88,56 +88,64 @@ export function AdminPanel() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-6">
-      <div className="flex items-baseline justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Admin</h1>
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-7">
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-[22px] font-semibold tracking-tight">
+            Panneau de contrôle
+          </h1>
           <p className="text-sm text-muted-foreground">
-            Contrôle local via BroadcastChannel (aucun backend).
+            Gère les défis, la progression et les rewards de ta session en temps réel.
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setCurrent(null)}>
+          <Button variant="outline" size="sm" onClick={() => setCurrent(null)}>
             Désélectionner
           </Button>
-          <Button onClick={triggerReward}>Trigger reward</Button>
+          <Button size="sm" onClick={triggerReward}>
+            Trigger reward
+          </Button>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Nouveau challenge</CardTitle>
-          <CardDescription>Crée un challenge puis sélectionne-le.</CardDescription>
+      <Card className="border-border/60 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold">Nouveau défi</CardTitle>
+          <CardDescription className="text-xs">
+            Définis un objectif clair, une unité de mesure et une reward. Tu pourras mettre à jour la progression en game.
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <div className="grid gap-2 sm:grid-cols-2">
             <Input
-              placeholder="Titre (ex: Win au pistolet)"
+              placeholder="Titre (ex: 15 kills à l’AWP)"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
             <Input
-              placeholder="Reward (optionnel) (ex: 5€ / gage / roulette)"
+              placeholder="Reward (ex: roulette, gage, 5€...)"
               value={reward}
               onChange={(e) => setReward(e.target.value)}
             />
           </div>
-          <div className="grid gap-2 sm:grid-cols-[1fr_minmax(0,1fr)]">
+          <div className="grid gap-2 sm:grid-cols-[minmax(0,0.7fr)_minmax(0,1fr)]">
             <Input
-              placeholder="Objectif (ex: 15 pour 15 kills)"
+              placeholder="Objectif (ex: 15)"
               inputMode="numeric"
               value={target}
               onChange={(e) => setTarget(e.target.value)}
             />
             <Input
-              placeholder="Unité (ex: kills / headshots)"
+              placeholder="Unité (ex: kills, headshots, rounds...)"
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
             />
           </div>
         </CardContent>
-        <CardFooter className="justify-end">
-          <Button onClick={createChallenge}>Créer</Button>
+        <CardFooter className="justify-end border-t border-border/60 bg-muted/40">
+          <Button size="sm" onClick={createChallenge}>
+            Créer le défi
+          </Button>
         </CardFooter>
       </Card>
 

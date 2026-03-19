@@ -5,16 +5,21 @@ import * as React from "react"
 type PrimaryColorContextValue = {
   primaryColor: string
   setPrimaryColor: (value: string) => void
+  resetPrimaryColor: () => void
 }
 
 const STORAGE_KEY = "coopstream-primary-color"
+// Bleu indigo sobre (premium, lisible en clair/sombre)
+const DEFAULT_PRIMARY_COLOR = "#4F46E5"
 
 const PrimaryColorContext = React.createContext<PrimaryColorContextValue | undefined>(
   undefined,
 )
 
 export function PrimaryColorProvider({ children }: { children: React.ReactNode }) {
-  const [primaryColor, setPrimaryColorState] = React.useState<string>("#22c55e")
+  const [primaryColor, setPrimaryColorState] = React.useState<string>(
+    DEFAULT_PRIMARY_COLOR,
+  )
 
   React.useEffect(() => {
     if (typeof window === "undefined") return
@@ -44,8 +49,22 @@ export function PrimaryColorProvider({ children }: { children: React.ReactNode }
     }
   }, [])
 
+  const resetPrimaryColor = React.useCallback(() => {
+    setPrimaryColorState(DEFAULT_PRIMARY_COLOR)
+    applyColor(DEFAULT_PRIMARY_COLOR)
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(STORAGE_KEY)
+      } catch {
+        // ignore
+      }
+    }
+  }, [])
+
   return (
-    <PrimaryColorContext.Provider value={{ primaryColor, setPrimaryColor }}>
+    <PrimaryColorContext.Provider
+      value={{ primaryColor, setPrimaryColor, resetPrimaryColor }}
+    >
       {children}
     </PrimaryColorContext.Provider>
   )

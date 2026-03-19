@@ -1,9 +1,10 @@
  "use client";
 
 import { usePrimaryColor } from "@/components/primary-color-provider";
+import { Button } from "@/components/ui/button";
 
 export default function SettingsPage() {
-  const { primaryColor, setPrimaryColor } = usePrimaryColor();
+  const { primaryColor, setPrimaryColor, resetPrimaryColor } = usePrimaryColor();
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
@@ -47,6 +48,11 @@ export default function SettingsPage() {
               className="h-6 w-16 rounded-full ring-1 ring-border"
               style={{ backgroundColor: primaryColor }}
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={resetPrimaryColor}>
+              Réinitialiser
+            </Button>
           </div>
         </div>
       </section>
