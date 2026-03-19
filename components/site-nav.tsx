@@ -11,6 +11,7 @@ const links = [
   { href: "/", label: "Accueil" },
   { href: "/admin", label: "Admin" },
   { href: "/overlay", label: "Overlay" },
+  { href: "/guide", label: "Guide" },
   { href: "/recap", label: "Récap" },
   { href: "/skins", label: "Skins" },
   { href: "/settings", label: "Paramètres" },
@@ -46,13 +47,15 @@ export function SiteNav() {
                   ? Home
                   : link.href === "/admin"
                     ? LayoutDashboard
-                    : link.href === "/overlay"
+                  : link.href === "/overlay"
                       ? MonitorPlay
-                      : link.href === "/recap"
-                        ? LayoutDashboard
-                        : link.href === "/skins"
-                          ? MonitorPlay
-                          : Settings2
+                      : link.href === "/guide"
+                        ? Settings2
+                        : link.href === "/recap"
+                          ? LayoutDashboard
+                          : link.href === "/skins"
+                            ? MonitorPlay
+                            : Settings2
 
               const Icon = icon
 
