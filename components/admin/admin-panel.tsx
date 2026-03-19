@@ -50,6 +50,7 @@ export function AdminPanel() {
   const [reward, setReward] = React.useState("")
   const [target, setTarget] = React.useState<string>("")
   const [unit, setUnit] = React.useState<string>("kills")
+  const [skinImageUrl, setSkinImageUrl] = React.useState<string>("")
 
   const list = React.useMemo(() => {
     return Object.values(challenges).sort((a, b) => b.updatedAt - a.updatedAt)
@@ -149,6 +150,7 @@ export function AdminPanel() {
       current: 0,
       target: target ? Number(target) || undefined : undefined,
       unit: unit.trim() || undefined,
+      skinImageUrl: skinImageUrl.trim() || undefined,
       updatedAt: Date.now(),
     }
 
@@ -160,6 +162,7 @@ export function AdminPanel() {
     setReward("")
     setTarget("")
     setUnit("kills")
+    setSkinImageUrl("")
   }
 
   function setCurrent(id: string | null) {
@@ -248,6 +251,11 @@ export function AdminPanel() {
               onChange={(e) => setUnit(e.target.value)}
             />
           </div>
+          <Input
+            placeholder="URL image skin (optionnel)"
+            value={skinImageUrl}
+            onChange={(e) => setSkinImageUrl(e.target.value)}
+          />
         </CardContent>
         <CardFooter className="justify-end border-t border-border/60 bg-muted/40">
           <Button size="sm" onClick={createChallenge} className="gap-1.5">
@@ -284,6 +292,11 @@ export function AdminPanel() {
                     {typeof c.target === "number" && (
                       <div className="text-xs text-muted-foreground">
                         Progression: {c.current ?? 0}/{c.target} {c.unit ?? ""}
+                      </div>
+                    )}
+                    {c.skinImageUrl && (
+                      <div className="text-xs text-muted-foreground truncate">
+                        Skin: <span className="text-foreground/80">{c.skinImageUrl}</span>
                       </div>
                     )}
                   </CardDescription>

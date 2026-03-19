@@ -8,6 +8,7 @@ export type Challenge = {
   current?: number
   target?: number
   unit?: string
+  skinImageUrl?: string
   updatedAt: number
 }
 
