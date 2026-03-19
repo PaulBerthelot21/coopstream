@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
+import { Home, LayoutDashboard, MonitorPlay, Settings2, Moon, SunMedium } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 
@@ -22,7 +23,9 @@ export function SiteNav() {
       <div className="mx-auto flex h-12 w-full max-w-5xl items-center justify-between px-4">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 rounded-full bg-primary/5 px-3 py-1 ring-1 ring-primary/25">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_10px_rgba(59,130,246,0.9)]" />
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_14px_rgba(79,70,229,0.9)]">
+              <LayoutDashboard className="h-3 w-3" />
+            </span>
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
               CoopStream
             </span>
@@ -35,14 +38,30 @@ export function SiteNav() {
                 link.href === "/"
                   ? pathname === "/"
                   : pathname.startsWith(link.href)
+
+              const icon =
+                link.href === "/"
+                  ? Home
+                  : link.href === "/admin"
+                    ? LayoutDashboard
+                    : link.href === "/overlay"
+                      ? MonitorPlay
+                      : Settings2
+
+              const Icon = icon
+
               return (
                 <Button
                   key={link.href}
                   asChild
                   variant={active ? "secondary" : "outline"}
                   size="sm"
+                  className="gap-1.5"
                 >
-                  <Link href={link.href}>{link.label}</Link>
+                  <Link href={link.href}>
+                    <Icon className="h-3.5 w-3.5" />
+                    <span>{link.label}</span>
+                  </Link>
                 </Button>
               )
             })}
@@ -58,6 +77,7 @@ export function SiteNav() {
                   : "text-muted-foreground hover:text-foreground")
               }
             >
+              <SunMedium className="mr-1 inline h-3 w-3" />
               Clair
             </button>
             <button
@@ -70,6 +90,7 @@ export function SiteNav() {
                   : "text-muted-foreground hover:text-foreground")
               }
             >
+              <Moon className="mr-1 inline h-3 w-3" />
               Sombre
             </button>
           </div>

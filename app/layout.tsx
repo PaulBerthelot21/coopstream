@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { SiteNav } from "@/components/site-nav";
 import { PrimaryColorProvider } from "@/components/primary-color-provider";
+import { OverlaySettingsProvider } from "@/components/overlay/overlay-settings-provider";
 import { Geist, Geist_Mono } from "next/font/google";
 
 const geistSans = Geist({
@@ -37,9 +38,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-dvh bg-background text-foreground`}>
         <ThemeProvider>
           <PrimaryColorProvider>
-            <SiteNav />
-            {children}
-            <Toaster />
+            <OverlaySettingsProvider>
+              <SiteNav />
+              {children}
+              <Toaster />
+            </OverlaySettingsProvider>
           </PrimaryColorProvider>
         </ThemeProvider>
       </body>

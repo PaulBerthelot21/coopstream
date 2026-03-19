@@ -7,13 +7,11 @@ import { useBroadcastSync } from "@/lib/sync/useBroadcastSync"
 import { useCoopStreamPersistence } from "@/lib/sync/useCoopStreamPersistence"
 import { selectSelectedChallenge, useCoopStreamStore } from "@/lib/store/coopstream"
 import { OverlayBar } from "@/components/overlay/overlay-bar"
-import { OverlayCard } from "@/components/overlay/overlay-card"
 import { OverlayTicker } from "@/components/overlay/overlay-ticker"
 import { OverlayNowPlaying } from "@/components/overlay/overlay-now-playing"
 import { OverlayScoreboard } from "@/components/overlay/overlay-scoreboard"
-import { OverlayPillStack } from "@/components/overlay/overlay-pill-stack"
-import { OverlayTimeline } from "@/components/overlay/overlay-timeline"
 import { OverlayCarousel } from "@/components/overlay/overlay-carousel"
+import { useOverlaySettings } from "@/components/overlay/overlay-settings-provider"
 
 export function OverlayView() {
   useBroadcastSync()
@@ -32,16 +30,8 @@ export function OverlayView() {
   const lastRewardAt = useCoopStreamStore((s) => s.lastRewardAt)
 
   const [rewardVisible, setRewardVisible] = React.useState(false)
-  const [mode, setMode] = React.useState<
-    | "bar"
-    | "card"
-    | "ticker"
-    | "now-playing"
-    | "scoreboard"
-    | "stack"
-    | "timeline"
-    | "carousel"
-  >("bar")
+  const { settings, setMode } = useOverlaySettings()
+  const mode = settings.mode
 
   React.useEffect(() => {
     if (!lastRewardAt || !lastRewardText) return
@@ -65,18 +55,6 @@ export function OverlayView() {
             }
           >
             Barre
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("card")}
-            className={
-              "rounded-full px-3 py-1 transition " +
-              (mode === "card"
-                ? "bg-white text-black"
-                : "bg-black/60 text-white/70 ring-1 ring-white/20")
-            }
-          >
-            Carte
           </button>
           <button
             type="button"
@@ -116,30 +94,6 @@ export function OverlayView() {
           </button>
           <button
             type="button"
-            onClick={() => setMode("stack")}
-            className={
-              "rounded-full px-3 py-1 transition " +
-              (mode === "stack"
-                ? "bg-white text-black"
-                : "bg-black/60 text-white/70 ring-1 ring-white/20")
-            }
-          >
-            Stack
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("timeline")}
-            className={
-              "rounded-full px-3 py-1 transition " +
-              (mode === "timeline"
-                ? "bg-white text-black"
-                : "bg-black/60 text-white/70 ring-1 ring-white/20")
-            }
-          >
-            Timeline
-          </button>
-          <button
-            type="button"
             onClick={() => setMode("carousel")}
             className={
               "rounded-full px-3 py-1 transition " +
@@ -153,18 +107,11 @@ export function OverlayView() {
         </div>
 
         {mode === "bar" && <OverlayBar selected={selected} challenges={challenges} />}
-        {mode === "card" && <OverlayCard selected={selected} />}
         {mode === "ticker" && (
           <OverlayTicker selected={selected} challenges={challenges} />
         )}
         {mode === "now-playing" && <OverlayNowPlaying selected={selected} />}
         {mode === "scoreboard" && <OverlayScoreboard selected={selected} />}
-        {mode === "stack" && (
-          <OverlayPillStack selected={selected} challenges={challenges} />
-        )}
-        {mode === "timeline" && (
-          <OverlayTimeline selected={selected} challenges={challenges} />
-        )}
         {mode === "carousel" && (
           <OverlayCarousel challenges={challenges} />
         )}

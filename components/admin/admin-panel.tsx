@@ -2,6 +2,16 @@
 
 import * as React from "react"
 import { toast } from "sonner"
+import { z } from "zod"
+import {
+  Download,
+  Upload,
+  Plus,
+  Minus,
+  Trash2,
+  Target,
+  Trophy,
+} from "lucide-react"
 
 import type { Challenge } from "@/lib/types/challenge"
 import { publishEvent } from "@/lib/sync/broadcast"
@@ -10,7 +20,14 @@ import { useBroadcastSync } from "@/lib/sync/useBroadcastSync"
 import { useCoopStreamPersistence } from "@/lib/sync/useCoopStreamPersistence"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
 function newId() {
@@ -37,6 +54,86 @@ export function AdminPanel() {
   const list = React.useMemo(() => {
     return Object.values(challenges).sort((a, b) => b.updatedAt - a.updatedAt)
   }, [challenges])
+
+  const importInputRef = React.useRef<HTMLInputElement | null>(null)
+
+  const challengeSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string().optional(),
+    reward: z.string().optional(),
+    current: z.number().optional(),
+    target: z.number().optional(),
+    unit: z.string().optional(),
+    updatedAt: z.number(),
+  })
+
+  const exportSchema = z.object({
+    version: z.literal(1),
+    exportedAt: z.number(),
+    selectedChallengeId: z.string().nullable(),
+    challenges: z.array(challengeSchema),
+  })
+
+  function exportChallenges() {
+    const payload = {
+      version: 1 as const,
+      exportedAt: Date.now(),
+      selectedChallengeId,
+      challenges: Object.values(challenges),
+    }
+
+    const json = JSON.stringify(payload, null, 2)
+    const blob = new Blob([json], { type: "application/json" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    const date = new Date().toISOString().slice(0, 10)
+    a.download = `coopstream-defis-${date}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success("Export JSON téléchargé")
+  }
+
+  async function handleImportFile(file: File) {
+    try {
+      const text = await file.text()
+      const parsed = exportSchema.parse(JSON.parse(text))
+
+      const incoming = Object.fromEntries(
+        parsed.challenges.map((c) => [c.id, c]),
+      )
+      const prevIds = new Set(Object.keys(challenges))
+      const nextIds = new Set(Object.keys(incoming))
+
+      // Remplace l'état local (persistance localStorage suivra automatiquement)
+      useCoopStreamStore.setState((prev) => ({
+        ...prev,
+        challenges: incoming,
+        selectedChallengeId: parsed.selectedChallengeId,
+      }))
+
+      // Sync overlay: supprimer ce qui n'existe plus, upsert ce qui existe, puis sélectionner
+      for (const id of prevIds) {
+        if (!nextIds.has(id)) {
+          publishEvent({ type: "DELETE_CHALLENGE", payload: { id } })
+        }
+      }
+      for (const c of parsed.challenges) {
+        publishEvent({ type: "UPSERT_CHALLENGE", payload: { challenge: c } })
+      }
+      publishEvent({
+        type: "SELECT_CHALLENGE",
+        payload: { id: parsed.selectedChallengeId },
+      })
+
+      toast.success(`Import OK (${parsed.challenges.length} défis)`)
+    } catch (e) {
+      toast.error("Import impossible: JSON invalide ou format non reconnu")
+    } finally {
+      if (importInputRef.current) importInputRef.current.value = ""
+    }
+  }
 
   function createChallenge() {
     const trimmedTitle = title.trim()
@@ -76,34 +173,41 @@ export function AdminPanel() {
     toast.success("Challenge supprimé")
   }
 
-  function triggerReward() {
-    const current = selectedChallengeId ? challenges[selectedChallengeId] : null
-    const text =
-      reward.trim() ||
-      current?.reward ||
-      (current ? `Récompense: ${current.title}` : "Récompense !")
-
-    publishEvent({ type: "TRIGGER_REWARD", payload: { text } })
-    toast.success("Reward envoyé à l’overlay")
-  }
-
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-7">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-[22px] font-semibold tracking-tight">
-            Panneau de contrôle
+          <h1 className="flex items-center gap-2 text-[22px] font-semibold tracking-tight">
+            <Target className="h-4 w-4 text-primary" />
+            <span>Panneau de contrôle</span>
           </h1>
           <p className="text-sm text-muted-foreground">
             Gère les défis, la progression et les rewards de ta session en temps réel.
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setCurrent(null)}>
-            Désélectionner
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) void handleImportFile(file)
+            }}
+          />
+          <Button variant="outline" size="sm" onClick={exportChallenges} className="gap-1.5">
+            <Download className="h-3.5 w-3.5" />
+            <span>Exporter JSON</span>
           </Button>
-          <Button size="sm" onClick={triggerReward}>
-            Trigger reward
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => importInputRef.current?.click()}
+            className="gap-1.5"
+          >
+            <Upload className="h-3.5 w-3.5" />
+            <span>Importer JSON</span>
           </Button>
         </div>
       </div>
@@ -122,11 +226,14 @@ export function AdminPanel() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
-            <Input
-              placeholder="Reward (ex: roulette, gage, 5€...)"
-              value={reward}
-              onChange={(e) => setReward(e.target.value)}
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Reward (ex: roulette, gage, 5€...)"
+                value={reward}
+                onChange={(e) => setReward(e.target.value)}
+              />
+              <Trophy className="hidden h-4 w-4 text-primary/70 sm:inline" />
+            </div>
           </div>
           <div className="grid gap-2 sm:grid-cols-[minmax(0,0.7fr)_minmax(0,1fr)]">
             <Input
@@ -143,8 +250,9 @@ export function AdminPanel() {
           </div>
         </CardContent>
         <CardFooter className="justify-end border-t border-border/60 bg-muted/40">
-          <Button size="sm" onClick={createChallenge}>
-            Créer le défi
+          <Button size="sm" onClick={createChallenge} className="gap-1.5">
+            <Plus className="h-3.5 w-3.5" />
+            <span>Créer le défi</span>
           </Button>
         </CardFooter>
       </Card>
@@ -185,9 +293,20 @@ export function AdminPanel() {
                     <Button
                       variant={isSelected ? "secondary" : "outline"}
                       size="sm"
-                      onClick={() => setCurrent(c.id)}
+                      onClick={() => setCurrent(isSelected ? null : c.id)}
+                      className="gap-1.5"
                     >
-                      Sélectionner
+                      {isSelected ? (
+                        <>
+                          <Minus className="h-3.5 w-3.5" />
+                          <span>Déselectionner</span>
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-3.5 w-3.5" />
+                          <span>Sélectionner</span>
+                        </>
+                      )}
                     </Button>
                     {typeof c.target === "number" && (
                       <>
@@ -202,8 +321,10 @@ export function AdminPanel() {
                               payload: { id: c.id, current: next },
                             })
                           }}
+                          className="px-2"
+                          aria-label="+1"
                         >
-                          +1
+                          <Plus className="h-3 w-3" />
                         </Button>
                         <Button
                           variant="outline"
@@ -216,14 +337,22 @@ export function AdminPanel() {
                               payload: { id: c.id, current: next },
                             })
                           }}
+                          className="px-2"
+                          aria-label="-1"
                         >
-                          -1
+                          <Minus className="h-3 w-3" />
                         </Button>
                       </>
                     )}
                   </div>
-                  <Button variant="destructive" size="sm" onClick={() => remove(c.id)}>
-                    Supprimer
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => remove(c.id)}
+                    className="gap-1.5"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Supprimer</span>
                   </Button>
                 </CardFooter>
               </Card>

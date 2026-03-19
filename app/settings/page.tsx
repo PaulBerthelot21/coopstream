@@ -1,10 +1,23 @@
- "use client";
+"use client";
 
 import { usePrimaryColor } from "@/components/primary-color-provider";
+import { useOverlaySettings } from "@/components/overlay/overlay-settings-provider";
 import { Button } from "@/components/ui/button";
+
+const overlayModeLabels: Record<
+  ReturnType<typeof useOverlaySettings>["settings"]["mode"],
+  string
+> = {
+  bar: "Barre",
+  ticker: "Ticker",
+  "now-playing": "Now playing",
+  scoreboard: "Scoreboard",
+  carousel: "Carrousel",
+};
 
 export default function SettingsPage() {
   const { primaryColor, setPrimaryColor, resetPrimaryColor } = usePrimaryColor();
+  const { settings, setMode } = useOverlaySettings();
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
@@ -54,6 +67,29 @@ export default function SettingsPage() {
               Réinitialiser
             </Button>
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-border/60 bg-background/60 p-4 shadow-sm">
+        <h2 className="text-sm font-semibold tracking-tight">
+          Mode d&apos;overlay par défaut
+        </h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Le mode sélectionné sera utilisé par défaut sur l&apos;overlay. Tu peux
+          toujours le changer en live via le sélecteur.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {Object.entries(overlayModeLabels).map(([value, label]) => (
+            <Button
+              key={value}
+              type="button"
+              variant={settings.mode === value ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => setMode(value as typeof settings.mode)}
+            >
+              {label}
+            </Button>
+          ))}
         </div>
       </section>
     </main>
