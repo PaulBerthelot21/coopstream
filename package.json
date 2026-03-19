@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:gsi": "node scripts/cs2-gsi-server.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

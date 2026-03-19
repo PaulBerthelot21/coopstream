@@ -22,7 +22,11 @@ const links = [
   { href: "/settings", label: "Paramètres" },
 ] as const
 
-const OVERLAY_ONLY_PATHS = ["/overlay-defi-carrousel", "/overlay-chat"]
+const OVERLAY_ONLY_PATHS = [
+  "/overlay-defi-carrousel",
+  "/overlay-chat",
+  "/overlay-cs2",
+]
 
 export function SiteNav() {
   const pathname = usePathname()

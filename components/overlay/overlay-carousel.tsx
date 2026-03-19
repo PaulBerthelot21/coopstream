@@ -50,7 +50,7 @@ export function OverlayCarousel({ challenges }: OverlayCarouselProps) {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -10, scale: 0.98 }}
           transition={{ duration: 0.25 }}
-          className="relative flex w-full max-w-xl items-stretch gap-4 rounded-2xl bg-black/80 px-5 py-3 ring-1 ring-white/10 backdrop-blur-xl"
+          className="relative flex w-full max-w-xl items-stretch gap-4 overflow-hidden rounded-2xl bg-black/80 px-5 py-3 ring-1 ring-white/10 backdrop-blur-xl"
         >
           {current.skinImageUrl && (
             <div className="relative hidden h-20 w-40 overflow-hidden rounded-xl bg-black/60 ring-1 ring-white/10 sm:block">

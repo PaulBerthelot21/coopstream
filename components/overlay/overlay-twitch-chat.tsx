@@ -279,7 +279,7 @@ export function OverlayTwitchChat({
 
   return (
     <div className="pointer-events-none select-none h-full w-full overflow-hidden">
-      <div className="relative flex h-full w-full flex-col rounded-2xl bg-black/70 px-4 py-3 ring-1 ring-white/10 backdrop-blur-xl">
+      <div className="relative flex h-full w-full flex-col overflow-hidden rounded-2xl bg-black/70 px-4 py-3 ring-1 ring-white/10 backdrop-blur-xl">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-10 rounded-t-2xl bg-gradient-to-r from-sky-500/20 via-transparent to-violet-500/20 blur-2xl" />
 
         <div className="relative mb-2 flex items-center justify-between gap-3">
