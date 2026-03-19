@@ -3,14 +3,11 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useTheme } from "next-themes"
 import {
   Home,
   LayoutDashboard,
   MonitorPlay,
   Settings2,
-  Moon,
-  SunMedium,
   Menu,
   X,
 } from "lucide-react"
@@ -21,16 +18,17 @@ const links = [
   { href: "/", label: "Accueil" },
   { href: "/admin", label: "Admin" },
   { href: "/overlay", label: "Overlay" },
-  { href: "/guide", label: "Guide" },
-  { href: "/recap", label: "Récap" },
   { href: "/skins", label: "Skins" },
   { href: "/settings", label: "Paramètres" },
 ] as const
 
+const OVERLAY_ONLY_PATHS = ["/overlay-defi-carrousel", "/overlay-chat"]
+
 export function SiteNav() {
   const pathname = usePathname()
-  const { theme, setTheme } = useTheme()
   const [open, setOpen] = React.useState(false)
+
+  if (OVERLAY_ONLY_PATHS.some((p) => pathname.startsWith(p))) return null
 
   const getIconFor = (href: string) => {
     if (href === "/") return Home
@@ -81,32 +79,7 @@ export function SiteNav() {
             </nav>
           </div>
           <div className="flex gap-1 rounded-full bg-background/80 p-0.5 ring-1 ring-border/60">
-            <button
-              type="button"
-              onClick={() => setTheme("light")}
-              className={
-                "rounded-full px-2 py-0.5 text-[11px] transition " +
-                (theme === "light"
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:text-foreground")
-              }
-            >
-              <SunMedium className="mr-1 inline h-3 w-3" />
-              <span className="hidden sm:inline">Clair</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setTheme("dark")}
-              className={
-                "rounded-full px-2 py-0.5 text-[11px] transition " +
-                (theme === "dark"
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:text-foreground")
-              }
-            >
-              <Moon className="mr-1 inline h-3 w-3" />
-              <span className="hidden sm:inline">Sombre</span>
-            </button>
+            {/* Le sélecteur clair/sombre est dans la page Paramètres. */}
           </div>
           <button
             type="button"

@@ -39,18 +39,26 @@ export default function SkinsPage() {
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }
-        const json = (await res.json()) as any[];
+        type ApiSkin = {
+          id: string
+          name: string
+          weapon?: { name?: string }
+          wear?: { name?: string }
+          image: string
+        }
+
+        const json = (await res.json()) as ApiSkin[];
         if (!cancelled) {
           const mapped: Cs2Skin[] = json.map((item) => ({
             id: item.id,
             name: item.name,
             weapon: { name: item.weapon?.name ?? "Unknown" },
-            wear: item.wear ? { name: item.wear.name } : undefined,
+            wear: item.wear?.name ? { name: item.wear.name } : undefined,
             image: item.image,
-          }));
+          }))
           setSkins(mapped);
         }
-      } catch (e) {
+      } catch {
         if (!cancelled) {
           setError("Impossible de charger les skins CS2.");
         }

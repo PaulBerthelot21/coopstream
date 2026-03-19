@@ -65,7 +65,9 @@ export function OverlaySettingsProvider({
 export function useOverlaySettings() {
   const ctx = React.useContext(OverlaySettingsContext)
   if (!ctx) {
-    throw new Error("useOverlaySettings must be used within OverlaySettingsProvider")
+    throw new Error(
+      "useOverlaySettings must be used within OverlaySettingsProvider",
+    )
   }
   return ctx
 }

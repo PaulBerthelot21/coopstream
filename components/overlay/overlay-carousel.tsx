@@ -96,7 +96,7 @@ export function OverlayCarousel({ challenges }: OverlayCarouselProps) {
               <div className="mt-1 flex items-center gap-2 text-[11px] text-white/70">
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
                 <span className="truncate">
-                  Reward: {current.reward}
+                  {current.reward}
                 </span>
               </div>
             )}

@@ -1,23 +1,43 @@
 "use client";
 
+import * as React from "react";
 import { usePrimaryColor } from "@/components/primary-color-provider";
-import { useOverlaySettings } from "@/components/overlay/overlay-settings-provider";
 import { Button } from "@/components/ui/button";
-
-const overlayModeLabels: Record<
-  ReturnType<typeof useOverlaySettings>["settings"]["mode"],
-  string
-> = {
-  bar: "Barre",
-  ticker: "Ticker",
-  "now-playing": "Now playing",
-  scoreboard: "Scoreboard",
-  carousel: "Carrousel",
-};
+import { useTheme } from "next-themes";
+import { Moon, SunMedium } from "lucide-react";
 
 export default function SettingsPage() {
   const { primaryColor, setPrimaryColor, resetPrimaryColor } = usePrimaryColor();
-  const { settings, setMode } = useOverlaySettings();
+  const { theme, setTheme } = useTheme();
+  const STORAGE_KEY = "coopstream-twitch-channel";
+  const [twitchChannel, setTwitchChannel] = React.useState<string>("");
+
+  function normalize(input: string) {
+    return input
+      .trim()
+      .replace(/^@/, "")
+      .replace(/^https?:\/\/(www\.)?twitch\.tv\//i, "")
+      .split("/")[0]
+      .toLowerCase();
+  }
+
+  React.useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (raw) setTwitchChannel(normalize(raw));
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  function saveTwitchChannel() {
+    try {
+      const normalized = normalize(twitchChannel);
+      window.localStorage.setItem(STORAGE_KEY, normalized);
+    } catch {
+      // ignore
+    }
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
@@ -71,25 +91,64 @@ export default function SettingsPage() {
       </section>
 
       <section className="rounded-2xl border border-border/60 bg-background/60 p-4 shadow-sm">
-        <h2 className="text-sm font-semibold tracking-tight">
-          Mode d&apos;overlay par défaut
-        </h2>
+        <h2 className="text-sm font-semibold tracking-tight">Chat Twitch</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Le mode sélectionné sera utilisé par défaut sur l&apos;overlay. Tu peux
-          toujours le changer en live via le sélecteur.
+          Définit le canal Twitch utilisé par l&apos;overlay chat.
         </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {Object.entries(overlayModeLabels).map(([value, label]) => (
-            <Button
-              key={value}
-              type="button"
-              variant={settings.mode === value ? "secondary" : "outline"}
-              size="sm"
-              onClick={() => setMode(value as typeof settings.mode)}
-            >
-              {label}
+
+        <div className="mt-4 flex flex-col gap-3">
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-muted-foreground">Nom du canal</span>
+            <input
+              type="text"
+              value={twitchChannel}
+              onChange={(e) => setTwitchChannel(e.target.value)}
+              placeholder="@anthemtv_ (ou juste anthemtv_)"
+              className="h-9 w-full rounded border border-input bg-background px-3 text-sm"
+            />
+          </label>
+
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs text-muted-foreground">
+              Astuce : tu peux aussi passer{" "}
+              <span className="font-mono">?channel=...</span> dans l&apos;URL.
+            </span>
+            <Button type="button" variant="outline" onClick={saveTwitchChannel}>
+              Sauvegarder
             </Button>
-          ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-border/60 bg-background/60 p-4 shadow-sm">
+        <h2 className="text-sm font-semibold tracking-tight">Thème</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Choisis ton thème pour l&apos;interface (les overlays restent transparents
+          et lisibles).
+        </p>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant={theme === "light" ? "secondary" : "outline"}
+            size="sm"
+            onClick={() => setTheme("light")}
+            className="gap-1.5"
+          >
+            <SunMedium className="h-3.5 w-3.5" />
+            Clair
+          </Button>
+
+          <Button
+            type="button"
+            variant={theme === "dark" || !theme ? "secondary" : "outline"}
+            size="sm"
+            onClick={() => setTheme("dark")}
+            className="gap-1.5"
+          >
+            <Moon className="h-3.5 w-3.5" />
+            Sombre
+          </Button>
         </div>
       </section>
     </main>

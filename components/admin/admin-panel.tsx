@@ -74,6 +74,7 @@ export function AdminPanel() {
     current: z.number().optional(),
     target: z.number().optional(),
     unit: z.string().optional(),
+    skinImageUrl: z.string().optional(),
     updatedAt: z.number(),
   })
 
