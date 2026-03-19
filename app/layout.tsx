@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Coopstream",
-  description: "Coopstream is a platform for streaming music",
+  description: "Coopstream : Streaming tools",
 };
 
 export default function RootLayout({

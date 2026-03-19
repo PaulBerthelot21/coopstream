@@ -184,6 +184,31 @@ export function AdminPanel() {
     toast.success("Challenge supprimé")
   }
 
+  function removeAll() {
+    const ids = Object.keys(challenges)
+    if (ids.length === 0) {
+      toast.info("Aucun défi à supprimer.")
+      return
+    }
+    const ok = window.confirm(
+      "Tu es sur le point de supprimer TOUS les défis (et de désélectionner le défi courant). Continuer ?",
+    )
+    if (!ok) return
+
+    useCoopStreamStore.setState((prev) => ({
+      ...prev,
+      challenges: {},
+      selectedChallengeId: null,
+    }))
+
+    for (const id of ids) {
+      publishEvent({ type: "DELETE_CHALLENGE", payload: { id } })
+    }
+    publishEvent({ type: "SELECT_CHALLENGE", payload: { id: null } })
+
+    toast.success("Tous les défis ont été supprimés.")
+  }
+
   function startEdit(c: Challenge) {
     setEditingId(c.id)
     setEditingTitle(c.title)
@@ -264,6 +289,15 @@ export function AdminPanel() {
           >
             <Upload className="h-3.5 w-3.5" />
             <span>Importer JSON</span>
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={removeAll}
+            className="gap-1.5"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            <span>Tout supprimer</span>
           </Button>
         </div>
       </div>
