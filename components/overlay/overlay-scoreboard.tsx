@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 
 import type { Challenge } from "@/lib/types/challenge"
 
@@ -54,6 +55,16 @@ export function OverlayScoreboard({ selected }: OverlayScoreboardProps) {
           </>
         ) : (
           <span className="text-[11px] text-white/70">Progression libre</span>
+        )}
+        {selected?.skinImageUrl && (
+          <div className="relative ml-2 h-8 w-24 overflow-hidden rounded-lg bg-black/60 ring-1 ring-white/10">
+            <Image
+              src={selected.skinImageUrl}
+              alt={selected.title}
+              fill
+              className="object-contain"
+            />
+          </div>
         )}
       </div>
     </div>

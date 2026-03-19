@@ -12,6 +12,7 @@ import {
   Target,
   Trophy,
 } from "lucide-react"
+import Image from "next/image"
 
 import type { Challenge } from "@/lib/types/challenge"
 import { publishEvent } from "@/lib/sync/broadcast"
@@ -51,6 +52,13 @@ export function AdminPanel() {
   const [target, setTarget] = React.useState<string>("")
   const [unit, setUnit] = React.useState<string>("kills")
   const [skinImageUrl, setSkinImageUrl] = React.useState<string>("")
+
+  const [editingId, setEditingId] = React.useState<string | null>(null)
+  const [editingTitle, setEditingTitle] = React.useState("")
+  const [editingReward, setEditingReward] = React.useState("")
+  const [editingTarget, setEditingTarget] = React.useState<string>("")
+  const [editingUnit, setEditingUnit] = React.useState<string>("")
+  const [editingSkinUrl, setEditingSkinUrl] = React.useState<string>("")
 
   const list = React.useMemo(() => {
     return Object.values(challenges).sort((a, b) => b.updatedAt - a.updatedAt)
@@ -176,6 +184,51 @@ export function AdminPanel() {
     toast.success("Challenge supprimé")
   }
 
+  function startEdit(c: Challenge) {
+    setEditingId(c.id)
+    setEditingTitle(c.title)
+    setEditingReward(c.reward ?? "")
+    setEditingTarget(
+      typeof c.target === "number" && !Number.isNaN(c.target)
+        ? String(c.target)
+        : "",
+    )
+    setEditingUnit(c.unit ?? "")
+    setEditingSkinUrl(c.skinImageUrl ?? "")
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setEditingTitle("")
+    setEditingReward("")
+    setEditingTarget("")
+    setEditingUnit("")
+    setEditingSkinUrl("")
+  }
+
+  function saveEdit(original: Challenge) {
+    const trimmedTitle = editingTitle.trim()
+    if (!trimmedTitle) {
+      toast.error("Titre requis")
+      return
+    }
+    const updated: Challenge = {
+      ...original,
+      title: trimmedTitle,
+      reward: editingReward.trim() || undefined,
+      target: editingTarget
+        ? Number(editingTarget) || original.target
+        : undefined,
+      unit: editingUnit.trim() || undefined,
+      skinImageUrl: editingSkinUrl.trim() || undefined,
+      updatedAt: Date.now(),
+    }
+    upsertChallenge(updated)
+    publishEvent({ type: "UPSERT_CHALLENGE", payload: { challenge: updated } })
+    cancelEdit()
+    toast.success("Défi mis à jour")
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-7">
       <div className="flex items-start justify-between gap-4">
@@ -256,6 +309,21 @@ export function AdminPanel() {
             value={skinImageUrl}
             onChange={(e) => setSkinImageUrl(e.target.value)}
           />
+          {skinImageUrl && (
+            <div className="flex items-center gap-3 rounded-xl border border-dashed border-border/60 bg-muted/40 p-3">
+              <div className="relative h-16 w-32 overflow-hidden rounded-lg bg-black/40 ring-1 ring-border/60">
+                <Image
+                  src={skinImageUrl}
+                  alt="Prévisualisation skin"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Prévisualisation du skin lié au défi sélectionné.
+              </p>
+            </div>
+          )}
         </CardContent>
         <CardFooter className="justify-end border-t border-border/60 bg-muted/40">
           <Button size="sm" onClick={createChallenge} className="gap-1.5">
@@ -276,27 +344,121 @@ export function AdminPanel() {
         ) : (
           list.map((c) => {
             const isSelected = c.id === selectedChallengeId
+            const isEditing = editingId === c.id
             return (
               <Card key={c.id} className={isSelected ? "ring-2 ring-ring" : undefined}>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between gap-2">
-                    <span className="truncate">{c.title}</span>
-                    {isSelected && (
-                      <span className="rounded-md bg-primary/10 px-2 py-1 text-xs text-primary">
-                        Actuel
-                      </span>
+                    {isEditing ? (
+                      <Input
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        className="h-8 text-xs"
+                      />
+                    ) : (
+                      <span className="truncate">{c.title}</span>
                     )}
+                    <div className="flex items-center gap-2">
+                      {isSelected && !isEditing && (
+                        <span className="rounded-md bg-primary/10 px-2 py-1 text-xs text-primary">
+                          Actuel
+                        </span>
+                      )}
+                      {isEditing ? (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="xs"
+                            onClick={() => cancelEdit()}
+                            className="h-7 px-2 text-[10px]"
+                          >
+                            Annuler
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="xs"
+                            onClick={() => saveEdit(c)}
+                            className="h-7 px-2 text-[10px]"
+                          >
+                            Enregistrer
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          onClick={() => startEdit(c)}
+                          className="h-7 px-2 text-[10px]"
+                        >
+                          Modifier
+                        </Button>
+                      )}
+                    </div>
                   </CardTitle>
-                  <CardDescription className="space-y-1">
-                    {c.reward && <div className="truncate">Reward: {c.reward}</div>}
-                    {typeof c.target === "number" && (
-                      <div className="text-xs text-muted-foreground">
-                        Progression: {c.current ?? 0}/{c.target} {c.unit ?? ""}
-                      </div>
-                    )}
-                    {c.skinImageUrl && (
-                      <div className="text-xs text-muted-foreground truncate">
-                        Skin: <span className="text-foreground/80">{c.skinImageUrl}</span>
+                  <CardDescription className="space-y-2">
+                    <div className="space-y-1">
+                      {isEditing ? (
+                        <div className="grid gap-2 sm:grid-cols-[minmax(0,0.7fr)_minmax(0,1fr)]">
+                          <Input
+                            placeholder="Reward"
+                            value={editingReward}
+                            onChange={(e) => setEditingReward(e.target.value)}
+                            className="h-8 text-xs"
+                          />
+                          <div className="flex gap-1">
+                            <Input
+                              placeholder="Objectif"
+                              inputMode="numeric"
+                              value={editingTarget}
+                              onChange={(e) => setEditingTarget(e.target.value)}
+                              className="h-8 text-xs"
+                            />
+                            <Input
+                              placeholder="Unité"
+                              value={editingUnit}
+                              onChange={(e) => setEditingUnit(e.target.value)}
+                              className="h-8 text-xs"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          {c.reward && (
+                            <div className="truncate">Reward: {c.reward}</div>
+                          )}
+                          {typeof c.target === "number" && (
+                            <div className="text-xs text-muted-foreground">
+                              Progression: {c.current ?? 0}/{c.target}{" "}
+                              {c.unit ?? ""}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    {(c.skinImageUrl || isEditing) && (
+                      <div className="flex items-center gap-3">
+                        <div className="relative h-10 w-20 overflow-hidden rounded-md bg-black/40 ring-1 ring-border/60">
+                          <Image
+                            src={isEditing ? editingSkinUrl || c.skinImageUrl || "" : c.skinImageUrl || ""}
+                            alt={c.title}
+                            fill
+                            className="object-contain"
+                          />
+                        </div>
+                        {isEditing ? (
+                          <Input
+                            placeholder="URL image skin"
+                            value={editingSkinUrl}
+                            onChange={(e) => setEditingSkinUrl(e.target.value)}
+                            className="h-8 flex-1 text-[10px]"
+                          />
+                        ) : (
+                          <div className="min-w-0 text-[10px] text-muted-foreground">
+                            <div className="truncate">
+                              Skin lié à ce défi (prévisualisation rapide).
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </CardDescription>

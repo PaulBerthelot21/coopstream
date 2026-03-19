@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { AnimatePresence, motion } from "framer-motion"
+import Image from "next/image"
 
 import type { Challenge } from "@/lib/types/challenge"
 
@@ -53,6 +54,16 @@ export function OverlayNowPlaying({ selected }: OverlayNowPlayingProps) {
             </motion.div>
           </AnimatePresence>
         </div>
+        {selected?.skinImageUrl && (
+          <div className="relative h-14 w-40 overflow-hidden rounded-xl bg-black/60 ring-1 ring-white/10">
+            <Image
+              src={selected.skinImageUrl}
+              alt={selected.title}
+              fill
+              className="object-contain"
+            />
+          </div>
+        )}
         {selected?.reward && (
           <div className="shrink-0 rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] text-emerald-200 ring-1 ring-emerald-400/40">
             Reward: {selected.reward}
