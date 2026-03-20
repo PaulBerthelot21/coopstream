@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
 
 /**
  * Nécessite un jeton utilisateur OAuth avec les droits Helix pour lire les followers
  * du canal cible (voir la doc Twitch « Get Channel Followers »).
- * Variables : TWITCH_CLIENT_ID, TWITCH_ACCESS_TOKEN
+ * Utilise en priorité le accessToken Twitch de l'utilisateur (Better Auth + DB),
+ * et fallback sur TWITCH_ACCESS_TOKEN pour les cas où la session n'est pas dispo.
  */
 export async function GET(req: NextRequest) {
   const channelRaw = req.nextUrl.searchParams.get("channel")?.trim()
@@ -12,7 +15,29 @@ export async function GET(req: NextRequest) {
   }
 
   const clientId = process.env.TWITCH_CLIENT_ID
-  const token = process.env.TWITCH_ACCESS_TOKEN
+  const envToken = process.env.TWITCH_ACCESS_TOKEN
+
+  let token: string | undefined = envToken
+
+  // Si l'utilisateur est connecté (Better Auth) et qu'on a un accessToken Twitch en DB,
+  // on préfère l'utiliser plutôt que le token "global" en `.env`.
+  try {
+    const session = await auth.api.getSession({ headers: req.headers })
+    const userId = session?.user?.id
+
+    if (userId) {
+      const twitchAccount = await prisma.account.findFirst({
+        where: { userId, providerId: "twitch" },
+        select: { accessToken: true },
+      })
+
+      if (twitchAccount?.accessToken) {
+        token = twitchAccount.accessToken
+      }
+    }
+  } catch {
+    // Fallback : on garde envToken.
+  }
 
   if (!clientId || !token) {
     return NextResponse.json(

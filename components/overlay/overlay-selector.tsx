@@ -179,7 +179,7 @@ export function OverlaySelector({
 
   return (
     <div className="min-h-[360px] w-full bg-transparent flex items-center justify-center px-0">
-      <div className="w-full max-w-5xl px-4">
+      <div className="w-full max-w-5xl py-8 px-4">
         <div className="rounded-2xl border border-border/60 bg-background/60 p-6 shadow-sm backdrop-blur-xl">
           <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{description}</p>
