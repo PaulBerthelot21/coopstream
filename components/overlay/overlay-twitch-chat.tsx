@@ -147,6 +147,7 @@ export function OverlayTwitchChat({
 }) {
   const [messages, setMessages] = React.useState<TwitchChatMessage[]>([])
   const [channelNormalized, setChannelNormalized] = React.useState<string>("")
+  const listRef = React.useRef<HTMLDivElement | null>(null)
 
   React.useEffect(() => {
     const STORAGE_KEY = "coopstream-twitch-channel"
@@ -172,6 +173,11 @@ export function OverlayTwitchChat({
     const id = window.setInterval(applyFromLocalStorage, 2000)
     return () => window.clearInterval(id)
   }, [channel])
+
+  // Reset de l'affichage quand on change de channel.
+  React.useEffect(() => {
+    setMessages([])
+  }, [channelNormalized])
 
   React.useEffect(() => {
     type TmiMessageHandler = (
@@ -277,6 +283,13 @@ export function OverlayTwitchChat({
     }
   }, [channelNormalized, maxMessages])
 
+  // Assure un défilement vers le bas à chaque ajout de messages.
+  React.useEffect(() => {
+    const el = listRef.current
+    if (!el) return
+    el.scrollTop = el.scrollHeight
+  }, [messages.length])
+
   return (
     <div className="pointer-events-none select-none h-full w-full overflow-hidden">
       <div className="relative flex h-full w-full flex-col overflow-hidden rounded-2xl bg-black/70 px-4 py-3 ring-1 ring-white/10 backdrop-blur-xl">
@@ -293,7 +306,10 @@ export function OverlayTwitchChat({
           </div>
         </div>
 
-        <div className="relative flex flex-1 flex-col justify-end gap-0.5">
+        <div
+          ref={listRef}
+          className="relative flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        >
           {messages.map((m) => (
             <div
               key={m.id}
