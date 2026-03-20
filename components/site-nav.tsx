@@ -4,7 +4,6 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
-  Home,
   LayoutDashboard,
   MonitorPlay,
   Settings2,
@@ -13,9 +12,18 @@ import {
 } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { useAuthSession } from "@/lib/useAuthSession"
 import { signInWithTwitch } from "@/lib/auth.client"
+import { authClient } from "@/lib/auth.client"
 
 function TwitchLogo({ className }: { className?: string }) {
   // SVG simple (bulles + queue) pour rester autonome (pas de fichier public dédié).
@@ -33,16 +41,15 @@ function TwitchLogo({ className }: { className?: string }) {
 }
 
 const links = [
-  { href: "/", label: "Accueil" },
   { href: "/admin", label: "Admin" },
   { href: "/overlay", label: "Overlay" },
   { href: "/skins", label: "Skins" },
-  { href: "/settings", label: "Paramètres" },
 ] as const
 
 const OVERLAY_ONLY_PATHS = [
   "/overlay-defi-carrousel",
   "/overlay-chat",
+  "/overlay-camera",
 ]
 
 export function SiteNav() {
@@ -59,7 +66,6 @@ export function SiteNav() {
   if (OVERLAY_ONLY_PATHS.some((p) => pathname.startsWith(p))) return null
 
   const getIconFor = (href: string) => {
-    if (href === "/") return Home
     if (href === "/admin") return LayoutDashboard
     if (href === "/overlay") return MonitorPlay
     if (href === "/recap") return LayoutDashboard
@@ -71,14 +77,14 @@ export function SiteNav() {
     <header className="sticky top-0 z-30 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl" suppressHydrationWarning>
       <div className="mx-auto flex h-12 w-full max-w-5xl items-center justify-between px-4">
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 rounded-full bg-primary/5 px-3 py-1 ring-1 ring-primary/25">
+          <Link href="/" className="flex items-center gap-2 rounded-full bg-primary/5 px-3 py-1 ring-1 ring-primary/25">
             <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_14px_rgba(79,70,229,0.9)]">
               <LayoutDashboard className="h-3 w-3" />
             </span>
             <span className="hidden text-xs font-semibold uppercase tracking-[0.2em] text-primary sm:inline">
               CoopStream
             </span>
-          </div>
+          </Link>
         </div>
         <div className="flex items-center gap-2">
           <div className="hidden items-center gap-3 md:flex">
@@ -86,10 +92,7 @@ export function SiteNav() {
               {links
                 .filter((l) => (l.href === "/admin" ? isAuthed : true))
                 .map((link) => {
-                  const active =
-                    link.href === "/"
-                      ? pathname === "/"
-                      : pathname.startsWith(link.href)
+                  const active = pathname.startsWith(link.href)
                   const Icon = getIconFor(link.href)
                   return (
                     <Button
@@ -109,28 +112,49 @@ export function SiteNav() {
             </nav>
           </div>
             {isAuthed ? (
-              <Button
-                asChild
-                variant="outline"
-                size="icon"
-                aria-label="Ouvrir l'admin"
-                className="border-border/60"
-              >
-                <Link href="/admin">
-                  <Avatar className="h-7 w-7">
-                    {avatarUrl ? (
-                      <AvatarImage
-                        src={avatarUrl}
-                        alt={displayName}
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : null}
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      {displayName?.[0]?.toUpperCase?.() ?? "T"}
-                    </AvatarFallback>
-                  </Avatar>
-                </Link>
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label="Ouvrir le menu utilisateur"
+                    className="border-border/60"
+                  >
+                    <Avatar className="h-7 w-7">
+                      {avatarUrl ? (
+                        <AvatarImage
+                          src={avatarUrl}
+                          alt={displayName}
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : null}
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {displayName?.[0]?.toUpperCase?.() ?? "T"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuLabel>Compte</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile">Mon profil</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings">Paramètres</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault()
+                      void authClient.signOut()
+                    }}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    Se déconnecter
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <Button
                 variant="outline"
@@ -161,10 +185,7 @@ export function SiteNav() {
             {links
               .filter((l) => (l.href === "/admin" ? isAuthed : true))
               .map((link) => {
-                const active =
-                  link.href === "/"
-                    ? pathname === "/"
-                    : pathname.startsWith(link.href)
+                const active = pathname.startsWith(link.href)
                 const Icon = getIconFor(link.href)
                 return (
                   <Button
