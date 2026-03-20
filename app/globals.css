@@ -151,6 +151,24 @@
   background-attachment: fixed;
 }
 
+/* Overlay OBS : on veut une transparence totale (sinon OBS capture un fond). */
+html.overlay-body,
+body.overlay-body {
+  background: transparent !important;
+}
+
+/* Désactive aussi les background-images (important en mode .dark). */
+html.overlay-body,
+body.overlay-body {
+  background-image: none !important;
+}
+
+/* Par sécurité : on neutralise le fond issu de `bg-background` via Tailwind. */
+body.overlay-body {
+  background-color: transparent !important;
+}
+
+
 @keyframes marquee {
   0% {
     transform: translateX(0);

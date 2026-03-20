@@ -3,6 +3,7 @@
 import * as React from "react"
 
 import { OverlayCarousel } from "@/components/overlay/overlay-carousel"
+import { OverlayBodyMode } from "@/components/overlay/overlay-body-mode"
 
 import type { Challenge } from "@/lib/types/challenge"
 
@@ -64,6 +65,7 @@ export default function OverlayDefiCarrouselPage() {
 
   return (
     <div className="flex h-dvh w-dvw items-start justify-end bg-transparent pt-6 pr-6">
+      <OverlayBodyMode />
       <div className="w-full max-w-xl">
         <OverlayCarousel challenges={ordered} />
       </div>

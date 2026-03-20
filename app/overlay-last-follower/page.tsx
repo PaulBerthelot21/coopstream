@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 
 import { OverlayLastFollower } from "../../components/overlay/overlay-last-follower"
+import { OverlayBodyMode } from "@/components/overlay/overlay-body-mode"
 
 export const metadata: Metadata = {
   title: "Overlay Dernier follower",
@@ -25,6 +26,7 @@ export default async function OverlayLastFollowerPage({
 
   return (
     <div className="flex h-dvh w-dvw items-start justify-end bg-transparent pointer-events-none pr-6 pt-6">
+      <OverlayBodyMode />
       <div className="w-[360px] max-w-[40vw] min-h-[140px]">
         <OverlayLastFollower
           channel={channelFromQuery}
