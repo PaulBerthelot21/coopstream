@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "dev:gsi": "node scripts/cs2-gsi-server.mjs",
-    "build": "next build",
+    "prisma:generate": "node scripts/prisma-generate.mjs",
+    "build": "npm run prisma:generate && next build",
     "start": "next start",
     "lint": "eslint"
   },
