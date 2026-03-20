@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { HomeAdminCard } from "@/components/auth/home-admin-card";
 
 export default function HomePage() {
   return (
@@ -14,17 +15,7 @@ export default function HomePage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Admin</CardTitle>
-            <CardDescription>Créer, choisir et déclencher les rewards.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-end">
-            <Button asChild>
-              <Link href="/admin">Ouvrir l&apos;admin</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <HomeAdminCard />
 
         <Card>
           <CardHeader>

@@ -11,14 +11,13 @@ import {
   Trash2,
   Target,
   Trophy,
+  Copy,
 } from "lucide-react"
 import Image from "next/image"
 
 import type { Challenge } from "@/lib/types/challenge"
-import { publishEvent } from "@/lib/sync/broadcast"
+import type { CoopStreamEvent } from "@/lib/types/events"
 import { useCoopStreamStore } from "@/lib/store/coopstream"
-import { useBroadcastSync } from "@/lib/sync/useBroadcastSync"
-import { useCoopStreamPersistence } from "@/lib/sync/useCoopStreamPersistence"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -30,15 +29,15 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { useRouter } from "next/navigation"
 
 function newId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID()
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
-export function AdminPanel() {
-  useBroadcastSync()
-  useCoopStreamPersistence()
+export function AdminPanel({ initialKey }: { initialKey?: string }) {
+  const router = useRouter()
 
   const challenges = useCoopStreamStore((s) => s.challenges)
   const selectedChallengeId = useCoopStreamStore((s) => s.selectedChallengeId)
@@ -46,6 +45,131 @@ export function AdminPanel() {
   const deleteChallenge = useCoopStreamStore((s) => s.deleteChallenge)
   const selectChallenge = useCoopStreamStore((s) => s.selectChallenge)
   const updateProgress = useCoopStreamStore((s) => s.updateProgress)
+
+  const [coopstreamKey, setCoopstreamKey] = React.useState<string>(
+    initialKey?.trim() ?? "",
+  )
+
+  React.useEffect(() => {
+    if (coopstreamKey) return
+
+    const newKey = `${Date.now().toString(36)}-${Math.random()
+      .toString(36)
+      .slice(2, 10)}`
+    setCoopstreamKey(newKey)
+
+    try {
+      const url = new URL(window.location.href)
+      url.searchParams.set("coopstreamKey", newKey)
+      void router.replace(`${url.pathname}${url.search}`)
+    } catch {
+      // ignore
+    }
+  }, [coopstreamKey, router])
+
+  // Hydrate admin state from DB so the UI matches the room.
+  React.useEffect(() => {
+    if (!coopstreamKey) return
+
+    let alive = true
+    const hydrate = async () => {
+      try {
+        const res = await fetch(
+          `/api/coopstream/rooms/${encodeURIComponent(coopstreamKey)}`,
+          { cache: "no-store" },
+        )
+        if (!res.ok) return
+
+        const data = (await res.json()) as {
+          challenges?: Challenge[]
+          selectedChallengeId?: string | null
+          lastRewardText?: string | null
+          lastRewardAt?: number | null
+        }
+
+        if (!alive) return
+
+        const map = Object.fromEntries(
+          (data.challenges ?? []).map((c) => [c.id, c]),
+        ) as Record<string, Challenge>
+
+        useCoopStreamStore.setState((prev) => ({
+          ...prev,
+          challenges: map,
+          selectedChallengeId: data.selectedChallengeId ?? null,
+          lastRewardText: data.lastRewardText ?? null,
+          lastRewardAt: data.lastRewardAt ?? null,
+        }))
+      } catch {
+        // ignore
+      }
+    }
+
+    void hydrate()
+    return () => {
+      alive = false
+    }
+  }, [coopstreamKey])
+
+  const postEvent = React.useCallback(
+    async (event: CoopStreamEvent) => {
+      if (!coopstreamKey) return
+      try {
+        const res = await fetch(
+          `/api/coopstream/rooms/${encodeURIComponent(coopstreamKey)}/events`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(event),
+          },
+        )
+
+        if (!res.ok) {
+          toast.error("Impossible de synchroniser l'overlay.")
+        }
+      } catch {
+        toast.error("Impossible de synchroniser l'overlay.")
+      }
+    },
+    [coopstreamKey],
+  )
+
+  const copyOverlayLink = React.useCallback(async () => {
+    if (!coopstreamKey) {
+      toast.error("Aucune coopstreamKey disponible pour copier le lien.")
+      return
+    }
+
+    const url = `${window.location.origin}/overlay-defi-carrousel?coopstreamKey=${encodeURIComponent(
+      coopstreamKey,
+    )}`
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url)
+        toast.success("Lien overlay copié")
+        return
+      }
+    } catch {
+      // fallback ci-dessous
+    }
+
+    try {
+      const ta = document.createElement("textarea")
+      ta.value = url
+      ta.style.position = "fixed"
+      ta.style.opacity = "0"
+      ta.style.left = "-9999px"
+      document.body.appendChild(ta)
+      ta.focus()
+      ta.select()
+      document.execCommand("copy")
+      ta.remove()
+      toast.success("Lien overlay copié")
+    } catch {
+      toast.error("Impossible de copier le lien. Copie-le manuellement.")
+    }
+  }, [coopstreamKey])
 
   const [title, setTitle] = React.useState("")
   const [reward, setReward] = React.useState("")
@@ -126,13 +250,13 @@ export function AdminPanel() {
       // Sync overlay: supprimer ce qui n'existe plus, upsert ce qui existe, puis sélectionner
       for (const id of prevIds) {
         if (!nextIds.has(id)) {
-          publishEvent({ type: "DELETE_CHALLENGE", payload: { id } })
+          await postEvent({ type: "DELETE_CHALLENGE", payload: { id } })
         }
       }
       for (const c of parsed.challenges) {
-        publishEvent({ type: "UPSERT_CHALLENGE", payload: { challenge: c } })
+        await postEvent({ type: "UPSERT_CHALLENGE", payload: { challenge: c } })
       }
-      publishEvent({
+      await postEvent({
         type: "SELECT_CHALLENGE",
         payload: { id: parsed.selectedChallengeId },
       })
@@ -164,7 +288,7 @@ export function AdminPanel() {
     }
 
     upsertChallenge(challenge)
-    publishEvent({ type: "UPSERT_CHALLENGE", payload: { challenge } })
+    void postEvent({ type: "UPSERT_CHALLENGE", payload: { challenge } })
     toast.success("Challenge créé")
 
     setTitle("")
@@ -176,16 +300,16 @@ export function AdminPanel() {
 
   function setCurrent(id: string | null) {
     selectChallenge(id)
-    publishEvent({ type: "SELECT_CHALLENGE", payload: { id } })
+    void postEvent({ type: "SELECT_CHALLENGE", payload: { id } })
   }
 
   function remove(id: string) {
     deleteChallenge(id)
-    publishEvent({ type: "DELETE_CHALLENGE", payload: { id } })
+    void postEvent({ type: "DELETE_CHALLENGE", payload: { id } })
     toast.success("Challenge supprimé")
   }
 
-  function removeAll() {
+  async function removeAll() {
     const ids = Object.keys(challenges)
     if (ids.length === 0) {
       toast.info("Aucun défi à supprimer.")
@@ -203,9 +327,9 @@ export function AdminPanel() {
     }))
 
     for (const id of ids) {
-      publishEvent({ type: "DELETE_CHALLENGE", payload: { id } })
+      await postEvent({ type: "DELETE_CHALLENGE", payload: { id } })
     }
-    publishEvent({ type: "SELECT_CHALLENGE", payload: { id: null } })
+    await postEvent({ type: "SELECT_CHALLENGE", payload: { id: null } })
 
     toast.success("Tous les défis ont été supprimés.")
   }
@@ -250,7 +374,7 @@ export function AdminPanel() {
       updatedAt: Date.now(),
     }
     upsertChallenge(updated)
-    publishEvent({ type: "UPSERT_CHALLENGE", payload: { challenge: updated } })
+    void postEvent({ type: "UPSERT_CHALLENGE", payload: { challenge: updated } })
     cancelEdit()
     toast.success("Défi mis à jour")
   }
@@ -294,11 +418,21 @@ export function AdminPanel() {
           <Button
             variant="destructive"
             size="sm"
-            onClick={removeAll}
+            onClick={() => void removeAll()}
             className="gap-1.5"
           >
             <Trash2 className="h-3.5 w-3.5" />
             <span>Tout supprimer</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void copyOverlayLink()}
+            className="gap-1.5"
+          >
+            <Copy className="h-3.5 w-3.5" />
+            <span>Copier lien overlay</span>
           </Button>
         </div>
       </div>
@@ -526,7 +660,7 @@ export function AdminPanel() {
                           onClick={() => {
                             const next = (c.current ?? 0) + 1
                             updateProgress(c.id, next)
-                            publishEvent({
+                            void postEvent({
                               type: "UPDATE_PROGRESS",
                               payload: { id: c.id, current: next },
                             })
@@ -542,7 +676,7 @@ export function AdminPanel() {
                           onClick={() => {
                             const next = Math.max(0, (c.current ?? 0) - 1)
                             updateProgress(c.id, next)
-                            publishEvent({
+                            void postEvent({
                               type: "UPDATE_PROGRESS",
                               payload: { id: c.id, current: next },
                             })
