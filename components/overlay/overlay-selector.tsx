@@ -116,6 +116,7 @@ export function OverlaySelector({
       return
     }
 
+    // Valeur optimiste depuis localStorage (évite un flash vide).
     try {
       setCoopstreamKey(
         window.localStorage.getItem(COOPSTREAM_KEY_STORAGE) ?? "",
@@ -124,6 +125,7 @@ export function OverlaySelector({
       setCoopstreamKey("")
     }
 
+    // Pré-remplissage du channel Twitch.
     try {
       const stored = window.localStorage.getItem(TWITCH_CHANNEL_STORAGE) ?? ""
       const sessionUser = (session as any)?.user as
@@ -139,7 +141,27 @@ export function OverlaySelector({
     } catch {
       setChannel("")
     }
-  }, [isAuthed])
+
+    // Confirmation côté backend : 1 seule coopstreamKey stable par utilisateur.
+    ;(async () => {
+      try {
+        const res = await fetch("/api/coopstream/rooms/me", { cache: "no-store" })
+        if (!res.ok) return
+        const data = (await res.json()) as { coopstreamKey?: string }
+        const key = data?.coopstreamKey?.trim() ?? ""
+        if (!key) return
+
+        setCoopstreamKey(key)
+        try {
+          window.localStorage.setItem(COOPSTREAM_KEY_STORAGE, key)
+        } catch {
+          // ignore
+        }
+      } catch {
+        // ignore
+      }
+    })()
+  }, [isAuthed, session])
 
   const buildOverlayHref = React.useCallback(
     (href: string) => {

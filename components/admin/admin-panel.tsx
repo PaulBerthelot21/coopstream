@@ -29,16 +29,13 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { useRouter } from "next/navigation"
 
 function newId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID()
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
-export function AdminPanel({ initialKey }: { initialKey?: string }) {
-  const router = useRouter()
-
+export function AdminPanel() {
   const challenges = useCoopStreamStore((s) => s.challenges)
   const selectedChallengeId = useCoopStreamStore((s) => s.selectedChallengeId)
   const upsertChallenge = useCoopStreamStore((s) => s.upsertChallenge)
@@ -46,26 +43,31 @@ export function AdminPanel({ initialKey }: { initialKey?: string }) {
   const selectChallenge = useCoopStreamStore((s) => s.selectChallenge)
   const updateProgress = useCoopStreamStore((s) => s.updateProgress)
 
-  const [coopstreamKey, setCoopstreamKey] = React.useState<string>(
-    initialKey?.trim() ?? "",
-  )
+  const [coopstreamKey, setCoopstreamKey] = React.useState<string>("")
+  const isKeyReady = coopstreamKey.trim().length > 0
 
   React.useEffect(() => {
-    if (coopstreamKey) return
+    let alive = true
 
-    const newKey = `${Date.now().toString(36)}-${Math.random()
-      .toString(36)
-      .slice(2, 10)}`
-    setCoopstreamKey(newKey)
-
-    try {
-      const url = new URL(window.location.href)
-      url.searchParams.set("coopstreamKey", newKey)
-      void router.replace(`${url.pathname}${url.search}`)
-    } catch {
-      // ignore
+    const loadKey = async () => {
+      try {
+        const res = await fetch("/api/coopstream/rooms/me", { cache: "no-store" })
+        if (!res.ok) return
+        const data = (await res.json()) as { coopstreamKey?: string }
+        const key = data?.coopstreamKey?.trim() ?? ""
+        if (!alive) return
+        if (key) setCoopstreamKey(key)
+      } catch {
+        // ignore
+      }
     }
-  }, [coopstreamKey, router])
+
+    void loadKey()
+
+    return () => {
+      alive = false
+    }
+  }, [])
 
   // Mémorise la dernière `coopstreamKey` côté navigateur.
   // L’UX “overlay” peut ensuite l’injecter dans les liens UNIQUEMENT si l’utilisateur est connecté.
@@ -509,7 +511,12 @@ export function AdminPanel({ initialKey }: { initialKey?: string }) {
           )}
         </CardContent>
         <CardFooter className="justify-end border-t border-border/60 bg-muted/40">
-          <Button size="sm" onClick={createChallenge} className="gap-1.5">
+          <Button
+            size="sm"
+            onClick={createChallenge}
+            className="gap-1.5"
+            disabled={!isKeyReady}
+          >
             <Plus className="h-3.5 w-3.5" />
             <span>Créer le défi</span>
           </Button>

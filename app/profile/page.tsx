@@ -22,6 +22,59 @@ export default function ProfilePage() {
   const avatarUrl = user?.image ?? null
   const initial = displayName?.[0]?.toUpperCase?.() ?? "T"
 
+  const [coopstreamKey, setCoopstreamKey] = React.useState<string>("")
+  const [coopstreamKeyStatus, setCoopstreamKeyStatus] = React.useState<
+    "loading" | "ok" | "error"
+  >("loading")
+  const [coopstreamKeyError, setCoopstreamKeyError] = React.useState<string>("")
+
+  React.useEffect(() => {
+    if (!isAuthed) return
+
+    let alive = true
+    setCoopstreamKeyStatus("loading")
+    setCoopstreamKeyError("")
+    ;(async () => {
+      try {
+        const res = await fetch("/api/coopstream/rooms/me", { cache: "no-store" })
+        if (!res.ok) {
+          if (!alive) return
+          setCoopstreamKeyStatus("error")
+          let payload: any = null
+          try {
+            payload = await res.json()
+          } catch {
+            // ignore
+          }
+          const message =
+            payload?.message ||
+            payload?.error ||
+            `HTTP ${res.status}`
+          setCoopstreamKeyError(message)
+          return
+        }
+        const data = (await res.json()) as { coopstreamKey?: string }
+        const key = data?.coopstreamKey?.trim() ?? ""
+        if (!alive) return
+        if (key) {
+          setCoopstreamKey(key)
+          setCoopstreamKeyStatus("ok")
+        } else {
+          setCoopstreamKeyStatus("error")
+          setCoopstreamKeyError("Réponse sans coopstreamKey")
+        }
+      } catch {
+        if (!alive) return
+        setCoopstreamKeyStatus("error")
+        setCoopstreamKeyError("Fetch échoué")
+      }
+    })()
+
+    return () => {
+      alive = false
+    }
+  }, [isAuthed])
+
   if (!isAuthed) {
     return (
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-10">
@@ -75,6 +128,19 @@ export default function ProfilePage() {
 
             <div className="text-xs text-muted-foreground">
               Source : Twitch (SSO)
+            </div>
+
+            <div className="mt-3">
+              <div className="text-xs font-semibold text-muted-foreground">
+                coopstreamKey (défis)
+              </div>
+              <div className="mt-1 break-all font-mono text-[12px] text-foreground/80">
+                {coopstreamKeyStatus === "loading"
+                  ? "Chargement…"
+                  : coopstreamKeyStatus === "error"
+                    ? coopstreamKeyError || "Erreur"
+                    : coopstreamKey || "—"}
+              </div>
             </div>
 
             <div className="mt-2">

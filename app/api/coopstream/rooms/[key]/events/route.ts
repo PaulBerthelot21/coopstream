@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 
+import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import type { CoopStreamEvent } from "@/lib/types/events"
 
@@ -21,6 +22,29 @@ function safeDateFromMs(value: unknown): Date {
         : NaN
   const d = new Date(ms)
   return Number.isFinite(d.getTime()) ? d : new Date()
+}
+
+async function getUserIdFromSession(session: unknown): Promise<string | undefined> {
+  const user = (session as any)?.user as
+    | { id?: string; sub?: string; email?: string }
+    | undefined
+
+  const direct =
+    user?.id?.toString().trim() ||
+    user?.sub?.toString().trim() ||
+    undefined
+
+  if (direct) return direct
+
+  const email = user?.email?.toString().trim()
+  if (!email) return undefined
+
+  const dbUser = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true },
+  })
+
+  return dbUser?.id
 }
 
 export async function POST(
@@ -58,12 +82,42 @@ export async function POST(
   }
 
   try {
-    const room = await prisma.coopStreamRoom.upsert({
+    const session = await auth.api.getSession({ headers: req.headers })
+    const userId = await getUserIdFromSession(session)
+
+    if (!userId) {
+      return NextResponse.json({ error: "auth requis" }, { status: 401 })
+    }
+
+    const existingRoom = await prisma.coopStreamRoom.findUnique({
       where: { key: coopstreamKey },
-      create: { key: coopstreamKey },
-      update: {},
-      select: { id: true },
+      select: { id: true, userId: true },
     })
+
+    let roomId: string
+
+    if (existingRoom) {
+      if (existingRoom.userId && existingRoom.userId !== userId) {
+        return NextResponse.json({ error: "room inaccessible" }, { status: 403 })
+      }
+
+      roomId = existingRoom.id
+
+      // Permet de "rattacher" les anciennes rooms (déjà en prod) sans userId.
+      if (!existingRoom.userId) {
+        await prisma.coopStreamRoom.update({
+          where: { id: existingRoom.id },
+          data: { userId },
+          select: { id: true },
+        })
+      }
+    } else {
+      const created = await prisma.coopStreamRoom.create({
+        data: { key: coopstreamKey, userId },
+        select: { id: true },
+      })
+      roomId = created.id
+    }
 
     switch (type) {
       case "UPSERT_CHALLENGE": {
@@ -78,12 +132,12 @@ export async function POST(
         await prisma.coopStreamChallenge.upsert({
           where: {
             roomId_externalId: {
-              roomId: room.id,
+              roomId,
               externalId,
             },
           },
           create: {
-            roomId: room.id,
+            roomId,
             externalId,
             title: typeof ch?.title === "string" ? ch.title : "—",
             description: typeof ch?.description === "string" ? ch.description : null,
@@ -122,11 +176,11 @@ export async function POST(
         }
 
         await prisma.coopStreamChallenge.deleteMany({
-          where: { roomId: room.id, externalId },
+          where: { roomId, externalId },
         })
 
         await prisma.coopStreamRoom.updateMany({
-          where: { id: room.id, selectedChallengeExternalId: externalId },
+          where: { id: roomId, selectedChallengeExternalId: externalId },
           data: { selectedChallengeExternalId: null },
         })
 
@@ -140,7 +194,7 @@ export async function POST(
             ? externalId
             : null
         await prisma.coopStreamRoom.update({
-          where: { id: room.id },
+          where: { id: roomId },
           data: { selectedChallengeExternalId: next },
         })
         return NextResponse.json({ ok: true })
@@ -156,7 +210,7 @@ export async function POST(
         await prisma.coopStreamChallenge.update({
           where: {
             roomId_externalId: {
-              roomId: room.id,
+              roomId,
               externalId,
             },
           },
@@ -172,7 +226,7 @@ export async function POST(
       case "TRIGGER_REWARD": {
         const text = typeof payload?.text === "string" ? payload.text : ""
         await prisma.coopStreamRoom.update({
-          where: { id: room.id },
+          where: { id: roomId },
           data: { lastRewardText: text, lastRewardAt: new Date() },
         })
         return NextResponse.json({ ok: true })

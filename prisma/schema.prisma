@@ -15,6 +15,11 @@ model CoopStreamRoom {
   id  String @id @default(cuid())
   key String @unique
 
+  // Une seule room "défis" par utilisateur (un utilisateur = une seule coopstreamKey stable).
+  // Optionnel pour ne pas casser les rooms existantes déjà en base.
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   selectedChallengeExternalId String?
 
   lastRewardText String?
@@ -63,6 +68,8 @@ model User {
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
+
+  coopStreamRoom CoopStreamRoom?
 
   @@unique([email])
   @@map("user")
