@@ -43,6 +43,13 @@ const OVERLAYS: OverlayDef[] = [
     hint: "Optionnel : tu peux passer `?channel=...`.",
   },
   {
+    href: "/overlay-new-follower",
+    title: "Nouveau follower (toast)",
+    description:
+      "Affiche un toast animé quand un nouveau follow arrive pendant le live.",
+    hint: "Optionnel : tu peux passer `?channel=...`.",
+  },
+  {
     href: "/overlay-camera",
     title: "Caméra",
     description: "Habillage pour placer ta source vidéo (webcam / capture).",
@@ -177,7 +184,9 @@ export function OverlaySelector({
       }
 
       if (
-        (href === "/overlay-chat" || href === "/overlay-last-follower") &&
+        (href === "/overlay-chat" ||
+          href === "/overlay-last-follower" ||
+          href === "/overlay-new-follower") &&
         channel
       ) {
         url.searchParams.set("channel", normalizeChannel(channel))
@@ -219,7 +228,9 @@ export function OverlaySelector({
                   ) : null}
 
                   {isAuthed &&
-                  (o.href === "/overlay-chat" || o.href === "/overlay-last-follower") ? (
+                  (o.href === "/overlay-chat" ||
+                    o.href === "/overlay-last-follower" ||
+                    o.href === "/overlay-new-follower") ? (
                     <div className="flex flex-col gap-2">
                       <div className="text-xs font-semibold text-muted-foreground">
                         Channel Twitch

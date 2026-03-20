@@ -50,6 +50,7 @@ const OVERLAY_ONLY_PATHS = [
   "/overlay-defi-carrousel",
   "/overlay-chat",
   "/overlay-camera",
+  "/overlay-new-follower",
 ]
 
 const TWITCH_CHANNEL_STORAGE = "coopstream-twitch-channel"
