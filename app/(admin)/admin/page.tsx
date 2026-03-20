@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Target, Sparkles, Settings2 } from "lucide-react"
+import { Target, Sparkles, Zap } from "lucide-react"
 
 import { AdminProtected } from "@/components/auth/admin-protected"
 
@@ -52,6 +52,23 @@ export default async function AdminPage() {
             <CardContent className="flex justify-end">
               <Button asChild size="sm" variant="secondary">
                 <Link href="/admin/wheel">Ouvrir</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-background/60 md:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-primary" />
+                Streamdeck (défis)
+              </CardTitle>
+              <CardDescription>
+                Mini liste rapide pour incrémenter les défis en live (boutons +1).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-end">
+              <Button asChild size="sm" variant="secondary">
+                <Link href="/admin/streamdeck">Ouvrir</Link>
               </Button>
             </CardContent>
           </Card>
