@@ -125,7 +125,17 @@ export function OverlaySelector({
     }
 
     try {
-      setChannel(window.localStorage.getItem(TWITCH_CHANNEL_STORAGE) ?? "")
+      const stored = window.localStorage.getItem(TWITCH_CHANNEL_STORAGE) ?? ""
+      const sessionUser = (session as any)?.user as
+        | { name?: string; email?: string }
+        | undefined
+      const candidate =
+        stored.trim() ||
+        sessionUser?.name?.toString()?.trim() ||
+        sessionUser?.email?.toString()?.trim() ||
+        ""
+
+      setChannel(candidate ? normalizeChannel(candidate) : "")
     } catch {
       setChannel("")
     }

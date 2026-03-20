@@ -52,6 +52,8 @@ const OVERLAY_ONLY_PATHS = [
   "/overlay-camera",
 ]
 
+const TWITCH_CHANNEL_STORAGE = "coopstream-twitch-channel"
+
 export function SiteNav() {
   const pathname = usePathname()
   const [open, setOpen] = React.useState(false)
@@ -62,6 +64,37 @@ export function SiteNav() {
     | undefined
   const displayName = user?.name ?? user?.email ?? "Twitch"
   const avatarUrl = user?.image ?? null
+
+  function normalizeChannel(input: string) {
+    let ch = input.trim()
+    ch = ch.replace(/^@/, "")
+    ch = ch.replace(/^https?:\/\/(www\.)?twitch\.tv\//i, "")
+    ch = ch.split("/")[0] ?? ""
+    return ch.toLowerCase()
+  }
+
+  // Pré-remplit automatiquement le canal Twitch utilisé par les overlays.
+  // Si l'utilisateur a déjà une valeur en localStorage, on ne l'écrase pas.
+  React.useEffect(() => {
+    if (!isAuthed) return
+
+    try {
+      const existing = window.localStorage.getItem(
+        TWITCH_CHANNEL_STORAGE,
+      )
+      if (existing && existing.trim()) return
+
+      const candidate = (user?.name ?? user?.email ?? "").toString()
+      if (!candidate.trim()) return
+
+      const normalized = normalizeChannel(candidate)
+      if (!normalized) return
+
+      window.localStorage.setItem(TWITCH_CHANNEL_STORAGE, normalized)
+    } catch {
+      // ignore
+    }
+  }, [isAuthed, user?.name, user?.email])
 
   if (OVERLAY_ONLY_PATHS.some((p) => pathname.startsWith(p))) return null
 
