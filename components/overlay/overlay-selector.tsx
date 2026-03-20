@@ -6,6 +6,8 @@ import { Copy } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { useAuthSession } from "@/lib/useAuthSession"
 import {
   Card,
   CardContent,
@@ -48,6 +50,17 @@ const OVERLAYS: OverlayDef[] = [
   },
 ]
 
+const COOPSTREAM_KEY_STORAGE = "coopstream-last-coopstreamKey"
+const TWITCH_CHANNEL_STORAGE = "coopstream-twitch-channel"
+
+function normalizeChannel(input: string) {
+  let ch = input.trim()
+  ch = ch.replace(/^@/, "")
+  ch = ch.replace(/^https?:\/\/(www\.)?twitch\.tv\//i, "")
+  ch = ch.split("/")[0] ?? ""
+  return ch.toLowerCase()
+}
+
 function safeCopy(text: string) {
   return new Promise<void>((resolve, reject) => {
     if (navigator?.clipboard?.writeText) {
@@ -82,6 +95,11 @@ export function OverlaySelector({
   description?: string
 }) {
   const [origin, setOrigin] = React.useState<string>("")
+  const session = useAuthSession()
+  const isAuthed = Boolean((session as any)?.user)
+
+  const [coopstreamKey, setCoopstreamKey] = React.useState<string>("")
+  const [channel, setChannel] = React.useState<string>("")
 
   React.useEffect(() => {
     try {
@@ -91,18 +109,63 @@ export function OverlaySelector({
     }
   }, [])
 
-  const copyOverlayLink = React.useCallback(
-    async (href: string) => {
-      const text = origin ? `${origin}${href}` : href
-      try {
-        await safeCopy(text)
-        toast.success("Lien overlay copié")
-      } catch {
-        toast.error("Impossible de copier le lien. Copie-le manuellement.")
+  React.useEffect(() => {
+    if (!isAuthed) {
+      setCoopstreamKey("")
+      setChannel("")
+      return
+    }
+
+    try {
+      setCoopstreamKey(
+        window.localStorage.getItem(COOPSTREAM_KEY_STORAGE) ?? "",
+      )
+    } catch {
+      setCoopstreamKey("")
+    }
+
+    try {
+      setChannel(window.localStorage.getItem(TWITCH_CHANNEL_STORAGE) ?? "")
+    } catch {
+      setChannel("")
+    }
+  }, [isAuthed])
+
+  const buildOverlayHref = React.useCallback(
+    (href: string) => {
+      // Aujourd’hui, on injecte seulement si l’utilisateur est connecté.
+      if (!isAuthed) return href
+
+      const url = new URL(href, origin || "http://localhost")
+      let changed = false
+
+      if (href === "/overlay-defi-carrousel" && coopstreamKey) {
+        url.searchParams.set("coopstreamKey", coopstreamKey)
+        changed = true
       }
+
+      if (
+        (href === "/overlay-chat" || href === "/overlay-last-follower") &&
+        channel
+      ) {
+        url.searchParams.set("channel", normalizeChannel(channel))
+        changed = true
+      }
+
+      if (!changed) return href
+      return `${url.pathname}?${url.searchParams.toString()}`
     },
-    [origin],
+    [channel, coopstreamKey, isAuthed, origin],
   )
+
+  const copyOverlayLink = React.useCallback(async (fullUrl: string) => {
+    try {
+      await safeCopy(fullUrl)
+      toast.success("Lien overlay copié")
+    } catch {
+      toast.error("Impossible de copier le lien. Copie-le manuellement.")
+    }
+  }, [])
 
   return (
     <div className="min-h-[360px] w-full bg-transparent flex items-center justify-center px-0">
@@ -122,21 +185,54 @@ export function OverlaySelector({
                   {o.hint ? (
                     <div className="text-xs text-muted-foreground">{o.hint}</div>
                   ) : null}
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => void copyOverlayLink(o.href)}
-                      className="gap-1.5"
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                      <span>Copier le lien</span>
-                    </Button>
-                    <Button asChild size="sm" variant="secondary">
-                      <Link href={o.href}>Ouvrir l'overlay</Link>
-                    </Button>
-                  </div>
+
+                  {isAuthed &&
+                  (o.href === "/overlay-chat" || o.href === "/overlay-last-follower") ? (
+                    <div className="flex flex-col gap-2">
+                      <div className="text-xs font-semibold text-muted-foreground">
+                        Channel Twitch
+                      </div>
+                      <Input
+                        value={channel}
+                        placeholder="anthemtv_"
+                        onChange={(e) =>
+                          setChannel(normalizeChannel(e.target.value))
+                        }
+                      />
+                    </div>
+                  ) : null}
+
+                  {(() => {
+                    const relativeHref = buildOverlayHref(o.href)
+                    const fullUrl = origin ? `${origin}${relativeHref}` : relativeHref
+
+                    return (
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={fullUrl}
+                            readOnly
+                            onFocus={(e) => e.currentTarget.select()}
+                            aria-label={`Lien ${o.title}`}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="shrink-0"
+                            onClick={() => void copyOverlayLink(fullUrl)}
+                            aria-label={`Copier le lien ${o.title}`}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        <Button asChild size="sm" variant="secondary">
+                          <Link href={relativeHref}>Ouvrir l'overlay</Link>
+                        </Button>
+                      </div>
+                    )
+                  })()}
                 </CardContent>
               </Card>
             ))}

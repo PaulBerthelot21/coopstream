@@ -24,7 +24,7 @@ export default function HomePage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
-        <Card className="bg-background/60 md:col-span-2">
+        <Card className="bg-background/60">
           <CardHeader>
             <CardTitle>Skins</CardTitle>
             <CardDescription>Gérer et sélectionner les skins disponibles.</CardDescription>
@@ -32,6 +32,18 @@ export default function HomePage() {
           <CardContent className="flex justify-end">
             <Button variant="outline" asChild>
               <Link href="/skins">Ouvrir les skins</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-background/60">
+          <CardHeader>
+            <CardTitle>Paramètres</CardTitle>
+            <CardDescription>Clair / sombre et options d’interface.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-end">
+            <Button variant="outline" asChild>
+              <Link href="/settings">Ouvrir les paramètres</Link>
             </Button>
           </CardContent>
         </Card>

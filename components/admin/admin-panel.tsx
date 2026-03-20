@@ -67,6 +67,20 @@ export function AdminPanel({ initialKey }: { initialKey?: string }) {
     }
   }, [coopstreamKey, router])
 
+  // Mémorise la dernière `coopstreamKey` côté navigateur.
+  // L’UX “overlay” peut ensuite l’injecter dans les liens UNIQUEMENT si l’utilisateur est connecté.
+  React.useEffect(() => {
+    if (!coopstreamKey) return
+    try {
+      window.localStorage.setItem(
+        "coopstream-last-coopstreamKey",
+        coopstreamKey,
+      )
+    } catch {
+      // ignore (navigation privée, restrictions navigateur, etc.)
+    }
+  }, [coopstreamKey])
+
   // Hydrate admin state from DB so the UI matches the room.
   React.useEffect(() => {
     if (!coopstreamKey) return
