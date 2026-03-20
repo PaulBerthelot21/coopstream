@@ -40,14 +40,14 @@ const OVERLAYS: OverlayDef[] = [
     href: "/overlay-last-follower",
     title: "Dernier follower",
     description: "Affiche le dernier abonné Twitch (avec compteurs).",
-    hint: "Optionnel : tu peux passer `?channel=...`.",
+    hint: "Optionnel : `channel` ; pour éviter la config ajoute `coopstreamKey`.",
   },
   {
     href: "/overlay-new-follower",
     title: "Nouveau follower (toast)",
     description:
       "Affiche un toast animé quand un nouveau follow arrive pendant le live.",
-    hint: "Optionnel : tu peux passer `?channel=...`.",
+    hint: "Optionnel : `channel` ; pour éviter la config ajoute `coopstreamKey`.",
   },
   {
     href: "/overlay-wheel-texte",
@@ -186,7 +186,9 @@ export function OverlaySelector({
 
       if (
         (href === "/overlay-defi-carrousel" ||
-          href === "/overlay-wheel-texte") &&
+          href === "/overlay-wheel-texte" ||
+          href === "/overlay-last-follower" ||
+          href === "/overlay-new-follower") &&
         coopstreamKey
       ) {
         url.searchParams.set("coopstreamKey", coopstreamKey)

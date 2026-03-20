@@ -297,7 +297,7 @@ export function OverlayTwitchChat({
           {messages.map((m) => (
             <div
               key={m.id}
-              className="flex items-start gap-2 leading-tight text-[13px] text-white/90"
+              className="flex items-start gap-2 leading-tight text-[15px] text-white/90"
             >
               <span
                 className="mt-0.5 h-2 w-2 shrink-0 rounded-full"
@@ -309,7 +309,7 @@ export function OverlayTwitchChat({
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-2 min-w-0">
                   <span
-                    className="shrink-0 font-mono text-[12px] font-semibold"
+                    className="shrink-0 font-mono text-[14px] font-semibold"
                     style={{
                       color: m.color ?? "rgba(255,255,255,0.95)",
                       textShadow: "0 0 8px rgba(0,0,0,0.7)",
@@ -318,7 +318,7 @@ export function OverlayTwitchChat({
                     {m.displayName}
                   </span>
                   <span
-                    className="min-w-0 flex-1 font-mono text-[12px] break-words"
+                    className="min-w-0 flex-1 font-mono text-[14px] break-words"
                     style={{
                       textShadow: "0 0 8px rgba(0,0,0,0.7)",
                       whiteSpace: "pre-wrap",
@@ -334,7 +334,7 @@ export function OverlayTwitchChat({
                           key={`e-${p.id}-${p.start}`}
                           src={getTwitchEmoteSrc(p.id)}
                           alt=""
-                          className="inline-block h-4 w-auto align-text-bottom"
+                          className="inline-block h-5 w-auto align-text-bottom"
                           draggable={false}
                         />
                       )

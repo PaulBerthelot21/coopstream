@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default async function OverlayLastFollowerPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ channel?: string }>
+  searchParams?: Promise<{ channel?: string; coopstreamKey?: string }>
 }) {
   const sp = searchParams ? await searchParams : undefined
 
@@ -18,10 +18,18 @@ export default async function OverlayLastFollowerPage({
       ? sp.channel.trim()
       : undefined
 
+  const coopstreamKeyFromQuery =
+    typeof sp?.coopstreamKey === "string" && sp.coopstreamKey.trim()
+      ? sp.coopstreamKey.trim()
+      : undefined
+
   return (
     <div className="flex h-dvh w-dvw items-start justify-end bg-transparent pointer-events-none pr-6 pt-6">
       <div className="w-[360px] max-w-[40vw] min-h-[140px]">
-        <OverlayLastFollower channel={channelFromQuery} />
+        <OverlayLastFollower
+          channel={channelFromQuery}
+          coopstreamKey={coopstreamKeyFromQuery}
+        />
       </div>
     </div>
   )

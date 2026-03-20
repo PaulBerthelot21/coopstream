@@ -32,7 +32,13 @@ const POLL_MS = 15_000
 const TOAST_MS = 5_000
 const IS_DEV = process.env.NODE_ENV !== "production"
 
-export function OverlayNewFollowerToast({ channel }: { channel?: string }) {
+export function OverlayNewFollowerToast({
+  channel,
+  coopstreamKey,
+}: {
+  channel?: string
+  coopstreamKey?: string
+}) {
   const [channelNormalized, setChannelNormalized] = React.useState<string>("")
   const [toast, setToast] = React.useState<ToastState | null>(null)
   const lastFollowedAtRef = React.useRef<string | null>(null)
@@ -65,10 +71,13 @@ export function OverlayNewFollowerToast({ channel }: { channel?: string }) {
   const fetchFollower = React.useCallback(async () => {
     if (!channelNormalized) return
 
-    const res = await fetch(
-      `/api/twitch/last-follower?channel=${encodeURIComponent(channelNormalized)}`,
-      { cache: "no-store" },
-    )
+    const qp = new URLSearchParams({ channel: channelNormalized })
+    const key = coopstreamKey?.trim()
+    if (key) qp.set("coopstreamKey", key)
+
+    const res = await fetch(`/api/twitch/last-follower?${qp.toString()}`, {
+      cache: "no-store",
+    })
 
     if (res.status === 503) return
     if (!res.ok) return
@@ -103,7 +112,7 @@ export function OverlayNewFollowerToast({ channel }: { channel?: string }) {
         followedAt,
       })
     }
-  }, [channelNormalized])
+  }, [channelNormalized, coopstreamKey])
 
   const triggerDevToast = React.useCallback(() => {
     const followedAt = new Date().toISOString()

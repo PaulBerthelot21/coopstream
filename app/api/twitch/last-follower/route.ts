@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma"
  */
 export async function GET(req: NextRequest) {
   const channelRaw = req.nextUrl.searchParams.get("channel")?.trim()
+  const coopstreamKeyRaw = req.nextUrl.searchParams.get("coopstreamKey")?.trim()
   if (!channelRaw) {
     return NextResponse.json({ error: "channel requis" }, { status: 400 })
   }
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
   const clientId = process.env.TWITCH_CLIENT_ID
   const envToken = process.env.TWITCH_ACCESS_TOKEN
 
-  let token: string | undefined = envToken
+  let token: string | undefined = undefined
 
   // Si l'utilisateur est connecté (Better Auth) et qu'on a un accessToken Twitch en DB,
   // on préfère l'utiliser plutôt que le token "global" en `.env`.
@@ -39,9 +40,42 @@ export async function GET(req: NextRequest) {
     // Fallback : on garde envToken.
   }
 
+  // Si on n'a pas de session, on peut passer une `coopstreamKey` (jeton d'overlay)
+  // pour retrouver le accessToken Twitch associé à la room de l'utilisateur.
+  if (!token && coopstreamKeyRaw) {
+    try {
+      const room = await prisma.coopStreamRoom.findUnique({
+        where: { key: coopstreamKeyRaw },
+        select: { userId: true },
+      })
+
+      if (room?.userId) {
+        const twitchAccount = await prisma.account.findFirst({
+          where: { userId: room.userId, providerId: "twitch" },
+          select: { accessToken: true },
+        })
+
+        if (twitchAccount?.accessToken) {
+          token = twitchAccount.accessToken
+        }
+      }
+    } catch {
+      // ignore and fallback below
+    }
+  }
+
+  // Compat: fallback sur le token global si disponible.
+  if (!token && envToken) {
+    token = envToken
+  }
+
   if (!clientId || !token) {
     return NextResponse.json(
-      { error: "config", message: "TWITCH_CLIENT_ID et TWITCH_ACCESS_TOKEN manquants" },
+      {
+        error: "config",
+        message:
+          "TWITCH_CLIENT_ID manquant ou token Twitch introuvable (connecte-toi Twitch ou passe une `coopstreamKey`).",
+      },
       { status: 503 },
     )
   }

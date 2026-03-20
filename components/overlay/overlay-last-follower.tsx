@@ -39,8 +39,10 @@ const POLL_MS = 30_000
 
 export function OverlayLastFollower({
   channel,
+  coopstreamKey,
 }: {
   channel?: string
+  coopstreamKey?: string
 }) {
   const [channelNormalized, setChannelNormalized] = React.useState<string>("")
   const [displayName, setDisplayName] = React.useState<string | null>(null)
@@ -85,10 +87,13 @@ export function OverlayLastFollower({
     }
 
     try {
-      const res = await fetch(
-        `/api/twitch/last-follower?channel=${encodeURIComponent(channelNormalized)}`,
-        { cache: "no-store" },
-      )
+      const qp = new URLSearchParams({ channel: channelNormalized })
+      const key = coopstreamKey?.trim()
+      if (key) qp.set("coopstreamKey", key)
+
+      const res = await fetch(`/api/twitch/last-follower?${qp.toString()}`, {
+        cache: "no-store",
+      })
 
       if (res.status === 503) {
         hasLoadedRef.current = true
@@ -128,7 +133,7 @@ export function OverlayLastFollower({
       setRelative("")
       setTotal(undefined)
     }
-  }, [channelNormalized])
+  }, [channelNormalized, coopstreamKey])
 
   React.useEffect(() => {
     void fetchFollower()
@@ -144,7 +149,7 @@ export function OverlayLastFollower({
 
   const subtitle =
     status === "no_config"
-      ? "API Twitch (variables d’environnement)"
+      ? "Jeton requis (connecte-toi ou passe `coopstreamKey`)"
       : status === "error"
         ? "Erreur API"
         : status === "loading" && displayName === null
