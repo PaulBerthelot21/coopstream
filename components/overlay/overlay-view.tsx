@@ -29,10 +29,10 @@ export function OverlayView() {
             </Link>
 
             <Link
-              href="/overlay-cs2"
+              href="/overlay-last-follower"
               className="inline-flex items-center justify-center rounded-full bg-black/60 px-4 py-2 text-sm text-white ring-1 ring-white/20 transition hover:bg-black/70"
             >
-              CS2 (GSI)
+              Dernier follower
             </Link>
           </div>
         </div>

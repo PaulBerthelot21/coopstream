@@ -25,7 +25,6 @@ const links = [
 const OVERLAY_ONLY_PATHS = [
   "/overlay-defi-carrousel",
   "/overlay-chat",
-  "/overlay-cs2",
 ]
 
 export function SiteNav() {
