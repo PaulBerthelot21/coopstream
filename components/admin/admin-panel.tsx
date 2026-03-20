@@ -397,7 +397,7 @@ export function AdminPanel() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-7">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <h1 className="flex items-center gap-2 text-[22px] font-semibold tracking-tight">
             <Target className="h-4 w-4 text-primary" />
@@ -407,7 +407,7 @@ export function AdminPanel() {
             Gère les défis, la progression et les rewards de ta session en temps réel.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
           <input
             ref={importInputRef}
             type="file"
