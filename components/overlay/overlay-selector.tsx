@@ -50,6 +50,12 @@ const OVERLAYS: OverlayDef[] = [
     hint: "Optionnel : tu peux passer `?channel=...`.",
   },
   {
+    href: "/overlay-wheel-texte",
+    title: "Roue (défis texte)",
+    description: "Affiche une roulette de défis texte (animation casino).",
+    hint: "Requiert une `coopstreamKey` dans l'URL.",
+  },
+  {
     href: "/overlay-camera",
     title: "Caméra",
     description: "Habillage pour placer ta source vidéo (webcam / capture).",
@@ -178,7 +184,11 @@ export function OverlaySelector({
       const url = new URL(href, origin || "http://localhost")
       let changed = false
 
-      if (href === "/overlay-defi-carrousel" && coopstreamKey) {
+      if (
+        (href === "/overlay-defi-carrousel" ||
+          href === "/overlay-wheel-texte") &&
+        coopstreamKey
+      ) {
         url.searchParams.set("coopstreamKey", coopstreamKey)
         changed = true
       }

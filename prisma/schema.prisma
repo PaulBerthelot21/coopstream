@@ -29,6 +29,8 @@ model CoopStreamRoom {
   updatedAt DateTime @updatedAt
 
   challenges CoopStreamChallenge[]
+
+  wheelTextChallenges WheelTextChallenge[]
 }
 
 model CoopStreamChallenge {
@@ -56,6 +58,20 @@ model CoopStreamChallenge {
   updatedAt DateTime @updatedAt
 
   @@unique([roomId, externalId], name: "roomId_externalId")
+}
+
+model WheelTextChallenge {
+  id String @id @default(cuid())
+
+  roomId String
+  room   CoopStreamRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  text String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([roomId])
 }
 
 model User {
