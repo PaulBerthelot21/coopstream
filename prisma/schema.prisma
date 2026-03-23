@@ -25,6 +25,11 @@ model CoopStreamRoom {
   lastRewardText String?
   lastRewardAt   DateTime?
 
+  /// Objectif “followers” pour l’overlay dédié.
+  followerGoalTitle String?
+  followerGoalTarget Int?
+  followerGoalUnit String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

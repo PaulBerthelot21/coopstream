@@ -37,6 +37,12 @@ const OVERLAYS: OverlayDef[] = [
     hint: "Requiert une `coopstreamKey` dans l'URL.",
   },
   {
+    href: "/overlay-follower-goal",
+    title: "Objectif followers",
+    description: "Affiche `current/target` à partir du nombre de followers Twitch.",
+    hint: "Requiert une `coopstreamKey` (objectif configuré dans `/admin/follower-goal`).",
+  },
+  {
     href: "/overlay-last-follower",
     title: "Dernier follower",
     description: "Affiche le dernier abonné Twitch (avec compteurs).",
@@ -186,6 +192,7 @@ export function OverlaySelector({
 
       if (
         (href === "/overlay-defi-carrousel" ||
+          href === "/overlay-follower-goal" ||
           href === "/overlay-wheel-texte" ||
           href === "/overlay-last-follower" ||
           href === "/overlay-new-follower") &&
@@ -197,6 +204,7 @@ export function OverlaySelector({
 
       if (
         (href === "/overlay-chat" ||
+          href === "/overlay-follower-goal" ||
           href === "/overlay-last-follower" ||
           href === "/overlay-new-follower") &&
         channel
@@ -241,6 +249,7 @@ export function OverlaySelector({
 
                   {isAuthed &&
                   (o.href === "/overlay-chat" ||
+                    o.href === "/overlay-follower-goal" ||
                     o.href === "/overlay-last-follower" ||
                     o.href === "/overlay-new-follower") ? (
                     <div className="flex flex-col gap-2">

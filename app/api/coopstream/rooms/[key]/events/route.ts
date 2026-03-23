@@ -76,6 +76,7 @@ export async function POST(
       "SELECT_CHALLENGE",
       "UPDATE_PROGRESS",
       "TRIGGER_REWARD",
+      "UPSERT_FOLLOWER_GOAL",
     ].includes(type)
   ) {
     return NextResponse.json({ error: "type d'event invalide" }, { status: 400 })
@@ -229,6 +230,31 @@ export async function POST(
           where: { id: roomId },
           data: { lastRewardText: text, lastRewardAt: new Date() },
         })
+        return NextResponse.json({ ok: true })
+      }
+
+      case "UPSERT_FOLLOWER_GOAL": {
+        const title =
+          typeof payload?.title === "string"
+            ? payload.title.trim()
+            : ""
+        const target =
+          typeof payload?.target === "number" && Number.isFinite(payload.target)
+            ? payload.target
+            : null
+        const unit =
+          typeof payload?.unit === "string" ? payload.unit.trim() : undefined
+
+        // On autorise : soit un goal complet (title + target), soit un "reset" en envoyant des valeurs vides.
+        await prisma.coopStreamRoom.update({
+          where: { id: roomId },
+          data: {
+            followerGoalTitle: title || null,
+            followerGoalTarget: target ?? null,
+            followerGoalUnit: unit || null,
+          },
+        })
+
         return NextResponse.json({ ok: true })
       }
     }

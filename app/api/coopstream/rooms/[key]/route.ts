@@ -45,6 +45,9 @@ export async function GET(
         selectedChallengeExternalId: true,
         lastRewardText: true,
         lastRewardAt: true,
+        followerGoalTitle: true,
+        followerGoalTarget: true,
+        followerGoalUnit: true,
       },
     })
 
@@ -54,6 +57,9 @@ export async function GET(
         selectedChallengeId: null as string | null,
         lastRewardText: null as string | null,
         lastRewardAt: null as number | null,
+        followerGoalTitle: null as string | null,
+        followerGoalTarget: null as number | null,
+        followerGoalUnit: null as string | null,
       })
     }
 
@@ -78,6 +84,9 @@ export async function GET(
       selectedChallengeId: room.selectedChallengeExternalId,
       lastRewardText: room.lastRewardText,
       lastRewardAt: room.lastRewardAt ? room.lastRewardAt.getTime() : null,
+      followerGoalTitle: room.followerGoalTitle,
+      followerGoalTarget: room.followerGoalTarget,
+      followerGoalUnit: room.followerGoalUnit,
     })
   } catch {
     return NextResponse.json(

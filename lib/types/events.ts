@@ -11,4 +11,8 @@ export type CoopStreamEvent =
       payload: { id: ChallengeId; current: number }
     }
   | { type: "TRIGGER_REWARD"; payload: { text: string } }
+  | {
+      type: "UPSERT_FOLLOWER_GOAL"
+      payload: { title: string; target: number; unit?: string }
+    }
 

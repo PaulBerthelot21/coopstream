@@ -42,6 +42,23 @@ export default async function AdminPage() {
           <Card className="bg-background/60">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
+                <Target className="h-4 w-4 text-primary" />
+                Objectif followers
+              </CardTitle>
+              <CardDescription>
+                Définis un titre et un nombre à atteindre pour l’overlay “Objectif followers”.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-end">
+              <Button asChild size="sm" variant="secondary">
+                <Link href="/admin/follower-goal">Ouvrir</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-background/60">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary" />
                 Roue (défis texte)
               </CardTitle>
