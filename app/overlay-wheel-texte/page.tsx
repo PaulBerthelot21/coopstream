@@ -21,7 +21,7 @@ export default async function OverlayWheelTextPage({
   return (
     <div className="flex h-dvh w-dvw items-start justify-end bg-transparent pointer-events-none pr-6 pt-6">
       <OverlayBodyMode />
-      <div className="w-[520px] max-w-[55vw] h-[52vh] max-h-[520px]">
+      <div className="w-[520px] max-w-[55vw] aspect-square max-h-[520px]">
         <OverlayWheelText coopstreamKey={coopstreamKey} />
       </div>
     </div>
