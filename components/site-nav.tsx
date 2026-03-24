@@ -51,6 +51,7 @@ const OVERLAY_ONLY_PATHS = [
   "/overlay-chat",
   "/overlay-camera",
   "/overlay-follower-goal",
+  "/overlay-intro",
   "/overlay-last-follower",
   "/overlay-new-follower",
   "/overlay-wheel-texte",

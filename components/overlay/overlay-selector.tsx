@@ -68,6 +68,12 @@ const OVERLAYS: OverlayDef[] = [
     description: "Habillage pour placer ta source vidéo (webcam / capture).",
     hint: "Pas de config technique a faire dans l'app.",
   },
+  {
+    href: "/overlay-intro",
+    title: "Intro + Minuteur",
+    description: "Affiche un fond animé élégant avec un compte à rebours.",
+    hint: "Optionnel : `?seconds=300` (5 min par défaut).",
+  },
 ]
 
 const COOPSTREAM_KEY_STORAGE = "coopstream-last-coopstreamKey"
