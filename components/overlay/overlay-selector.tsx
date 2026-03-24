@@ -129,6 +129,9 @@ export function OverlaySelector({
   const [coopstreamKey, setCoopstreamKey] = React.useState<string>("")
   const [channel, setChannel] = React.useState<string>("")
   const [preset, setPreset] = React.useState<OverlayPreset>("default")
+  const [introSeconds, setIntroSeconds] = React.useState<string>("300")
+  const [introSubtitle, setIntroSubtitle] = React.useState<string>("")
+  const [introFx, setIntroFx] = React.useState<"low" | "medium" | "high">("medium")
 
   React.useEffect(() => {
     try {
@@ -298,23 +301,71 @@ export function OverlaySelector({
                     </div>
                   ) : null}
 
+                  {o.href === "/overlay-intro" ? (
+                    <div className="flex flex-col gap-2">
+                      <div className="text-xs font-semibold text-muted-foreground">
+                        Paramètres Intro
+                      </div>
+                      <Input
+                        value={introSeconds}
+                        placeholder="300"
+                        inputMode="numeric"
+                        onChange={(e) => setIntroSeconds(e.target.value)}
+                      />
+                      <Input
+                        value={introSubtitle}
+                        placeholder="Le live commence bientôt"
+                        onChange={(e) => setIntroSubtitle(e.target.value)}
+                      />
+                      <select
+                        value={introFx}
+                        onChange={(e) =>
+                          setIntroFx(
+                            (e.target.value as "low" | "medium" | "high") ?? "medium",
+                          )
+                        }
+                        className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                      >
+                        <option value="low">fx low</option>
+                        <option value="medium">fx medium</option>
+                        <option value="high">fx high</option>
+                      </select>
+                    </div>
+                  ) : null}
+
                   {(() => {
                     const baseHref = buildOverlayHref(o.href)
                     const relativeHref = (() => {
-                      if (!showPresetSelector || preset === "default") return baseHref
-                      if (
-                        o.href !== "/overlay-chat" &&
-                        o.href !== "/overlay-camera" &&
-                        o.href !== "/overlay-defi-carrousel" &&
-                        o.href !== "/overlay-follower-goal" &&
-                        o.href !== "/overlay-last-follower" &&
-                        o.href !== "/overlay-new-follower" &&
-                        o.href !== "/overlay-wheel-texte"
-                      ) {
-                        return baseHref
-                      }
                       const url = new URL(baseHref, origin || "http://localhost")
-                      url.searchParams.set("preset", preset)
+                      if (
+                        showPresetSelector &&
+                        preset !== "default" &&
+                        (o.href === "/overlay-chat" ||
+                          o.href === "/overlay-camera" ||
+                          o.href === "/overlay-defi-carrousel" ||
+                          o.href === "/overlay-follower-goal" ||
+                          o.href === "/overlay-last-follower" ||
+                          o.href === "/overlay-new-follower" ||
+                          o.href === "/overlay-wheel-texte")
+                      ) {
+                        url.searchParams.set("preset", preset)
+                      }
+
+                      if (o.href === "/overlay-intro") {
+                        const sec = Number(introSeconds)
+                        if (Number.isFinite(sec) && sec > 0) {
+                          url.searchParams.set("seconds", String(Math.floor(sec)))
+                        }
+                        const sub = introSubtitle.trim()
+                        if (sub) {
+                          url.searchParams.set("subtitle", sub)
+                        }
+                        if (introFx !== "medium") {
+                          url.searchParams.set("fx", introFx)
+                        }
+                      }
+
+                      if (!url.searchParams.toString()) return url.pathname
                       return `${url.pathname}?${url.searchParams.toString()}`
                     })()
                     const fullUrl = origin ? `${origin}${relativeHref}` : relativeHref
