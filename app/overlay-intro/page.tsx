@@ -10,17 +10,21 @@ export const metadata: Metadata = {
 export default async function OverlayIntroPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ seconds?: string }>
+  searchParams?: Promise<{ seconds?: string; subtitle?: string }>
 }) {
   const sp = searchParams ? await searchParams : undefined
   const raw = sp?.seconds
   const parsed = typeof raw === "string" ? Number(raw) : NaN
   const startSeconds = Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 300
+  const subtitle = typeof sp?.subtitle === "string" ? sp.subtitle.trim() : ""
 
   return (
     <div className="h-dvh w-dvw bg-transparent pointer-events-none">
       <OverlayBodyMode />
-      <OverlayIntro startSeconds={startSeconds} />
+      <OverlayIntro
+        startSeconds={startSeconds}
+        subtitle={subtitle}
+      />
     </div>
   )
 }

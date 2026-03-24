@@ -7,8 +7,10 @@ import { OverlayIntroCountdown } from "@/components/overlay/overlay-intro-countd
 
 export function OverlayIntro({
   startSeconds = 300,
+  subtitle = "",
 }: {
   startSeconds?: number
+  subtitle?: string
 }) {
   return (
     <div className="pointer-events-none relative h-full w-full overflow-hidden bg-black">
@@ -32,6 +34,17 @@ export function OverlayIntro({
         animate={{ x: [0, 10, -4, 0], y: [0, -6, 6, 0] }}
         transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
       />
+
+      {subtitle.trim() ? (
+        <div className="absolute left-10 top-[36%] max-w-[460px]">
+          <div className="text-[12px] uppercase tracking-[0.24em] text-white/45">
+            Bientot en direct
+          </div>
+          <div className="mt-2 text-5xl font-semibold leading-[1.05] text-white/92 drop-shadow-[0_0_18px_rgba(0,0,0,0.78)]">
+            {subtitle}
+          </div>
+        </div>
+      ) : null}
 
       <div className="relative flex h-full w-full items-end justify-start px-10 pb-10">
         <OverlayIntroCountdown startSeconds={startSeconds} />
