@@ -32,6 +32,12 @@ const OVERLAYS: OverlayDef[] = [
     hint: "Optionnel : tu peux passer `?channel=...`.",
   },
   {
+    href: "/overlay-talk",
+    title: "Talk tranquille",
+    description: "Affiche les derniers messages chat dans un style calme.",
+    hint: "Optionnel : `?channel=...` ; preset possible.",
+  },
+  {
     href: "/overlay-defi-carrousel",
     title: "Défis / Carrousel",
     description: "Affiche les challenges avec l’état synchronisé par `coopstreamKey`.",
@@ -79,6 +85,12 @@ const OVERLAYS: OverlayDef[] = [
     title: "Outro",
     description: "Affiche un écran de fin avec un message de remerciement.",
     hint: "Optionnel : `?title=Merci%20d%27avoir%20suivi&subtitle=A%20bientot&fx=off|low|medium|high`.",
+  },
+  {
+    href: "/overlay-pause",
+    title: "Pause",
+    description: "Affiche un écran de pause élégant avec message personnalisable.",
+    hint: "Optionnel : `?title=Pause&subtitle=Je%20reviens%20dans%205%20min&fx=off|low|medium|high`.",
   },
 ]
 
@@ -141,6 +153,9 @@ export function OverlaySelector({
   const [outroTitle, setOutroTitle] = React.useState<string>("Merci d'avoir suivi")
   const [outroSubtitle, setOutroSubtitle] = React.useState<string>("")
   const [outroFx, setOutroFx] = React.useState<"low" | "medium" | "high" | "off">("medium")
+  const [pauseTitle, setPauseTitle] = React.useState<string>("Pause")
+  const [pauseSubtitle, setPauseSubtitle] = React.useState<string>("")
+  const [pauseFx, setPauseFx] = React.useState<"low" | "medium" | "high" | "off">("medium")
 
   React.useEffect(() => {
     try {
@@ -226,6 +241,7 @@ export function OverlaySelector({
 
       if (
         (href === "/overlay-chat" ||
+          href === "/overlay-talk" ||
           href === "/overlay-follower-goal" ||
           href === "/overlay-last-follower" ||
           href === "/overlay-new-follower") &&
@@ -293,6 +309,7 @@ export function OverlaySelector({
 
                   {isAuthed &&
                   (o.href === "/overlay-chat" ||
+                    o.href === "/overlay-talk" ||
                     o.href === "/overlay-follower-goal" ||
                     o.href === "/overlay-last-follower" ||
                     o.href === "/overlay-new-follower") ? (
@@ -377,6 +394,39 @@ export function OverlaySelector({
                     </div>
                   ) : null}
 
+                  {o.href === "/overlay-pause" ? (
+                    <div className="flex flex-col gap-2">
+                      <div className="text-xs font-semibold text-muted-foreground">
+                        Paramètres Pause
+                      </div>
+                      <Input
+                        value={pauseTitle}
+                        placeholder="Pause"
+                        onChange={(e) => setPauseTitle(e.target.value)}
+                      />
+                      <Input
+                        value={pauseSubtitle}
+                        placeholder="Je reviens dans 5 minutes"
+                        onChange={(e) => setPauseSubtitle(e.target.value)}
+                      />
+                      <select
+                        value={pauseFx}
+                        onChange={(e) =>
+                          setPauseFx(
+                            (e.target.value as "low" | "medium" | "high" | "off") ??
+                              "medium",
+                          )
+                        }
+                        className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                      >
+                        <option value="off">fx off</option>
+                        <option value="low">fx low</option>
+                        <option value="medium">fx medium</option>
+                        <option value="high">fx high</option>
+                      </select>
+                    </div>
+                  ) : null}
+
                   {(() => {
                     const baseHref = buildOverlayHref(o.href)
                     const relativeHref = (() => {
@@ -385,6 +435,7 @@ export function OverlaySelector({
                         showPresetSelector &&
                         preset !== "default" &&
                         (o.href === "/overlay-chat" ||
+                          o.href === "/overlay-talk" ||
                           o.href === "/overlay-camera" ||
                           o.href === "/overlay-defi-carrousel" ||
                           o.href === "/overlay-follower-goal" ||
@@ -419,6 +470,19 @@ export function OverlaySelector({
                         }
                         if (outroFx !== "medium") {
                           url.searchParams.set("fx", outroFx)
+                        }
+                      }
+                      if (o.href === "/overlay-pause") {
+                        const t = pauseTitle.trim()
+                        if (t) {
+                          url.searchParams.set("title", t)
+                        }
+                        const sub = pauseSubtitle.trim()
+                        if (sub) {
+                          url.searchParams.set("subtitle", sub)
+                        }
+                        if (pauseFx !== "medium") {
+                          url.searchParams.set("fx", pauseFx)
                         }
                       }
 

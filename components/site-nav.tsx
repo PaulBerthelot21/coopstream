@@ -49,10 +49,12 @@ const links = [
 const OVERLAY_ONLY_PATHS = [
   "/overlay-defi-carrousel",
   "/overlay-chat",
+  "/overlay-talk",
   "/overlay-camera",
   "/overlay-follower-goal",
   "/overlay-intro",
   "/overlay-outro",
+  "/overlay-pause",
   "/overlay-last-follower",
   "/overlay-new-follower",
   "/overlay-wheel-texte",
