@@ -72,7 +72,7 @@ const OVERLAYS: OverlayDef[] = [
     href: "/overlay-intro",
     title: "Intro + Minuteur",
     description: "Affiche un fond animé élégant avec un compte à rebours.",
-    hint: "Optionnel : `?seconds=300&subtitle=Le%20live%20commence%20bientot`.",
+    hint: "Optionnel : `?seconds=300&subtitle=Le%20live%20commence%20bientot&fx=low|medium|high`.",
   },
 ]
 
