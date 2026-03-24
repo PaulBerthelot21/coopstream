@@ -36,14 +36,14 @@ export function OverlayOutro({
 
       <div className="relative flex h-full w-full items-center justify-center px-8">
         <div className="w-full max-w-[980px] text-center">
-          <div className="text-[12px] uppercase tracking-[0.26em] text-white/45">
+          <div className="text-[18px] uppercase tracking-[0.26em] text-white/45">
             Stream terminé
           </div>
-          <div className="mt-4 text-6xl font-semibold leading-[1.02] text-white/95 drop-shadow-[0_0_20px_rgba(0,0,0,0.78)]">
+          <div className="mt-4 text-[5.625rem] font-semibold leading-[1.02] text-white/95 drop-shadow-[0_0_20px_rgba(0,0,0,0.78)]">
             {title.trim() || "Merci d'avoir suivi"}
           </div>
           {subtitle.trim() ? (
-            <div className="mx-auto mt-5 max-w-[760px] text-2xl font-medium leading-snug text-white/75 drop-shadow-[0_0_16px_rgba(0,0,0,0.7)]">
+            <div className="mx-auto mt-5 max-w-[760px] text-4xl font-medium leading-snug text-white/75 drop-shadow-[0_0_16px_rgba(0,0,0,0.7)]">
               {subtitle}
             </div>
           ) : null}
