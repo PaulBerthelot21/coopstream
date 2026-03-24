@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import * as React from "react"
+import { getOverlayPresetTheme, type OverlayPreset } from "@/lib/overlay/presets"
 
 type TwitchChatMessage = {
   id: string
@@ -141,13 +142,16 @@ function getTwitchEmoteSrc(emoteId: string) {
 export function OverlayTwitchChat({
   channel,
   maxMessages = 16,
+  preset = "default",
 }: {
   channel?: string
   maxMessages?: number
+  preset?: OverlayPreset
 }) {
   const [messages, setMessages] = React.useState<TwitchChatMessage[]>([])
   const [channelNormalized, setChannelNormalized] = React.useState<string>("")
   const listRef = React.useRef<HTMLDivElement | null>(null)
+  const visual = getOverlayPresetTheme(preset)
 
   React.useEffect(() => {
     const STORAGE_KEY = "coopstream-twitch-channel"
@@ -292,8 +296,11 @@ export function OverlayTwitchChat({
 
   return (
     <div className="pointer-events-none select-none h-full w-full overflow-hidden">
-      <div className="relative flex h-full w-full flex-col overflow-hidden rounded-2xl bg-black/70 px-4 py-3 ring-1 ring-white/10 backdrop-blur-xl">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-10 rounded-t-2xl bg-gradient-to-r from-sky-500/20 via-transparent to-violet-500/20 blur-2xl" />
+      <div className={visual.panelClassName}>
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-10 rounded-t-2xl blur-2xl"
+          style={{ backgroundImage: visual.topGlowGradient }}
+        />
 
         <div className="relative mb-2 flex items-center justify-between gap-3">
           <div className="min-w-0">

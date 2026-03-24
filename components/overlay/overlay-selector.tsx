@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuthSession } from "@/lib/useAuthSession"
+import type { OverlayPreset } from "@/lib/overlay/presets"
 import {
   Card,
   CardContent,
@@ -109,9 +110,11 @@ function safeCopy(text: string) {
 export function OverlaySelector({
   title = "Overlay",
   description = "Choisis quelle source tu veux ajouter dans OBS.",
+  showPresetSelector = false,
 }: {
   title?: string
   description?: string
+  showPresetSelector?: boolean
 }) {
   const [origin, setOrigin] = React.useState<string>("")
   const session = useAuthSession()
@@ -119,6 +122,7 @@ export function OverlaySelector({
 
   const [coopstreamKey, setCoopstreamKey] = React.useState<string>("")
   const [channel, setChannel] = React.useState<string>("")
+  const [preset, setPreset] = React.useState<OverlayPreset>("default")
 
   React.useEffect(() => {
     try {
@@ -234,6 +238,28 @@ export function OverlaySelector({
         <div className="rounded-2xl border border-border/60 bg-background/60 p-6 shadow-sm backdrop-blur-xl">
           <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          {showPresetSelector ? (
+            <div className="mt-4 flex items-center gap-2">
+              <label
+                htmlFor="overlay-preset"
+                className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground"
+              >
+                Preset
+              </label>
+              <select
+                id="overlay-preset"
+                value={preset}
+                onChange={(e) => setPreset(e.target.value as OverlayPreset)}
+                className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+              >
+                <option value="default">default</option>
+                <option value="lecalme">lecalme</option>
+              </select>
+              <span className="text-xs text-muted-foreground">
+                Appliqué aux overlays compatibles.
+              </span>
+            </div>
+          ) : null}
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {OVERLAYS.map((o) => (
@@ -267,7 +293,24 @@ export function OverlaySelector({
                   ) : null}
 
                   {(() => {
-                    const relativeHref = buildOverlayHref(o.href)
+                    const baseHref = buildOverlayHref(o.href)
+                    const relativeHref = (() => {
+                      if (!showPresetSelector || preset === "default") return baseHref
+                      if (
+                        o.href !== "/overlay-chat" &&
+                        o.href !== "/overlay-camera" &&
+                        o.href !== "/overlay-defi-carrousel" &&
+                        o.href !== "/overlay-follower-goal" &&
+                        o.href !== "/overlay-last-follower" &&
+                        o.href !== "/overlay-new-follower" &&
+                        o.href !== "/overlay-wheel-texte"
+                      ) {
+                        return baseHref
+                      }
+                      const url = new URL(baseHref, origin || "http://localhost")
+                      url.searchParams.set("preset", preset)
+                      return `${url.pathname}?${url.searchParams.toString()}`
+                    })()
                     const fullUrl = origin ? `${origin}${relativeHref}` : relativeHref
 
                     return (

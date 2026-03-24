@@ -3,18 +3,25 @@
 import * as React from "react"
 import Image from "next/image"
 import { AnimatePresence, motion } from "framer-motion"
+import { getOverlayPresetTheme, type OverlayPreset } from "@/lib/overlay/presets"
 
 import type { Challenge } from "@/lib/types/challenge"
 
 type OverlayCarouselProps = {
   challenges: Challenge[]
+  preset?: OverlayPreset
 }
 
 const INTERVAL_MS = 5000
 
-export function OverlayCarousel({ challenges }: OverlayCarouselProps) {
+export function OverlayCarousel({ challenges, preset = "default" }: OverlayCarouselProps) {
   const [index, setIndex] = React.useState(0)
   const [paused, setPaused] = React.useState(false)
+  const visual = getOverlayPresetTheme(preset)
+  const cardClassName =
+    preset === "lecalme"
+      ? "relative flex w-full max-w-xl items-stretch gap-4 overflow-hidden rounded-2xl border-2 border-violet-400/70 bg-black/90 px-5 py-3 ring-1 ring-violet-300/35 backdrop-blur-md"
+      : "relative flex w-full max-w-xl items-stretch gap-4 overflow-hidden rounded-2xl bg-black/80 px-5 py-3 ring-1 ring-white/10 backdrop-blur-xl"
 
   const ordered = React.useMemo(
     () =>
@@ -42,7 +49,10 @@ export function OverlayCarousel({ challenges }: OverlayCarouselProps) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="pointer-events-none absolute inset-x-6 -top-4 h-12 rounded-full bg-gradient-to-r from-sky-500/25 via-transparent to-violet-500/25 blur-2xl" />
+      <div
+        className="pointer-events-none absolute inset-x-6 -top-4 h-12 rounded-full blur-2xl"
+        style={{ backgroundImage: visual.topGlowGradient }}
+      />
       <AnimatePresence mode="popLayout" initial={false}>
         <motion.div
           key={current.id}
@@ -50,7 +60,7 @@ export function OverlayCarousel({ challenges }: OverlayCarouselProps) {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -10, scale: 0.98 }}
           transition={{ duration: 0.25 }}
-          className="relative flex w-full max-w-xl items-stretch gap-4 overflow-hidden rounded-2xl bg-black/80 px-5 py-3 ring-1 ring-white/10 backdrop-blur-xl"
+          className={cardClassName}
         >
           {current.skinImageUrl && (
             <div className="relative hidden h-20 w-40 overflow-hidden rounded-xl bg-black/60 ring-1 ring-white/10 sm:block">
@@ -73,19 +83,20 @@ export function OverlayCarousel({ challenges }: OverlayCarouselProps) {
                 </div>
               </div>
               {typeof current.target === "number" && (
-                <div className="shrink-0 text-right text-[11px] text-white/70">
-                  <div>
+                <div className="shrink-0 rounded-md bg-black/35 px-2 py-1 text-right text-[12px] font-semibold text-white/95 ring-1 ring-white/15">
+                  <div className="font-mono drop-shadow-[0_0_8px_rgba(0,0,0,0.65)]">
                     {current.current ?? 0}/{current.target}{" "}
                     {current.unit ?? ""}
                   </div>
-                  <div className="mt-1 h-1 w-20 overflow-hidden rounded-full bg-white/10">
+                  <div className="mt-1.5 h-1.5 w-24 overflow-hidden rounded-full bg-white/15">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-lime-300"
+                      className="h-full rounded-full"
                       style={{
                         width: `${Math.min(
                           100,
                           ((current.current ?? 0) / current.target) * 100,
                         ).toFixed(0)}%`,
+                        backgroundImage: visual.progressGradient,
                       }}
                     />
                   </div>

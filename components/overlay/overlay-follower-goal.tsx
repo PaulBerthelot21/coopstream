@@ -3,6 +3,7 @@
 import * as React from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { Target } from "lucide-react"
+import { getOverlayPresetTheme, type OverlayPreset } from "@/lib/overlay/presets"
 
 type ApiOk = {
   follower: {
@@ -33,9 +34,11 @@ const ROOM_POLL_MS = 4000
 export function OverlayFollowerGoal({
   channel,
   coopstreamKey,
+  preset = "default",
 }: {
   channel?: string
   coopstreamKey?: string
+  preset?: OverlayPreset
 }) {
   const [channelNormalized, setChannelNormalized] = React.useState<string>("")
   const [followersTotal, setFollowersTotal] = React.useState<number | undefined>(undefined)
@@ -191,15 +194,19 @@ export function OverlayFollowerGoal({
     : 0
 
   const headerText = goalTitle?.trim() ? goalTitle : "Objectif followers"
+  const visual = getOverlayPresetTheme(preset)
 
   return (
     <div className="pointer-events-none select-none h-full w-full overflow-hidden">
-      <div className="relative flex h-full w-full flex-col overflow-hidden rounded-2xl bg-black/70 px-4 py-3 ring-1 ring-white/10 backdrop-blur-xl">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-10 rounded-t-2xl bg-gradient-to-r from-sky-500/20 via-transparent to-violet-500/20 blur-2xl" />
+      <div className={visual.panelClassName}>
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-10 rounded-t-2xl blur-2xl"
+          style={{ backgroundImage: visual.topGlowGradient }}
+        />
 
         <div className="relative mb-1 flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
-            <Target className="h-3.5 w-3.5 shrink-0 text-violet-300/90" />
+            <Target className={visual.targetIconClassName} />
             <div className="min-w-0">
               <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">
                 Objectif followers
@@ -260,8 +267,11 @@ export function OverlayFollowerGoal({
                   <div className="mt-0.5">
                     <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/10">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-lime-300"
-                        style={{ width: `${progressPercent.toFixed(0)}%` }}
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${progressPercent.toFixed(0)}%`,
+                          backgroundImage: visual.progressGradient,
+                        }}
                       />
                     </div>
                   </div>

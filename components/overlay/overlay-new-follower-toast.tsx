@@ -3,6 +3,7 @@
 import * as React from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { Heart, Sparkles } from "lucide-react"
+import { getOverlayPresetTheme, type OverlayPreset } from "@/lib/overlay/presets"
 
 function normalizeChannel(input: string) {
   let ch = input.trim()
@@ -35,9 +36,11 @@ const IS_DEV = process.env.NODE_ENV !== "production"
 export function OverlayNewFollowerToast({
   channel,
   coopstreamKey,
+  preset = "default",
 }: {
   channel?: string
   coopstreamKey?: string
+  preset?: OverlayPreset
 }) {
   const [channelNormalized, setChannelNormalized] = React.useState<string>("")
   const [toast, setToast] = React.useState<ToastState | null>(null)
@@ -152,6 +155,11 @@ export function OverlayNewFollowerToast({
     const t = window.setTimeout(() => setToast(null), TOAST_MS)
     return () => window.clearTimeout(t)
   }, [toast])
+  const visual = getOverlayPresetTheme(preset)
+  const toastPanelClassName =
+    preset === "lecalme"
+      ? "relative overflow-hidden rounded-2xl border-2 border-violet-400/70 bg-black/90 px-4 py-3 ring-1 ring-violet-300/35 backdrop-blur-md"
+      : "relative overflow-hidden rounded-2xl bg-black/75 px-4 py-3 ring-1 ring-white/10 backdrop-blur-xl"
 
   return (
     <div className="pointer-events-none select-none relative h-full w-full overflow-hidden">
@@ -174,13 +182,16 @@ export function OverlayNewFollowerToast({
             transition={{ duration: 0.28 }}
             className="absolute left-1/2 top-4 w-[340px] max-w-[92%] -translate-x-1/2"
           >
-            <div className="relative overflow-hidden rounded-2xl bg-black/75 px-4 py-3 ring-1 ring-white/10 backdrop-blur-xl">
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-r from-sky-500/25 via-transparent to-violet-500/25 blur-2xl" />
+            <div className={toastPanelClassName}>
+              <div
+                className="pointer-events-none absolute inset-x-0 top-0 h-10 rounded-t-2xl blur-2xl"
+                style={{ backgroundImage: visual.topGlowGradient }}
+              />
 
               <div className="relative flex items-start justify-between gap-4">
                 <div className="flex min-w-0 items-center gap-2">
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 ring-1 ring-white/10">
-                    <Sparkles className="h-4 w-4 text-emerald-300/90" strokeWidth={2.5} />
+                    <Sparkles className={visual.sparkleIconClassName} strokeWidth={2.5} />
                   </div>
                   <div className="min-w-0">
                     <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/55">
@@ -190,7 +201,7 @@ export function OverlayNewFollowerToast({
                       {toast.displayName}
                     </div>
                     <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-white/40">
-                      <Heart className="h-3.5 w-3.5 text-rose-400/80" strokeWidth={2.5} />
+                      <Heart className={visual.heartIconClassName} strokeWidth={2.5} />
                       <span className="truncate">@{toast.login}</span>
                     </div>
                   </div>

@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 
 import { OverlayNewFollowerToast } from "@/components/overlay/overlay-new-follower-toast"
 import { OverlayBodyMode } from "@/components/overlay/overlay-body-mode"
+import { parseOverlayPreset } from "@/lib/overlay/presets"
 
 export const metadata: Metadata = {
   title: "Overlay Nouveau follower",
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 export default async function OverlayNewFollowerPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ channel?: string; coopstreamKey?: string }>
+  searchParams?: Promise<{ channel?: string; coopstreamKey?: string; preset?: string }>
 }) {
   const sp = searchParams ? await searchParams : undefined
   const channelFromQuery =
@@ -21,6 +22,7 @@ export default async function OverlayNewFollowerPage({
     typeof sp?.coopstreamKey === "string" && sp.coopstreamKey.trim()
       ? sp.coopstreamKey.trim()
       : undefined
+  const presetFromQuery = parseOverlayPreset(sp?.preset)
 
   return (
     <div className="flex h-dvh w-dvw items-start justify-end bg-transparent pointer-events-none pr-6 pt-6">
@@ -29,6 +31,7 @@ export default async function OverlayNewFollowerPage({
         <OverlayNewFollowerToast
           channel={channelFromQuery}
           coopstreamKey={coopstreamKeyFromQuery}
+          preset={presetFromQuery}
         />
       </div>
     </div>

@@ -3,11 +3,14 @@
 import * as React from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { Sparkles } from "lucide-react"
+import { getOverlayPresetTheme, type OverlayPreset } from "@/lib/overlay/presets"
 
 export function OverlayWheelText({
   coopstreamKey,
+  preset = "default",
 }: {
   coopstreamKey?: string
+  preset?: OverlayPreset
 }) {
   const [status, setStatus] = React.useState<
     "idle" | "loading" | "ok" | "error" | "no_config"
@@ -78,18 +81,22 @@ export function OverlayWheelText({
     }
   }, [coopstreamKey])
 
+  const visual = getOverlayPresetTheme(preset)
   const wheelBaseClass =
-    "flex items-center justify-center rounded-full bg-[conic-gradient(from_90deg,rgba(79,70,229,0.95)_0deg,rgba(236,72,153,0.9)_60deg,rgba(34,197,94,0.85)_120deg,rgba(59,130,246,0.9)_180deg,rgba(236,72,153,0.9)_240deg,rgba(79,70,229,0.95)_300deg,rgba(79,70,229,0.95)_360deg)] ring-1 ring-white/10 shadow-[0_0_30px_rgba(79,70,229,0.25)]"
+    "flex items-center justify-center rounded-full ring-1 ring-white/10 shadow-[0_0_30px_rgba(79,70,229,0.25)]"
 
   return (
     <div className="pointer-events-none select-none relative h-full w-full">
-      <div className="relative flex h-full w-full flex-col items-center justify-center rounded-2xl bg-black/65 px-5 py-4 ring-1 ring-white/10 backdrop-blur-xl overflow-hidden">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-r from-sky-500/20 via-transparent to-violet-500/20 blur-2xl" />
+      <div className={visual.panelClassName}>
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-10 rounded-t-2xl blur-2xl"
+          style={{ backgroundImage: visual.topGlowGradient }}
+        />
 
         <div className="relative z-10 flex w-full items-center justify-between gap-3 mb-3">
           <div className="flex min-w-0 items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 ring-1 ring-white/10">
-              <Sparkles className="h-4 w-4 text-emerald-300/90" strokeWidth={2.5} />
+              <Sparkles className={visual.sparkleIconClassName} strokeWidth={2.5} />
             </div>
             <div className="min-w-0">
               <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/55">
@@ -119,12 +126,16 @@ export function OverlayWheelText({
                     ease: [0.2, 0.8, 0.2, 1],
                   }}
                   className={`absolute inset-0 ${wheelBaseClass}`}
+                  style={{ backgroundImage: visual.wheelGradient }}
                 >
                   <div className="absolute inset-2 rounded-full ring-1 ring-white/10 bg-black/15" />
                   <div className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 ring-1 ring-white/15" />
                 </motion.div>
               ) : (
-                <div className={`absolute inset-0 ${wheelBaseClass}`} />
+                <div
+                  className={`absolute inset-0 ${wheelBaseClass}`}
+                  style={{ backgroundImage: visual.wheelGradient }}
+                />
               )}
             </AnimatePresence>
 

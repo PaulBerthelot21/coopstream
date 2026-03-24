@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 
 import { OverlayLastFollower } from "../../components/overlay/overlay-last-follower"
 import { OverlayBodyMode } from "@/components/overlay/overlay-body-mode"
+import { parseOverlayPreset } from "@/lib/overlay/presets"
 
 export const metadata: Metadata = {
   title: "Overlay Dernier follower",
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 export default async function OverlayLastFollowerPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ channel?: string; coopstreamKey?: string }>
+  searchParams?: Promise<{ channel?: string; coopstreamKey?: string; preset?: string }>
 }) {
   const sp = searchParams ? await searchParams : undefined
 
@@ -23,6 +24,7 @@ export default async function OverlayLastFollowerPage({
     typeof sp?.coopstreamKey === "string" && sp.coopstreamKey.trim()
       ? sp.coopstreamKey.trim()
       : undefined
+  const presetFromQuery = parseOverlayPreset(sp?.preset)
 
   return (
     <div className="flex h-dvh w-dvw items-start justify-end bg-transparent pointer-events-none pr-6 pt-6">
@@ -31,6 +33,7 @@ export default async function OverlayLastFollowerPage({
         <OverlayLastFollower
           channel={channelFromQuery}
           coopstreamKey={coopstreamKeyFromQuery}
+          preset={presetFromQuery}
         />
       </div>
     </div>

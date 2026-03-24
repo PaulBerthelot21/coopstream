@@ -7,6 +7,7 @@ export function OverlayView() {
     <OverlaySelector
       title="Overlay"
       description="Vue globale : copie le lien d'un overlay ou ouvre-le pour tester."
+      showPresetSelector
     />
   )
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 
 import { OverlayBodyMode } from "@/components/overlay/overlay-body-mode"
 import { OverlayFollowerGoal } from "@/components/overlay/overlay-follower-goal"
+import { parseOverlayPreset } from "@/lib/overlay/presets"
 
 export const metadata: Metadata = {
   title: "Overlay Objectif followers",
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 export default async function OverlayFollowerGoalPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ channel?: string; coopstreamKey?: string }>
+  searchParams?: Promise<{ channel?: string; coopstreamKey?: string; preset?: string }>
 }) {
   const sp = searchParams ? await searchParams : undefined
 
@@ -21,12 +22,17 @@ export default async function OverlayFollowerGoalPage({
     typeof sp?.coopstreamKey === "string" && sp.coopstreamKey.trim()
       ? sp.coopstreamKey.trim()
       : undefined
+  const presetFromQuery = parseOverlayPreset(sp?.preset)
 
   return (
     <div className="flex h-dvh w-dvw items-start justify-end bg-transparent pointer-events-none pr-6 pt-6">
       <OverlayBodyMode />
       <div className="w-[360px] max-w-[40vw] min-h-[140px]">
-        <OverlayFollowerGoal channel={channelFromQuery} coopstreamKey={coopstreamKeyFromQuery} />
+        <OverlayFollowerGoal
+          channel={channelFromQuery}
+          coopstreamKey={coopstreamKeyFromQuery}
+          preset={presetFromQuery}
+        />
       </div>
     </div>
   )

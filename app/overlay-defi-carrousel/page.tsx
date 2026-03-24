@@ -4,11 +4,13 @@ import * as React from "react"
 
 import { OverlayCarousel } from "@/components/overlay/overlay-carousel"
 import { OverlayBodyMode } from "@/components/overlay/overlay-body-mode"
+import { parseOverlayPreset, type OverlayPreset } from "@/lib/overlay/presets"
 
 import type { Challenge } from "@/lib/types/challenge"
 
 export default function OverlayDefiCarrouselPage() {
   const [coopstreamKey, setCoopstreamKey] = React.useState<string>("")
+  const [preset, setPreset] = React.useState<OverlayPreset>("default")
 
   const [challenges, setChallenges] = React.useState<Challenge[]>([])
   const POLL_MS = 4000
@@ -17,8 +19,10 @@ export default function OverlayDefiCarrouselPage() {
     try {
       const sp = new URLSearchParams(window.location.search)
       setCoopstreamKey(sp.get("coopstreamKey")?.trim() ?? "")
+      setPreset(parseOverlayPreset(sp.get("preset") ?? undefined))
     } catch {
       setCoopstreamKey("")
+      setPreset("default")
     }
   }, [])
 
@@ -64,10 +68,10 @@ export default function OverlayDefiCarrouselPage() {
   }, [challenges])
 
   return (
-    <div className="flex h-dvh w-dvw items-start justify-end bg-transparent pt-6 pr-6">
+    <div className="flex h-dvh w-dvw items-start justify-end bg-transparent pt-6 pr-2">
       <OverlayBodyMode />
       <div className="w-full max-w-xl">
-        <OverlayCarousel challenges={ordered} />
+        <OverlayCarousel challenges={ordered} preset={preset} />
       </div>
     </div>
   )
