@@ -1,21 +1,19 @@
 import type { Metadata } from "next"
 
 import { OverlayBodyMode } from "@/components/overlay/overlay-body-mode"
-import { OverlayIntro } from "@/components/overlay/overlay-intro"
+import { OverlayOutro } from "@/components/overlay/overlay-outro"
 
 export const metadata: Metadata = {
-  title: "Overlay Intro",
+  title: "Overlay Outro",
 }
 
-export default async function OverlayIntroPage({
+export default async function OverlayOutroPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ seconds?: string; subtitle?: string; fx?: string }>
+  searchParams?: Promise<{ title?: string; subtitle?: string; fx?: string }>
 }) {
   const sp = searchParams ? await searchParams : undefined
-  const raw = sp?.seconds
-  const parsed = typeof raw === "string" ? Number(raw) : NaN
-  const startSeconds = Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 300
+  const title = typeof sp?.title === "string" ? sp.title.trim() : ""
   const subtitle = typeof sp?.subtitle === "string" ? sp.subtitle.trim() : ""
   const fx =
     sp?.fx === "off" || sp?.fx === "low" || sp?.fx === "high" || sp?.fx === "medium"
@@ -25,11 +23,7 @@ export default async function OverlayIntroPage({
   return (
     <div className="h-dvh w-dvw bg-transparent pointer-events-none">
       <OverlayBodyMode />
-      <OverlayIntro
-        startSeconds={startSeconds}
-        subtitle={subtitle}
-        fx={fx}
-      />
+      <OverlayOutro title={title || "Merci d'avoir suivi"} subtitle={subtitle} fx={fx} />
     </div>
   )
 }

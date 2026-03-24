@@ -72,7 +72,13 @@ const OVERLAYS: OverlayDef[] = [
     href: "/overlay-intro",
     title: "Intro + Minuteur",
     description: "Affiche un fond animé élégant avec un compte à rebours.",
-    hint: "Optionnel : `?seconds=300&subtitle=Le%20live%20commence%20bientot&fx=low|medium|high`.",
+    hint: "Optionnel : `?seconds=300&subtitle=Le%20live%20commence%20bientot&fx=off|low|medium|high`.",
+  },
+  {
+    href: "/overlay-outro",
+    title: "Outro",
+    description: "Affiche un écran de fin avec un message de remerciement.",
+    hint: "Optionnel : `?title=Merci%20d%27avoir%20suivi&subtitle=A%20bientot&fx=off|low|medium|high`.",
   },
 ]
 
@@ -131,7 +137,10 @@ export function OverlaySelector({
   const [preset, setPreset] = React.useState<OverlayPreset>("default")
   const [introSeconds, setIntroSeconds] = React.useState<string>("300")
   const [introSubtitle, setIntroSubtitle] = React.useState<string>("")
-  const [introFx, setIntroFx] = React.useState<"low" | "medium" | "high">("medium")
+  const [introFx, setIntroFx] = React.useState<"low" | "medium" | "high" | "off">("medium")
+  const [outroTitle, setOutroTitle] = React.useState<string>("Merci d'avoir suivi")
+  const [outroSubtitle, setOutroSubtitle] = React.useState<string>("")
+  const [outroFx, setOutroFx] = React.useState<"low" | "medium" | "high" | "off">("medium")
 
   React.useEffect(() => {
     try {
@@ -321,11 +330,46 @@ export function OverlaySelector({
                         value={introFx}
                         onChange={(e) =>
                           setIntroFx(
-                            (e.target.value as "low" | "medium" | "high") ?? "medium",
+                            (e.target.value as "low" | "medium" | "high" | "off") ??
+                              "medium",
                           )
                         }
                         className="h-8 rounded-md border border-input bg-background px-2 text-xs"
                       >
+                        <option value="off">fx off</option>
+                        <option value="low">fx low</option>
+                        <option value="medium">fx medium</option>
+                        <option value="high">fx high</option>
+                      </select>
+                    </div>
+                  ) : null}
+
+                  {o.href === "/overlay-outro" ? (
+                    <div className="flex flex-col gap-2">
+                      <div className="text-xs font-semibold text-muted-foreground">
+                        Paramètres Outro
+                      </div>
+                      <Input
+                        value={outroTitle}
+                        placeholder="Merci d'avoir suivi"
+                        onChange={(e) => setOutroTitle(e.target.value)}
+                      />
+                      <Input
+                        value={outroSubtitle}
+                        placeholder="À bientôt pour le prochain live"
+                        onChange={(e) => setOutroSubtitle(e.target.value)}
+                      />
+                      <select
+                        value={outroFx}
+                        onChange={(e) =>
+                          setOutroFx(
+                            (e.target.value as "low" | "medium" | "high" | "off") ??
+                              "medium",
+                          )
+                        }
+                        className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                      >
+                        <option value="off">fx off</option>
                         <option value="low">fx low</option>
                         <option value="medium">fx medium</option>
                         <option value="high">fx high</option>
@@ -362,6 +406,19 @@ export function OverlaySelector({
                         }
                         if (introFx !== "medium") {
                           url.searchParams.set("fx", introFx)
+                        }
+                      }
+                      if (o.href === "/overlay-outro") {
+                        const t = outroTitle.trim()
+                        if (t) {
+                          url.searchParams.set("title", t)
+                        }
+                        const sub = outroSubtitle.trim()
+                        if (sub) {
+                          url.searchParams.set("subtitle", sub)
+                        }
+                        if (outroFx !== "medium") {
+                          url.searchParams.set("fx", outroFx)
                         }
                       }
 

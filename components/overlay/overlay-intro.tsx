@@ -6,7 +6,7 @@ import { motion } from "framer-motion"
 import { OverlayIntroCountdown } from "@/components/overlay/overlay-intro-countdown"
 import { OverlayIntroParticles } from "@/components/overlay/overlay-intro-particles"
 
-type IntroFxLevel = "low" | "medium" | "high"
+type IntroFxLevel = "off" | "low" | "medium" | "high"
 
 export function OverlayIntro({
   startSeconds = 300,

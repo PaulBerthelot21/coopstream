@@ -12,13 +12,21 @@ type Particle = {
   hue: number
 }
 
-type IntroFxLevel = "low" | "medium" | "high"
+type IntroFxLevel = "off" | "low" | "medium" | "high"
 
 function rand(min: number, max: number) {
   return Math.random() * (max - min) + min
 }
 
 function getFxConfig(level: IntroFxLevel) {
+  if (level === "off") {
+    return {
+      particleCount: 0,
+      speedMul: 0,
+      spriteAlphaMul: 0,
+      particleAlphaMul: 0,
+    }
+  }
   if (level === "low") {
     return {
       particleCount: 36,
@@ -140,33 +148,35 @@ export function OverlayIntroParticles({
         ctx.fill()
       }
 
-      // Sprite-like floating discs.
-      const t = performance.now() * 0.001
-      const sprites = [
-        {
-          x: width * 0.18 + Math.sin(t * 0.9) * 16,
-          y: height * 0.22 + Math.cos(t * 1.1) * 12,
-          r: 34,
-          c: `rgba(167,139,250,${(0.12 * cfg.spriteAlphaMul).toFixed(3)})`,
-        },
-        {
-          x: width * 0.78 + Math.cos(t * 0.7) * 24,
-          y: height * 0.28 + Math.sin(t * 0.8) * 14,
-          r: 42,
-          c: `rgba(56,189,248,${(0.1 * cfg.spriteAlphaMul).toFixed(3)})`,
-        },
-        {
-          x: width * 0.62 + Math.sin(t * 0.55) * 20,
-          y: height * 0.72 + Math.cos(t * 0.7) * 10,
-          r: 28,
-          c: `rgba(129,140,248,${(0.1 * cfg.spriteAlphaMul).toFixed(3)})`,
-        },
-      ]
-      for (const s of sprites) {
-        ctx.beginPath()
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
-        ctx.fillStyle = s.c
-        ctx.fill()
+      if (cfg.spriteAlphaMul > 0) {
+        // Sprite-like floating discs.
+        const t = performance.now() * 0.001
+        const sprites = [
+          {
+            x: width * 0.18 + Math.sin(t * 0.9) * 16,
+            y: height * 0.22 + Math.cos(t * 1.1) * 12,
+            r: 34,
+            c: `rgba(167,139,250,${(0.12 * cfg.spriteAlphaMul).toFixed(3)})`,
+          },
+          {
+            x: width * 0.78 + Math.cos(t * 0.7) * 24,
+            y: height * 0.28 + Math.sin(t * 0.8) * 14,
+            r: 42,
+            c: `rgba(56,189,248,${(0.1 * cfg.spriteAlphaMul).toFixed(3)})`,
+          },
+          {
+            x: width * 0.62 + Math.sin(t * 0.55) * 20,
+            y: height * 0.72 + Math.cos(t * 0.7) * 10,
+            r: 28,
+            c: `rgba(129,140,248,${(0.1 * cfg.spriteAlphaMul).toFixed(3)})`,
+          },
+        ]
+        for (const s of sprites) {
+          ctx.beginPath()
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
+          ctx.fillStyle = s.c
+          ctx.fill()
+        }
       }
     }
 
