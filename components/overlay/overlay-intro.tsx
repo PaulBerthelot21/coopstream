@@ -42,11 +42,11 @@ export function OverlayIntro({
       />
 
       {subtitle.trim() ? (
-        <div className="absolute left-10 top-[36%] max-w-[460px]">
-          <div className="text-[12px] uppercase tracking-[0.24em] text-white/45">
+        <div className="absolute left-6 top-[38%] w-[min(92vw,42rem)] max-w-[42rem] sm:left-10 sm:top-[39%] md:top-[40%] lg:top-[41%]">
+          <div className="text-[10px] uppercase tracking-[0.24em] text-white/45 sm:text-[11px] md:text-xs">
             Bientot en direct
           </div>
-          <div className="mt-2 text-5xl font-semibold leading-[1.05] text-white/92 drop-shadow-[0_0_18px_rgba(0,0,0,0.78)]">
+          <div className="mt-2 font-semibold leading-[1.08] tracking-tight text-white/92 drop-shadow-[0_0_18px_rgba(0,0,0,0.78)] text-[clamp(1.9rem,4.8vmin+0.9rem,4.35rem)]">
             {subtitle}
           </div>
         </div>
