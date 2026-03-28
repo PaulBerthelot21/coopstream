@@ -1,0 +1,33 @@
+import type { Metadata } from "next"
+
+import { OverlayBodyMode } from "@/components/overlay/overlay-body-mode"
+import { OverlayIntroCs } from "@/components/overlay/overlay-intro-cs"
+
+export const metadata: Metadata = {
+  title: "Overlay Intro CS",
+  description:
+    "Intro tactique WebGL (style Counter-Strike) : couteau anime, sable, caisses. Option : public/models/cs-intro.glb",
+}
+
+export default async function OverlayIntroCsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ seconds?: string; subtitle?: string; fx?: string }>
+}) {
+  const sp = searchParams ? await searchParams : undefined
+  const raw = sp?.seconds
+  const parsed = typeof raw === "string" ? Number(raw) : NaN
+  const startSeconds = Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 300
+  const subtitle = typeof sp?.subtitle === "string" ? sp.subtitle.trim() : ""
+  const fx =
+    sp?.fx === "off" || sp?.fx === "low" || sp?.fx === "high" || sp?.fx === "medium"
+      ? sp.fx
+      : "medium"
+
+  return (
+    <div className="h-dvh w-dvw bg-transparent pointer-events-none">
+      <OverlayBodyMode />
+      <OverlayIntroCs startSeconds={startSeconds} subtitle={subtitle} fx={fx} />
+    </div>
+  )
+}
