@@ -8,10 +8,11 @@ export type OverlayPresetTheme = {
   targetIconClassName: string
   heartIconClassName: string
   sparkleIconClassName: string
-  /** Assets optionnels pour le rebrand (fond marbre + chibi). */
+  /** Assets optionnels pour le rebrand (fond marbre + chibis). */
   assets?: {
     backgroundUrl: string
     chibiUrl: string
+    chibiFollowUrl?: string
   }
   accentColor?: string
 }
@@ -55,6 +56,7 @@ const PRESET_THEMES: Record<OverlayPreset, OverlayPresetTheme> = {
     assets: {
       backgroundUrl: "/overlays/lecalme-rebrand/background.jpg",
       chibiUrl: "/overlays/lecalme-rebrand/chibi.png",
+      chibiFollowUrl: "/overlays/lecalme-rebrand/chibi-follow.png",
     },
   },
 }

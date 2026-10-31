@@ -23,11 +23,18 @@ export default async function OverlayNewFollowerPage({
       ? sp.coopstreamKey.trim()
       : undefined
   const presetFromQuery = parseOverlayPreset(sp?.preset)
+  const isRebrand = presetFromQuery === "lecalme-rebrand"
 
   return (
     <div className="flex h-dvh w-dvw items-start justify-end bg-transparent pointer-events-none pr-6 pt-6">
       <OverlayBodyMode />
-      <div className="w-[420px] max-w-[45vw] h-[40vh] max-h-[380px]">
+      <div
+        className={
+          isRebrand
+            ? "h-[180px] w-[520px] max-w-[92vw] overflow-visible"
+            : "w-[420px] max-w-[45vw] h-[40vh] max-h-[380px]"
+        }
+      >
         <OverlayNewFollowerToast
           channel={channelFromQuery}
           coopstreamKey={coopstreamKeyFromQuery}
@@ -37,4 +44,3 @@ export default async function OverlayNewFollowerPage({
     </div>
   )
 }
-

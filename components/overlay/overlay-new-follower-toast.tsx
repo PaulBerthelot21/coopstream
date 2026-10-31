@@ -4,6 +4,7 @@ import * as React from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { Heart, Sparkles } from "lucide-react"
 import { getOverlayPresetTheme, type OverlayPreset } from "@/lib/overlay/presets"
+import { OverlayNewFollowerRebrand } from "@/components/overlay/overlay-new-follower-rebrand"
 
 function normalizeChannel(input: string) {
   let ch = input.trim()
@@ -156,13 +157,19 @@ export function OverlayNewFollowerToast({
     return () => window.clearTimeout(t)
   }, [toast])
   const visual = getOverlayPresetTheme(preset)
+  const isRebrand = preset === "lecalme-rebrand"
   const toastPanelClassName =
     preset === "lecalme"
       ? "relative overflow-hidden rounded-2xl border-2 border-violet-400/70 bg-black/90 px-4 py-3 ring-1 ring-violet-300/35 backdrop-blur-md"
       : "relative overflow-hidden rounded-2xl bg-black/75 px-4 py-3 ring-1 ring-white/10 backdrop-blur-xl"
 
   return (
-    <div className="pointer-events-none select-none relative h-full w-full overflow-hidden">
+    <div
+      className={[
+        "pointer-events-none relative h-full w-full select-none",
+        isRebrand ? "overflow-visible" : "overflow-hidden",
+      ].join(" ")}
+    >
       {IS_DEV ? (
         <button
           type="button"
@@ -180,37 +187,48 @@ export function OverlayNewFollowerToast({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -14, scale: 0.98 }}
             transition={{ duration: 0.28 }}
-            className="absolute left-1/2 top-4 w-[340px] max-w-[92%] -translate-x-1/2"
+            className={
+              isRebrand
+                ? "absolute left-1/2 top-2 w-[480px] max-w-[96%] -translate-x-1/2 overflow-visible"
+                : "absolute left-1/2 top-4 w-[340px] max-w-[92%] -translate-x-1/2"
+            }
           >
-            <div className={toastPanelClassName}>
-              <div
-                className="pointer-events-none absolute inset-x-0 top-0 h-10 rounded-t-2xl blur-2xl"
-                style={{ backgroundImage: visual.topGlowGradient }}
+            {isRebrand ? (
+              <OverlayNewFollowerRebrand
+                visual={visual}
+                displayName={toast.displayName}
               />
+            ) : (
+              <div className={toastPanelClassName}>
+                <div
+                  className="pointer-events-none absolute inset-x-0 top-0 h-10 rounded-t-2xl blur-2xl"
+                  style={{ backgroundImage: visual.topGlowGradient }}
+                />
 
-              <div className="relative flex items-start justify-between gap-4">
-                <div className="flex min-w-0 items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 ring-1 ring-white/10">
-                    <Sparkles className={visual.sparkleIconClassName} strokeWidth={2.5} />
+                <div className="relative flex items-start justify-between gap-4">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 ring-1 ring-white/10">
+                      <Sparkles className={visual.sparkleIconClassName} strokeWidth={2.5} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/55">
+                        Nouveau follower
+                      </div>
+                      <div className="mt-1 truncate font-mono text-sm font-semibold text-white drop-shadow-[0_0_10px_rgba(0,0,0,0.85)]">
+                        {toast.displayName}
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-white/40">
+                        <Heart className={visual.heartIconClassName} strokeWidth={2.5} />
+                        <span className="truncate">@{toast.login}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/55">
-                      Nouveau follower
-                    </div>
-                    <div className="mt-1 truncate font-mono text-sm font-semibold text-white drop-shadow-[0_0_10px_rgba(0,0,0,0.85)]">
-                      {toast.displayName}
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-white/40">
-                      <Heart className={visual.heartIconClassName} strokeWidth={2.5} />
-                      <span className="truncate">@{toast.login}</span>
-                    </div>
+                  <div className="shrink-0 text-[10px] font-mono text-white/35">
+                    live
                   </div>
-                </div>
-                <div className="shrink-0 text-[10px] font-mono text-white/35">
-                  live
                 </div>
               </div>
-            </div>
+            )}
           </motion.div>
         ) : null}
       </AnimatePresence>
