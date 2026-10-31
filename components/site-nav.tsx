@@ -58,6 +58,7 @@ const OVERLAY_ONLY_PATHS = [
   "/overlay-last-follower",
   "/overlay-new-follower",
   "/overlay-new-sub",
+  "/overlay-new-raid",
   "/overlay-wheel-texte",
 ]
 
