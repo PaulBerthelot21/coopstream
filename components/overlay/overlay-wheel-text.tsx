@@ -4,6 +4,10 @@ import * as React from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { Sparkles } from "lucide-react"
 import { getOverlayPresetTheme, type OverlayPreset } from "@/lib/overlay/presets"
+import {
+  OverlayWheelTextRebrand,
+  WHEEL_REBRAND_SPIN_MS,
+} from "@/components/overlay/overlay-wheel-text-rebrand"
 
 export function OverlayWheelText({
   coopstreamKey,
@@ -16,6 +20,7 @@ export function OverlayWheelText({
     "idle" | "loading" | "ok" | "error" | "no_config"
   >("idle")
   const [selectedText, setSelectedText] = React.useState<string>("")
+  const [candidates, setCandidates] = React.useState<string[]>([])
   const [spinDegrees, setSpinDegrees] = React.useState<number>(0)
   const [spinNonce, setSpinNonce] = React.useState<number>(0)
   const [spinDone, setSpinDone] = React.useState<boolean>(false)
@@ -25,8 +30,11 @@ export function OverlayWheelText({
     if (!coopstreamKey || !coopstreamKey.trim()) {
       setStatus("no_config")
       setSelectedText("")
+      setCandidates([])
       return
     }
+
+    const spinMs = preset === "lecalme-rebrand" ? WHEEL_REBRAND_SPIN_MS : 2800
 
     const load = async () => {
       try {
@@ -39,11 +47,13 @@ export function OverlayWheelText({
           if (!alive) return
           setStatus("error")
           setSelectedText("")
+          setCandidates([])
           return
         }
 
         const data = (await res.json()) as {
           text?: string | null
+          candidates?: string[]
           spinDegrees?: number
         }
 
@@ -53,24 +63,26 @@ export function OverlayWheelText({
         if (!text) {
           setStatus("no_config")
           setSelectedText("")
+          setCandidates([])
           return
         }
 
         setStatus("ok")
         setSelectedText(text)
+        setCandidates(Array.isArray(data.candidates) ? data.candidates : [text])
         setSpinDegrees(Number(data?.spinDegrees ?? 0))
         setSpinNonce((n) => n + 1)
         setSpinDone(false)
 
-        // Le spinner doit "finir" au même rythme que l'animation.
         window.setTimeout(() => {
           if (!alive) return
           setSpinDone(true)
-        }, 2800)
+        }, spinMs)
       } catch {
         if (!alive) return
         setStatus("error")
         setSelectedText("")
+        setCandidates([])
       }
     }
 
@@ -79,11 +91,24 @@ export function OverlayWheelText({
     return () => {
       alive = false
     }
-  }, [coopstreamKey])
+  }, [coopstreamKey, preset])
 
   const visual = getOverlayPresetTheme(preset)
   const wheelBaseClass =
     "flex items-center justify-center rounded-full ring-1 ring-white/10 shadow-[0_0_30px_rgba(79,70,229,0.25)]"
+
+  if (preset === "lecalme-rebrand") {
+    return (
+      <OverlayWheelTextRebrand
+        visual={visual}
+        status={status}
+        selectedText={selectedText}
+        candidates={candidates}
+        spinNonce={spinNonce}
+        spinDone={spinDone}
+      />
+    )
+  }
 
   return (
     <div className="pointer-events-none select-none relative h-full w-full">

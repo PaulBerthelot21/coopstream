@@ -21,32 +21,29 @@ export async function GET(
     return NextResponse.json({ text: null })
   }
 
-  const count = await prisma.wheelTextChallenge.count({
+  const items = await prisma.wheelTextChallenge.findMany({
     where: { roomId: room.id },
-  })
-
-  if (count <= 0) {
-    return NextResponse.json({ text: null })
-  }
-
-  const randomIndex = Math.floor(Math.random() * count)
-
-  const item = await prisma.wheelTextChallenge.findFirst({
-    where: { roomId: room.id },
-    skip: randomIndex,
     orderBy: { createdAt: "desc" },
     select: { text: true },
   })
 
-  if (!item) {
-    return NextResponse.json({ text: null })
+  if (items.length <= 0) {
+    return NextResponse.json({ text: null, candidates: [] as string[] })
   }
 
-  // Rotation "casino" : plusieurs tours + angle aléatoire.
+  const candidates = items.map((i) => i.text)
+  const randomIndex = Math.floor(Math.random() * candidates.length)
+  const text = candidates[randomIndex] ?? null
+
+  if (!text) {
+    return NextResponse.json({ text: null, candidates })
+  }
+
+  // Rotation "casino" (preset default / lecalme).
   const spins = 6 + Math.floor(Math.random() * 4) // 6 à 9 tours
   const randomAngle = Math.floor(Math.random() * 360) // 0 à 359°
   const spinDegrees = spins * 360 + randomAngle
 
-  return NextResponse.json({ text: item.text, spinDegrees })
+  return NextResponse.json({ text, candidates, spinDegrees })
 }
 

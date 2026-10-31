@@ -19,14 +19,20 @@ export default async function OverlayWheelTextPage({
       ? sp.coopstreamKey.trim()
       : undefined
   const presetFromQuery = parseOverlayPreset(sp?.preset)
+  const isRebrand = presetFromQuery === "lecalme-rebrand"
 
   return (
     <div className="flex h-dvh w-dvw items-start justify-end bg-transparent pointer-events-none pr-6 pt-6">
       <OverlayBodyMode />
-      <div className="w-[520px] max-w-[55vw] aspect-square max-h-[520px]">
+      <div
+        className={
+          isRebrand
+            ? "h-[420px] w-[480px] max-h-[92vh] max-w-[92vw]"
+            : "w-[520px] max-w-[55vw] aspect-square max-h-[520px]"
+        }
+      >
         <OverlayWheelText coopstreamKey={coopstreamKey} preset={presetFromQuery} />
       </div>
     </div>
   )
 }
-
