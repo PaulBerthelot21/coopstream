@@ -4,6 +4,7 @@ import * as React from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { Heart } from "lucide-react"
 import { getOverlayPresetTheme, type OverlayPreset } from "@/lib/overlay/presets"
+import { OverlayLastFollowerRebrand } from "@/components/overlay/overlay-last-follower-rebrand"
 
 function normalizeChannel(input: string) {
   let ch = input.trim()
@@ -159,6 +160,31 @@ export function OverlayLastFollower({
           ? "Chargement…"
           : ""
   const visual = getOverlayPresetTheme(preset)
+  const nameLabel = displayName ?? (status === "loading" ? "…" : "—")
+  const detailLabel = relative || subtitle || undefined
+
+  if (preset === "lecalme-rebrand") {
+    return (
+      <div className="pointer-events-none relative h-full w-full select-none overflow-visible">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={displayName ?? status}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.22 }}
+            className="h-full w-full"
+          >
+            <OverlayLastFollowerRebrand
+              visual={visual}
+              displayName={nameLabel}
+              detail={detailLabel}
+            />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    )
+  }
 
   return (
     <div className="pointer-events-none select-none h-full w-full overflow-hidden">
@@ -197,7 +223,7 @@ export function OverlayLastFollower({
               className="flex flex-col gap-1"
             >
               <div className="font-mono text-lg font-semibold leading-tight text-white drop-shadow-[0_0_12px_rgba(0,0,0,0.85)]">
-                {displayName ?? (status === "loading" ? "…" : "—")}
+                {nameLabel}
               </div>
               {relative ? (
                 <div className="text-[11px] text-white/55">{relative}</div>

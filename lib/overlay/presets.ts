@@ -57,7 +57,7 @@ const PRESET_THEMES: Record<OverlayPreset, OverlayPresetTheme> = {
     accentColor: "#ffc4a8",
     assets: {
       backgroundUrl: "/overlays/lecalme-rebrand/background.jpg",
-      chibiUrl: "/overlays/lecalme-rebrand/chibi.png",
+      chibiUrl: "/overlays/lecalme-rebrand/chibi-goal.png",
       chibiFollowUrl: "/overlays/lecalme-rebrand/chibi-follow.png",
       chibiSubUrl: "/overlays/lecalme-rebrand/chibi-sub.png",
       chibiRaidUrl: "/overlays/lecalme-rebrand/chibi-raid.png",

@@ -225,7 +225,6 @@ export function OverlayFollowerGoal({
         target={target}
         unit={unit}
         subtitle={subtitle}
-        channelNormalized={channelNormalized}
         coopstreamKey={coopstreamKey}
         goalLoaded={goalLoaded}
         goalError={goalError}

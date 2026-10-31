@@ -12,7 +12,6 @@ type Props = {
   target: number | null
   unit: string
   subtitle: string
-  channelNormalized: string
   coopstreamKey?: string
   goalLoaded: boolean
   goalError: boolean
@@ -26,7 +25,6 @@ export function OverlayFollowerGoalRebrand({
   target,
   unit,
   subtitle,
-  channelNormalized,
   coopstreamKey,
   goalLoaded,
   goalError,
@@ -142,13 +140,6 @@ export function OverlayFollowerGoalRebrand({
                     />
                   </div>
                 </div>
-
-                <div
-                  className="mt-2 text-[9px] font-semibold uppercase tracking-[0.38em] text-white/80"
-                  style={{ textShadow: "0 1px 6px rgba(0,0,0,0.75)" }}
-                >
-                  LE CALME
-                </div>
               </motion.div>
             </AnimatePresence>
           </div>
@@ -162,17 +153,13 @@ export function OverlayFollowerGoalRebrand({
             alt="Le Calme"
             fill
             priority
-            className="object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.7)]"
+            className="border-0 bg-transparent object-contain outline-none drop-shadow-[0_10px_20px_rgba(0,0,0,0.7)]"
             sizes="240px"
+            unoptimized
           />
         </div>
       ) : null}
 
-      {channelNormalized ? (
-        <div className="absolute bottom-0 right-1 z-30 text-[9px] font-mono text-white/20">
-          @{channelNormalized}
-        </div>
-      ) : null}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 
-import { OverlayLastFollower } from "../../components/overlay/overlay-last-follower"
+import { OverlayLastFollower } from "@/components/overlay/overlay-last-follower"
 import { OverlayBodyMode } from "@/components/overlay/overlay-body-mode"
 import { parseOverlayPreset } from "@/lib/overlay/presets"
 
@@ -25,11 +25,18 @@ export default async function OverlayLastFollowerPage({
       ? sp.coopstreamKey.trim()
       : undefined
   const presetFromQuery = parseOverlayPreset(sp?.preset)
+  const isRebrand = presetFromQuery === "lecalme-rebrand"
 
   return (
     <div className="flex h-dvh w-dvw items-start justify-end bg-transparent pointer-events-none pr-6 pt-6">
       <OverlayBodyMode />
-      <div className="w-[360px] max-w-[40vw] min-h-[140px]">
+      <div
+        className={
+          isRebrand
+            ? "h-[180px] w-[520px] max-w-[92vw] overflow-visible"
+            : "w-[360px] max-w-[40vw] min-h-[140px]"
+        }
+      >
         <OverlayLastFollower
           channel={channelFromQuery}
           coopstreamKey={coopstreamKeyFromQuery}

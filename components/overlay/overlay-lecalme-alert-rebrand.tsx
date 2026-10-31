@@ -9,6 +9,10 @@ type Props = {
   title: string
   displayName: string
   chibiUrl?: string
+  /** Ligne secondaire optionnelle (ex. « il y a 5 min »). */
+  detail?: string
+  /** Si false, pas d’anim d’entrée sur le chibi (overlay persistant). */
+  animateChibi?: boolean
 }
 
 export function OverlayLecalmeAlertRebrand({
@@ -16,6 +20,8 @@ export function OverlayLecalmeAlertRebrand({
   title,
   displayName,
   chibiUrl,
+  detail,
+  animateChibi = true,
 }: Props) {
   const bg = visual.assets?.backgroundUrl
   const chibi = chibiUrl
@@ -70,18 +76,20 @@ export function OverlayLecalmeAlertRebrand({
             </div>
 
             <div
-              className="mt-1.5 max-w-full truncate px-1 text-[26px] font-black leading-none tracking-tight text-white"
+              className="mt-1.5 max-w-full overflow-hidden text-ellipsis whitespace-nowrap px-1 pb-0.5 text-[26px] font-black leading-[1.2] tracking-tight text-white"
               style={{ textShadow: "0 3px 14px rgba(0,0,0,0.9)" }}
             >
               {displayName}
             </div>
 
-            <div
-              className="mt-2 text-[9px] font-semibold uppercase tracking-[0.38em] text-white/80"
-              style={{ textShadow: "0 1px 6px rgba(0,0,0,0.75)" }}
-            >
-              LE CALME
-            </div>
+            {detail ? (
+              <div
+                className="mt-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70"
+                style={{ textShadow: "0 1px 6px rgba(0,0,0,0.8)" }}
+              >
+                {detail}
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
@@ -89,8 +97,12 @@ export function OverlayLecalmeAlertRebrand({
       {chibi ? (
         <motion.div
           className="absolute -left-[2%] top-1/2 z-20 h-[118%] w-[46%] -translate-y-[52%]"
-          initial={{ rotate: -8, scale: 0.92 }}
-          animate={{ rotate: [-6, 4, -4, 2, 0], scale: 1 }}
+          initial={animateChibi ? { rotate: -8, scale: 0.92 } : false}
+          animate={
+            animateChibi
+              ? { rotate: [-6, 4, -4, 2, 0], scale: 1 }
+              : { rotate: 0, scale: 1 }
+          }
           transition={{ duration: 0.55, ease: "easeOut" }}
         >
           <Image
@@ -98,8 +110,9 @@ export function OverlayLecalmeAlertRebrand({
             alt="Le Calme"
             fill
             priority
-            className="object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.7)]"
+            className="border-0 bg-transparent object-contain outline-none drop-shadow-[0_10px_20px_rgba(0,0,0,0.7)]"
             sizes="220px"
+            unoptimized
           />
         </motion.div>
       ) : null}
