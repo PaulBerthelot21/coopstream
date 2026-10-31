@@ -8,7 +8,12 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuthSession } from "@/lib/useAuthSession"
-import type { OverlayPreset } from "@/lib/overlay/presets"
+import {
+  OVERLAY_PRESET_OPTIONS,
+  OVERLAY_PRESET_STORAGE_KEY,
+  parseOverlayPreset,
+  type OverlayPreset,
+} from "@/lib/overlay/presets"
 import { INTRO_3D_SCENES, type Intro3dSceneId } from "@/lib/intro-3d-scenes"
 import { STINGER_VARIANTS, type StingerVariantId } from "@/lib/stinger-variants"
 import {
@@ -190,6 +195,23 @@ export function OverlaySelector({
   }, [])
 
   React.useEffect(() => {
+    try {
+      setPreset(parseOverlayPreset(window.localStorage.getItem(OVERLAY_PRESET_STORAGE_KEY) ?? undefined))
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  const selectPreset = React.useCallback((next: OverlayPreset) => {
+    setPreset(next)
+    try {
+      window.localStorage.setItem(OVERLAY_PRESET_STORAGE_KEY, next)
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  React.useEffect(() => {
     if (!isAuthed) {
       setCoopstreamKey("")
       setChannel("")
@@ -297,26 +319,65 @@ export function OverlaySelector({
           <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{description}</p>
           {showPresetSelector ? (
-            <div className="mt-4 flex items-center gap-2">
-              <label
-                htmlFor="overlay-preset"
-                className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground"
+            <div className="mt-5">
+              <div className="flex items-baseline justify-between gap-3">
+                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Preset
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  Mémorisé sur cet appareil · overlays compatibles
+                </div>
+              </div>
+              <div
+                role="radiogroup"
+                aria-label="Preset overlay"
+                className="mt-2.5 grid gap-2 sm:grid-cols-3"
               >
-                Preset
-              </label>
-              <select
-                id="overlay-preset"
-                value={preset}
-                onChange={(e) => setPreset(e.target.value as OverlayPreset)}
-                className="h-8 rounded-md border border-input bg-background px-2 text-xs"
-              >
-                <option value="default">default</option>
-                <option value="lecalme">lecalme</option>
-                <option value="lecalme-rebrand">lecalme-rebrand</option>
-              </select>
-              <span className="text-xs text-muted-foreground">
-                Appliqué aux overlays compatibles.
-              </span>
+                {OVERLAY_PRESET_OPTIONS.map((option) => {
+                  const selected = preset === option.id
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => selectPreset(option.id)}
+                      className={[
+                        "group relative overflow-hidden rounded-xl border px-3 py-3 text-left transition",
+                        selected
+                          ? "border-foreground/40 bg-foreground/[0.06] shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
+                          : "border-border/60 bg-background/40 hover:border-border hover:bg-background/70",
+                      ].join(" ")}
+                    >
+                      <div
+                        className="h-10 w-full rounded-lg ring-1 ring-white/10"
+                        style={{ backgroundImage: option.swatch }}
+                      />
+                      <div className="mt-2.5 flex items-center justify-between gap-2">
+                        <div className="text-sm font-semibold tracking-tight text-foreground">
+                          {option.label}
+                        </div>
+                        <span
+                          className={[
+                            "inline-flex h-4 w-4 items-center justify-center rounded-full border transition",
+                            selected
+                              ? "border-emerald-400/80 bg-emerald-400/90"
+                              : "border-muted-foreground/40 bg-transparent",
+                          ].join(" ")}
+                          aria-hidden
+                        >
+                          {selected ? (
+                            <span className="h-1.5 w-1.5 rounded-full bg-background" />
+                          ) : null}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+                        {option.description}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           ) : null}
 
