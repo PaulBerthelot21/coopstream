@@ -11,7 +11,12 @@ export const metadata: Metadata = {
 export default async function OverlayFollowerGoalPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ channel?: string; coopstreamKey?: string; preset?: string }>
+  searchParams?: Promise<{
+    channel?: string
+    coopstreamKey?: string
+    preset?: string
+    demo?: string
+  }>
 }) {
   const sp = searchParams ? await searchParams : undefined
 
@@ -23,18 +28,26 @@ export default async function OverlayFollowerGoalPage({
       ? sp.coopstreamKey.trim()
       : undefined
   const presetFromQuery = parseOverlayPreset(sp?.preset)
+  const isRebrand = presetFromQuery === "lecalme-rebrand"
+  const demo = sp?.demo === "1" || sp?.demo === "true"
 
   return (
     <div className="flex h-dvh w-dvw items-start justify-end bg-transparent pointer-events-none pr-6 pt-6">
       <OverlayBodyMode />
-      <div className="w-[360px] max-w-[40vw] min-h-[140px]">
+      <div
+        className={
+          isRebrand
+            ? "h-[168px] w-[520px] max-w-[92vw] overflow-visible"
+            : "w-[360px] max-w-[40vw] min-h-[140px]"
+        }
+      >
         <OverlayFollowerGoal
           channel={channelFromQuery}
           coopstreamKey={coopstreamKeyFromQuery}
           preset={presetFromQuery}
+          demo={demo}
         />
       </div>
     </div>
   )
 }
-

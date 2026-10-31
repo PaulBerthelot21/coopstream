@@ -312,6 +312,7 @@ export function OverlaySelector({
               >
                 <option value="default">default</option>
                 <option value="lecalme">lecalme</option>
+                <option value="lecalme-rebrand">lecalme-rebrand</option>
               </select>
               <span className="text-xs text-muted-foreground">
                 Appliqué aux overlays compatibles.

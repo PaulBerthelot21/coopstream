@@ -88,7 +88,9 @@ export async function GET(
       followerGoalTarget: room.followerGoalTarget,
       followerGoalUnit: room.followerGoalUnit,
     })
-  } catch {
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error("GET /api/coopstream/rooms/[key] failed:", message)
     return NextResponse.json(
       { error: "DB indisponible (migrations manquantes ?)" },
       { status: 503 },

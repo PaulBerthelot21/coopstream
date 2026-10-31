@@ -4,6 +4,7 @@ import * as React from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { Target } from "lucide-react"
 import { getOverlayPresetTheme, type OverlayPreset } from "@/lib/overlay/presets"
+import { OverlayFollowerGoalRebrand } from "@/components/overlay/overlay-follower-goal-rebrand"
 
 type ApiOk = {
   follower: {
@@ -35,22 +36,31 @@ export function OverlayFollowerGoal({
   channel,
   coopstreamKey,
   preset = "default",
+  demo = false,
 }: {
   channel?: string
   coopstreamKey?: string
   preset?: OverlayPreset
+  /** Aperçu design avec valeurs fictives (ex: `?demo=1`). */
+  demo?: boolean
 }) {
   const [channelNormalized, setChannelNormalized] = React.useState<string>("")
-  const [followersTotal, setFollowersTotal] = React.useState<number | undefined>(undefined)
+  const [followersTotal, setFollowersTotal] = React.useState<number | undefined>(
+    demo ? 124 : undefined,
+  )
   const [status, setStatus] = React.useState<"idle" | "loading" | "ok" | "no_config" | "error">(
-    "idle",
+    demo ? "ok" : "idle",
   )
 
-  const [goalLoaded, setGoalLoaded] = React.useState(false)
+  const [goalLoaded, setGoalLoaded] = React.useState(demo)
   const [goalError, setGoalError] = React.useState(false)
-  const [goalTitle, setGoalTitle] = React.useState<string | null>(null)
-  const [goalTarget, setGoalTarget] = React.useState<number | null>(null)
-  const [goalUnit, setGoalUnit] = React.useState<string | null>(null)
+  const [goalTitle, setGoalTitle] = React.useState<string | null>(
+    demo ? (preset === "lecalme-rebrand" ? "Follow Goal" : "Objectif followers") : null,
+  )
+  const [goalTarget, setGoalTarget] = React.useState<number | null>(demo ? 150 : null)
+  const [goalUnit, setGoalUnit] = React.useState<string | null>(
+    demo ? (preset === "lecalme-rebrand" ? "follows" : "followers") : null,
+  )
 
   const hasLoadedRef = React.useRef(false)
 
@@ -82,6 +92,7 @@ export function OverlayFollowerGoal({
   }, [channel])
 
   const fetchFollowersTotal = React.useCallback(async () => {
+    if (demo) return
     if (!channelNormalized) return
     if (!hasLoadedRef.current) setStatus("loading")
 
@@ -117,21 +128,23 @@ export function OverlayFollowerGoal({
       setStatus("error")
       setFollowersTotal(undefined)
     }
-  }, [channelNormalized, coopstreamKey])
+  }, [channelNormalized, coopstreamKey, demo])
 
   React.useEffect(() => {
     void fetchFollowersTotal()
   }, [fetchFollowersTotal])
 
   React.useEffect(() => {
+    if (demo) return
     if (!channelNormalized) return
     const id = window.setInterval(() => {
       void fetchFollowersTotal()
     }, POLL_MS)
     return () => window.clearInterval(id)
-  }, [channelNormalized, fetchFollowersTotal])
+  }, [channelNormalized, fetchFollowersTotal, demo])
 
   const fetchRoom = React.useCallback(async () => {
+    if (demo) return
     const key = coopstreamKey?.trim()
     if (!key) return
 
@@ -156,9 +169,10 @@ export function OverlayFollowerGoal({
       setGoalError(true)
       setGoalLoaded(true)
     }
-  }, [coopstreamKey])
+  }, [coopstreamKey, demo])
 
   React.useEffect(() => {
+    if (demo) return
     if (!coopstreamKey?.trim()) {
       setGoalLoaded(false)
       setGoalError(false)
@@ -171,10 +185,11 @@ export function OverlayFollowerGoal({
       void fetchRoom()
     }, ROOM_POLL_MS)
     return () => window.clearInterval(id)
-  }, [coopstreamKey, fetchRoom])
+  }, [coopstreamKey, fetchRoom, demo])
 
-  const subtitle =
-    status === "no_config"
+  const subtitle = demo
+    ? ""
+    : status === "no_config"
       ? "Jeton requis (connecte-toi ou passe `coopstreamKey`)"
       : status === "error"
         ? "Erreur API"
@@ -183,7 +198,8 @@ export function OverlayFollowerGoal({
           : ""
 
   const target = goalTarget
-  const unit = goalUnit?.trim() || "followers"
+  const unit =
+    goalUnit?.trim() || (preset === "lecalme-rebrand" ? "follows" : "followers")
   const current = followersTotal
 
   const canCompute =
@@ -193,8 +209,30 @@ export function OverlayFollowerGoal({
     ? Math.max(0, Math.min(100, (current / target) * 100))
     : 0
 
-  const headerText = goalTitle?.trim() ? goalTitle : "Objectif followers"
+  const headerText = goalTitle?.trim()
+    ? goalTitle
+    : preset === "lecalme-rebrand"
+      ? "Follow Goal"
+      : "Objectif followers"
   const visual = getOverlayPresetTheme(preset)
+
+  if (preset === "lecalme-rebrand") {
+    return (
+      <OverlayFollowerGoalRebrand
+        visual={visual}
+        headerText={headerText}
+        current={current}
+        target={target}
+        unit={unit}
+        subtitle={subtitle}
+        channelNormalized={channelNormalized}
+        coopstreamKey={coopstreamKey}
+        goalLoaded={goalLoaded}
+        goalError={goalError}
+        progressPercent={progressPercent}
+      />
+    )
+  }
 
   return (
     <div className="pointer-events-none select-none h-full w-full overflow-hidden">
