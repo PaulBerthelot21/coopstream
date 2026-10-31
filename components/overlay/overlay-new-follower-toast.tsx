@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { Heart, Sparkles } from "lucide-react"
 import { getOverlayPresetTheme, type OverlayPreset } from "@/lib/overlay/presets"
 import { OverlayNewFollowerRebrand } from "@/components/overlay/overlay-new-follower-rebrand"
+import { useOverlayTestEvent } from "@/lib/overlay/use-overlay-test-event"
 
 function normalizeChannel(input: string) {
   let ch = input.trim()
@@ -118,10 +119,9 @@ export function OverlayNewFollowerToast({
     }
   }, [channelNormalized, coopstreamKey])
 
-  const triggerDevToast = React.useCallback(() => {
+  const triggerDevToast = React.useCallback((displayName = "Dev follower") => {
     const followedAt = new Date().toISOString()
     const login = "dev_follower"
-    const displayName = "Dev follower"
     lastFollowedAtRef.current = followedAt
     lastLoginRef.current = login
     setToast({
@@ -131,6 +131,10 @@ export function OverlayNewFollowerToast({
       followedAt,
     })
   }, [])
+
+  useOverlayTestEvent("follow", (event) => {
+    triggerDevToast(event.displayName)
+  }, coopstreamKey)
 
   React.useEffect(() => {
     if (!channelNormalized) return

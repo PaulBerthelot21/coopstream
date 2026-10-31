@@ -43,6 +43,7 @@ function TwitchLogo({ className }: { className?: string }) {
 const links = [
   { href: "/admin", label: "Admin" },
   { href: "/overlay", label: "Overlay" },
+  { href: "/overlay-test", label: "Test overlays" },
   { href: "/skins", label: "Skins" },
 ] as const
 

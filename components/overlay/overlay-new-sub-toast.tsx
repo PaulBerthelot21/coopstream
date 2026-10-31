@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { Heart, Sparkles } from "lucide-react"
 import { getOverlayPresetTheme, type OverlayPreset } from "@/lib/overlay/presets"
 import { OverlayNewSubRebrand } from "@/components/overlay/overlay-new-sub-rebrand"
+import { useOverlayTestEvent } from "@/lib/overlay/use-overlay-test-event"
 
 function normalizeChannel(input: string) {
   let ch = input.trim()
@@ -110,13 +111,17 @@ export function OverlayNewSubToast({
     })
   }, [channelNormalized, coopstreamKey])
 
-  const triggerDevToast = React.useCallback(() => {
+  const triggerDevToast = React.useCallback((displayName = "Dev sub") => {
     setToast({
       id: `${Date.now()}`,
       login: "dev_sub",
-      displayName: "Dev sub",
+      displayName,
     })
   }, [])
+
+  useOverlayTestEvent("sub", (event) => {
+    triggerDevToast(event.displayName)
+  }, coopstreamKey)
 
   React.useEffect(() => {
     if (!channelNormalized) return

@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { Heart, Sparkles } from "lucide-react"
 import { getOverlayPresetTheme, type OverlayPreset } from "@/lib/overlay/presets"
 import { OverlayNewRaidRebrand } from "@/components/overlay/overlay-new-raid-rebrand"
+import { useOverlayTestEvent } from "@/lib/overlay/use-overlay-test-event"
 
 function normalizeChannel(input: string) {
   let ch = input.trim()
@@ -59,13 +60,17 @@ export function OverlayNewRaidToast({
     return () => window.clearInterval(id)
   }, [channel])
 
-  const triggerDevToast = React.useCallback(() => {
+  const triggerDevToast = React.useCallback((displayName = "Dev raider") => {
     setToast({
       id: `${Date.now()}`,
-      displayName: "Dev raider",
+      displayName,
       viewers: 42,
     })
   }, [])
+
+  useOverlayTestEvent("raid", (event) => {
+    triggerDevToast(event.displayName)
+  }, coopstreamKey)
 
   React.useEffect(() => {
     if (!channelNormalized) return
