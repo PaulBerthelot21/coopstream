@@ -180,7 +180,7 @@ export function OverlayNewRaidToast({
       {IS_DEV ? (
         <button
           type="button"
-          onClick={triggerDevToast}
+          onClick={() => triggerDevToast()}
           className="pointer-events-auto fixed left-4 top-4 z-[9999] rounded-lg bg-black/60 px-3 py-2 text-xs font-medium text-white ring-1 ring-white/20 backdrop-blur hover:bg-black/75"
         >
           Test toast
