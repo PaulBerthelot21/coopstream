@@ -24,12 +24,26 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
+type OverlayGroupId = "live" | "followers" | "challenges" | "scenes"
+
 type OverlayDef = {
   href: string
   title: string
   description: string
   hint?: string
+  group: OverlayGroupId
 }
+
+const OVERLAY_GROUPS: {
+  id: OverlayGroupId | "all"
+  label: string
+}[] = [
+  { id: "all", label: "Tous" },
+  { id: "live", label: "Live" },
+  { id: "followers", label: "Followers" },
+  { id: "challenges", label: "Défis" },
+  { id: "scenes", label: "Scènes" },
+]
 
 const OVERLAYS: OverlayDef[] = [
   {
@@ -37,30 +51,35 @@ const OVERLAYS: OverlayDef[] = [
     title: "Chat Twitch",
     description: "Affiche le chat en mode navigateur dans OBS.",
     hint: "Optionnel : tu peux passer `?channel=...`.",
+    group: "live",
   },
   {
     href: "/overlay-talk",
     title: "Talk tranquille",
     description: "Affiche les derniers messages chat dans un style calme.",
     hint: "Optionnel : `?channel=...` ; preset possible.",
+    group: "live",
   },
   {
-    href: "/overlay-defi-carrousel",
-    title: "Défis / Carrousel",
-    description: "Affiche les challenges avec l’état synchronisé par `coopstreamKey`.",
-    hint: "Requiert une `coopstreamKey` dans l'URL.",
+    href: "/overlay-camera",
+    title: "Caméra",
+    description: "Habillage pour placer ta source vidéo (webcam / capture).",
+    hint: "Pas de config technique a faire dans l'app.",
+    group: "live",
   },
   {
     href: "/overlay-follower-goal",
     title: "Objectif followers",
     description: "Affiche `current/target` à partir du nombre de followers Twitch.",
     hint: "Requiert une `coopstreamKey` (objectif configuré dans `/admin/follower-goal`).",
+    group: "followers",
   },
   {
     href: "/overlay-last-follower",
     title: "Dernier follower",
     description: "Affiche le dernier abonné Twitch (avec compteurs).",
     hint: "Optionnel : `channel` ; pour éviter la config ajoute `coopstreamKey`.",
+    group: "followers",
   },
   {
     href: "/overlay-new-follower",
@@ -68,24 +87,28 @@ const OVERLAYS: OverlayDef[] = [
     description:
       "Affiche un toast animé quand un nouveau follow arrive pendant le live.",
     hint: "Optionnel : `channel` ; pour éviter la config ajoute `coopstreamKey`.",
+    group: "followers",
+  },
+  {
+    href: "/overlay-defi-carrousel",
+    title: "Défis / Carrousel",
+    description: "Affiche les challenges avec l’état synchronisé par `coopstreamKey`.",
+    hint: "Requiert une `coopstreamKey` dans l'URL.",
+    group: "challenges",
   },
   {
     href: "/overlay-wheel-texte",
     title: "Roue (défis texte)",
     description: "Affiche une roulette de défis texte (animation casino).",
     hint: "Requiert une `coopstreamKey` dans l'URL.",
-  },
-  {
-    href: "/overlay-camera",
-    title: "Caméra",
-    description: "Habillage pour placer ta source vidéo (webcam / capture).",
-    hint: "Pas de config technique a faire dans l'app.",
+    group: "challenges",
   },
   {
     href: "/overlay-intro",
     title: "Intro + Minuteur",
     description: "Affiche un fond animé élégant avec un compte à rebours.",
     hint: "Optionnel : `?seconds=300&subtitle=Le%20live%20commence%20bientot&fx=off|low|medium|high`.",
+    group: "scenes",
   },
   {
     href: "/overlay-intro-3d",
@@ -93,6 +116,7 @@ const OVERLAYS: OverlayDef[] = [
     description:
       "Quatre ambiances Three.js (portail, élégance, nébuleuse, vitesse) + minuteur et bloom selon fx.",
     hint: "`?scene=portal|elegance|nebula|pulse` — minuteur / sous-titre / fx : carte « Intro + Minuteur ».",
+    group: "scenes",
   },
   {
     href: "/overlay-intro-cs",
@@ -100,29 +124,55 @@ const OVERLAYS: OverlayDef[] = [
     description:
       "Scène désert / CT : couteau animé type inspect, caisses, poussière. Pas d’asset Valve — GLB perso optionnel.",
     hint: "Place un modèle en `public/models/cs-intro.glb` pour le remplacer. Sinon minuteur / sous-titre / fx : carte « Intro + Minuteur ».",
+    group: "scenes",
   },
   {
     href: "/stinger",
     title: "Stinger OBS (capture)",
     description: "Animation 1920×1080 fond vert pour transition Stinger + chrominance dans OBS.",
     hint: "`?v=diagonal|vertical|iris|glitch` — enregistre l’écran en mode capture puis importe le clip dans OBS.",
+    group: "scenes",
   },
   {
     href: "/overlay-outro",
     title: "Outro",
     description: "Affiche un écran de fin avec un message de remerciement.",
     hint: "Optionnel : `?title=Merci%20d%27avoir%20suivi&subtitle=A%20bientot&fx=off|low|medium|high`.",
+    group: "scenes",
   },
   {
     href: "/overlay-pause",
     title: "Pause",
     description: "Affiche un écran de pause élégant avec message personnalisable.",
     hint: "Optionnel : `?title=Pause&subtitle=Je%20reviens%20dans%205%20min&fx=off|low|medium|high`.",
+    group: "scenes",
   },
 ]
 
 const COOPSTREAM_KEY_STORAGE = "coopstream-last-coopstreamKey"
 const TWITCH_CHANNEL_STORAGE = "coopstream-twitch-channel"
+const OVERLAY_GROUP_STORAGE = "coopstream-overlay-group"
+
+const CHANNEL_OVERLAY_HREFS = new Set([
+  "/overlay-chat",
+  "/overlay-talk",
+  "/overlay-follower-goal",
+  "/overlay-last-follower",
+  "/overlay-new-follower",
+])
+
+function parseOverlayGroup(raw?: string | null): OverlayGroupId | "all" {
+  if (
+    raw === "live" ||
+    raw === "followers" ||
+    raw === "challenges" ||
+    raw === "scenes" ||
+    raw === "all"
+  ) {
+    return raw
+  }
+  return "live"
+}
 
 function normalizeChannel(input: string) {
   let ch = input.trim()
@@ -174,6 +224,7 @@ export function OverlaySelector({
   const [coopstreamKey, setCoopstreamKey] = React.useState<string>("")
   const [channel, setChannel] = React.useState<string>("")
   const [preset, setPreset] = React.useState<OverlayPreset>("default")
+  const [overlayGroup, setOverlayGroup] = React.useState<OverlayGroupId | "all">("live")
   const [introSeconds, setIntroSeconds] = React.useState<string>("300")
   const [introSubtitle, setIntroSubtitle] = React.useState<string>("")
   const [introFx, setIntroFx] = React.useState<"low" | "medium" | "high" | "off">("medium")
@@ -197,6 +248,7 @@ export function OverlaySelector({
   React.useEffect(() => {
     try {
       setPreset(parseOverlayPreset(window.localStorage.getItem(OVERLAY_PRESET_STORAGE_KEY) ?? undefined))
+      setOverlayGroup(parseOverlayGroup(window.localStorage.getItem(OVERLAY_GROUP_STORAGE)))
     } catch {
       // ignore
     }
@@ -210,6 +262,27 @@ export function OverlaySelector({
       // ignore
     }
   }, [])
+
+  const selectOverlayGroup = React.useCallback((next: OverlayGroupId | "all") => {
+    setOverlayGroup(next)
+    try {
+      window.localStorage.setItem(OVERLAY_GROUP_STORAGE, next)
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  const visibleOverlays = React.useMemo(
+    () =>
+      overlayGroup === "all"
+        ? OVERLAYS
+        : OVERLAYS.filter((o) => o.group === overlayGroup),
+    [overlayGroup],
+  )
+
+  const showSharedChannel =
+    isAuthed &&
+    visibleOverlays.some((o) => CHANNEL_OVERLAY_HREFS.has(o.href))
 
   React.useEffect(() => {
     if (!isAuthed) {
@@ -381,8 +454,72 @@ export function OverlaySelector({
             </div>
           ) : null}
 
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            {OVERLAYS.map((o) => (
+          <div className="mt-6 flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div
+                role="tablist"
+                aria-label="Catégories overlays"
+                className="inline-flex flex-wrap gap-1 rounded-xl border border-border/60 bg-muted/30 p-1"
+              >
+                {OVERLAY_GROUPS.map((group) => {
+                  const selected = overlayGroup === group.id
+                  const count =
+                    group.id === "all"
+                      ? OVERLAYS.length
+                      : OVERLAYS.filter((o) => o.group === group.id).length
+                  return (
+                    <button
+                      key={group.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      onClick={() => selectOverlayGroup(group.id)}
+                      className={[
+                        "rounded-lg px-3 py-1.5 text-xs font-medium transition",
+                        selected
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground",
+                      ].join(" ")}
+                    >
+                      {group.label}
+                      <span className="ml-1.5 text-[10px] text-muted-foreground">
+                        {count}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="text-[11px] text-muted-foreground">
+                {visibleOverlays.length} overlay
+                {visibleOverlays.length > 1 ? "s" : ""}
+              </div>
+            </div>
+
+            {showSharedChannel ? (
+              <div className="flex flex-col gap-1.5 rounded-xl border border-border/60 bg-background/40 px-3 py-2.5 sm:flex-row sm:items-center sm:gap-3">
+                <div className="shrink-0 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  Channel
+                </div>
+                <Input
+                  value={channel}
+                  placeholder="anthemtv_"
+                  onChange={(e) => {
+                    const next = normalizeChannel(e.target.value)
+                    setChannel(next)
+                    try {
+                      window.localStorage.setItem(TWITCH_CHANNEL_STORAGE, next)
+                    } catch {
+                      // ignore
+                    }
+                  }}
+                  className="h-8"
+                />
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            {visibleOverlays.map((o) => (
               <Card key={o.href} className="bg-background/40">
                 <CardHeader>
                   <CardTitle>{o.title}</CardTitle>
@@ -391,26 +528,6 @@ export function OverlaySelector({
                 <CardContent className="flex flex-col gap-3">
                   {o.hint ? (
                     <div className="text-xs text-muted-foreground">{o.hint}</div>
-                  ) : null}
-
-                  {isAuthed &&
-                  (o.href === "/overlay-chat" ||
-                    o.href === "/overlay-talk" ||
-                    o.href === "/overlay-follower-goal" ||
-                    o.href === "/overlay-last-follower" ||
-                    o.href === "/overlay-new-follower") ? (
-                    <div className="flex flex-col gap-2">
-                      <div className="text-xs font-semibold text-muted-foreground">
-                        Channel Twitch
-                      </div>
-                      <Input
-                        value={channel}
-                        placeholder="anthemtv_"
-                        onChange={(e) =>
-                          setChannel(normalizeChannel(e.target.value))
-                        }
-                      />
-                    </div>
                   ) : null}
 
                   {o.href === "/overlay-intro-cs" ? (
