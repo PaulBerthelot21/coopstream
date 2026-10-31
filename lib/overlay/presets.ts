@@ -13,6 +13,7 @@ export type OverlayPresetTheme = {
     backgroundUrl: string
     chibiUrl: string
     chibiFollowUrl?: string
+    chibiSubUrl?: string
   }
   accentColor?: string
 }
@@ -57,6 +58,7 @@ const PRESET_THEMES: Record<OverlayPreset, OverlayPresetTheme> = {
       backgroundUrl: "/overlays/lecalme-rebrand/background.jpg",
       chibiUrl: "/overlays/lecalme-rebrand/chibi.png",
       chibiFollowUrl: "/overlays/lecalme-rebrand/chibi-follow.png",
+      chibiSubUrl: "/overlays/lecalme-rebrand/chibi-sub.png",
     },
   },
 }

@@ -7,6 +7,11 @@ export async function signInWithTwitch(params?: { scopes?: string[] }) {
     scopes:
       params?.scopes ??
       // On surcharge les scopes, donc on inclut aussi les scopes nécessaires à l'email.
-      ["user:read:email", "openid", "moderator:read:followers"],
+      [
+        "user:read:email",
+        "openid",
+        "moderator:read:followers",
+        "channel:read:subscriptions",
+      ],
   })
 }

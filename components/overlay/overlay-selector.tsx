@@ -90,6 +90,14 @@ const OVERLAYS: OverlayDef[] = [
     group: "followers",
   },
   {
+    href: "/overlay-new-sub",
+    title: "Nouveau sub (toast)",
+    description:
+      "Affiche un toast animé quand un nouvel abonnement Twitch arrive pendant le live.",
+    hint: "Requiert le scope `channel:read:subscriptions` (reconnecte Twitch) + `coopstreamKey` recommandé.",
+    group: "followers",
+  },
+  {
     href: "/overlay-defi-carrousel",
     title: "Défis / Carrousel",
     description: "Affiche les challenges avec l’état synchronisé par `coopstreamKey`.",
@@ -159,6 +167,7 @@ const CHANNEL_OVERLAY_HREFS = new Set([
   "/overlay-follower-goal",
   "/overlay-last-follower",
   "/overlay-new-follower",
+  "/overlay-new-sub",
 ])
 
 function parseOverlayGroup(raw?: string | null): OverlayGroupId | "all" {
@@ -351,7 +360,8 @@ export function OverlaySelector({
           href === "/overlay-follower-goal" ||
           href === "/overlay-wheel-texte" ||
           href === "/overlay-last-follower" ||
-          href === "/overlay-new-follower") &&
+          href === "/overlay-new-follower" ||
+          href === "/overlay-new-sub") &&
         coopstreamKey
       ) {
         url.searchParams.set("coopstreamKey", coopstreamKey)
@@ -363,7 +373,8 @@ export function OverlaySelector({
           href === "/overlay-talk" ||
           href === "/overlay-follower-goal" ||
           href === "/overlay-last-follower" ||
-          href === "/overlay-new-follower") &&
+          href === "/overlay-new-follower" ||
+          href === "/overlay-new-sub") &&
         channel
       ) {
         url.searchParams.set("channel", normalizeChannel(channel))
@@ -707,6 +718,7 @@ export function OverlaySelector({
                           o.href === "/overlay-follower-goal" ||
                           o.href === "/overlay-last-follower" ||
                           o.href === "/overlay-new-follower" ||
+                          o.href === "/overlay-new-sub" ||
                           o.href === "/overlay-wheel-texte")
                       ) {
                         url.searchParams.set("preset", preset)
