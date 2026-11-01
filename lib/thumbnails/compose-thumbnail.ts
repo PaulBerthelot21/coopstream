@@ -99,15 +99,48 @@ function drawBgEffects(
   ctx: CanvasRenderingContext2D,
   effects: ThumbnailEffects,
 ) {
-  // Grade ciné neutre (noir), pas de teinte violet « cheap »
+  // Grade gauche neutre
   const left = clamp01(effects.leftShade)
   if (left > 0.01) {
-    const g = ctx.createLinearGradient(0, 0, THUMB_W * 0.55, 0)
-    g.addColorStop(0, `rgba(0,0,0,${0.62 * left})`)
-    g.addColorStop(0.55, `rgba(0,0,0,${0.18 * left})`)
+    const g = ctx.createLinearGradient(0, 0, THUMB_W * 0.58, 0)
+    g.addColorStop(0, `rgba(0,0,0,${0.55 * left})`)
+    g.addColorStop(0.5, `rgba(0,0,0,${0.2 * left})`)
     g.addColorStop(1, "rgba(0,0,0,0)")
     ctx.fillStyle = g
     ctx.fillRect(0, 0, THUMB_W, THUMB_H)
+  }
+
+  // Voile ombré zone titres (bas-gauche) — fait ressortir le texte sur ciné clair
+  const veil = clamp01(effects.textVeil ?? 0)
+  if (veil > 0.01) {
+    // Dégradé depuis le coin bas-gauche
+    const corner = ctx.createRadialGradient(
+      0,
+      THUMB_H,
+      THUMB_H * 0.05,
+      THUMB_W * 0.08,
+      THUMB_H * 0.92,
+      THUMB_W * 0.72,
+    )
+    corner.addColorStop(0, `rgba(0,0,0,${0.78 * veil})`)
+    corner.addColorStop(0.45, `rgba(0,0,0,${0.42 * veil})`)
+    corner.addColorStop(1, "rgba(0,0,0,0)")
+    ctx.fillStyle = corner
+    ctx.fillRect(0, 0, THUMB_W, THUMB_H)
+
+    // Renfort horizontal bas (sol clair du gameplay)
+    const bottom = ctx.createLinearGradient(0, THUMB_H * 0.35, 0, THUMB_H)
+    bottom.addColorStop(0, "rgba(0,0,0,0)")
+    bottom.addColorStop(0.45, `rgba(0,0,0,${0.22 * veil})`)
+    bottom.addColorStop(1, `rgba(0,0,0,${0.55 * veil})`)
+    ctx.fillStyle = bottom
+    // Clip approximatif côté texte (gauche ~55%)
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(0, 0, THUMB_W * 0.58, THUMB_H)
+    ctx.clip()
+    ctx.fillRect(0, 0, THUMB_W, THUMB_H)
+    ctx.restore()
   }
 
   const vig = clamp01(effects.vignette)
@@ -320,18 +353,16 @@ function drawBadge(ctx: CanvasRenderingContext2D, item: TextItem) {
   const fontSize = Math.max(13, Math.min(box.h * 0.38, 22) * item.sizeScale)
   const tracking = fontSize * 0.18
   const radius = 4
-  const accentW = 3
+  const sq = Math.min(10, Math.max(8, box.h * 0.3))
 
   ctx.font = `700 ${fontSize}px ${font.stack}`
   const labelW = measureTrackedWidth(ctx, label || "BADGE", tracking)
-  const padX = 14
-  const padL = 12 + accentW
-  const pillW = Math.min(box.w, labelW + padL + padX)
+  const pillW = Math.min(box.w, 10 + sq + 8 + labelW + 14)
   const pillH = Math.max(box.h, fontSize + 16)
   const pillX = box.x
   const pillY = box.y
 
-  // Fond verre sombre (overlays Le Calme)
+  // Fond verre sombre
   roundRect(ctx, pillX, pillY, pillW, pillH, radius)
   ctx.fillStyle = "rgba(8,6,14,0.72)"
   ctx.fill()
@@ -340,14 +371,16 @@ function drawBadge(ctx: CanvasRenderingContext2D, item: TextItem) {
   ctx.lineWidth = 1
   ctx.stroke()
 
-  // Accent couleur à gauche
+  // Carré accent + label
+  const sqX = pillX + 10
+  const sqY = pillY + (pillH - sq) / 2
   ctx.fillStyle = accent
-  ctx.fillRect(pillX, pillY + 4, accentW, pillH - 8)
+  ctx.fillRect(sqX, sqY, sq, sq)
 
   ctx.font = `700 ${fontSize}px ${font.stack}`
   ctx.textBaseline = "middle"
   ctx.fillStyle = "#FFFFFF"
-  let cursor = pillX + padL
+  let cursor = sqX + sq + 8
   const ty = pillY + pillH / 2 + 0.5
   for (const ch of label || "BADGE") {
     ctx.fillText(ch, cursor, ty)
@@ -503,8 +536,8 @@ export function layersFromTemplate(
 }
 
 /**
- * Démo Bryan — alignée sur l’intro Le Calme :
- * Geist italic, titres pleins blancs, badge verre + accent.
+ * Démo Bryan — calquée sur ta ref :
+ * REDIFF · UNE NOUVELLE (outline) · AVENTURE (plein) · voile bas-gauche.
  */
 export function defaultEditorState(): ThumbnailEditorState {
   const template = getThumbnailTemplate("bryan-cine")
@@ -522,28 +555,27 @@ export function defaultEditorState(): ThumbnailEditorState {
         locked: false,
       },
       head: {
-        rect: { x: 0.46, y: 0.1, w: 0.56, h: 0.94 },
+        rect: { x: 0.48, y: 0.18, w: 0.54, h: 0.88 },
         visible: true,
         locked: false,
       },
       prop: layerFromRect(template.prop, false),
     },
     texts: [
-      createBadgeItem("rediff", { x: 0.05, y: 0.1, w: 0.2, h: 0.055 }),
-      // Comme « ARRIVE BIENTÔT » : plein blanc, italic, Geist
+      createBadgeItem("rediff", { x: 0.04, y: 0.06, w: 0.2, h: 0.055 }),
       createTextItem({
         text: "UNE NOUVELLE",
         fontId: "lecalme",
-        color: "#FFFFFF",
-        stroke: "transparent",
-        strokeWidth: 0,
-        sizeScale: 0.55,
+        color: "transparent",
+        stroke: "rgba(255,255,255,0.95)",
+        strokeWidth: 2.5,
+        sizeScale: 0.58,
         align: "left",
         italic: true,
         uppercase: true,
-        fillMode: "solid",
+        fillMode: "outline",
         tightTracking: true,
-        rect: { x: 0.05, y: 0.22, w: 0.48, h: 0.14 },
+        rect: { x: 0.04, y: 0.52, w: 0.5, h: 0.12 },
       }),
       createTextItem({
         text: "AVENTURE",
@@ -551,23 +583,24 @@ export function defaultEditorState(): ThumbnailEditorState {
         color: "#FFFFFF",
         stroke: "transparent",
         strokeWidth: 0,
-        sizeScale: 1.05,
+        sizeScale: 1.12,
         align: "left",
         italic: true,
         uppercase: true,
         fillMode: "solid",
         tightTracking: true,
-        rect: { x: 0.05, y: 0.36, w: 0.5, h: 0.26 },
+        rect: { x: 0.04, y: 0.64, w: 0.52, h: 0.24 },
       }),
     ],
     titleBand: null,
     effects: {
       ...DEFAULT_EFFECTS,
-      leftShade: 0.28,
-      vignette: 0.2,
+      leftShade: 0.35,
+      textVeil: 0.78,
+      vignette: 0.18,
       headShadow: true,
-      headShadowBlur: 22,
-      headShadowOpacity: 0.4,
+      headShadowBlur: 26,
+      headShadowOpacity: 0.45,
     },
   }
 }

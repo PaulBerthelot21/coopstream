@@ -61,7 +61,7 @@ import {
   type ThumbnailEffects,
 } from "@/lib/thumbnails"
 
-const STORAGE_KEY = "coopstream-thumbnail-editor-v10"
+const STORAGE_KEY = "coopstream-thumbnail-editor-v11"
 
 type PanelTab = "layers" | "edit" | "media" | "effects"
 
@@ -433,7 +433,14 @@ export function ThumbnailEditor() {
         ...prev,
         templateId: parsed.templateId || prev.templateId,
         effects: parsed.effects
-          ? { ...prev.effects, ...parsed.effects }
+          ? {
+              ...prev.effects,
+              ...parsed.effects,
+              textVeil:
+                typeof parsed.effects.textVeil === "number"
+                  ? parsed.effects.textVeil
+                  : prev.effects.textVeil,
+            }
           : prev.effects,
         layers: parsed.layers
           ? {
@@ -1038,6 +1045,21 @@ export function ThumbnailEditor() {
                     value={state.effects.leftShade}
                     onChange={(e) =>
                       patchEffects({ leftShade: Number(e.target.value) })
+                    }
+                    className="mt-2 w-full"
+                  />
+                </label>
+                <label className="block text-[12px] text-muted-foreground">
+                  Voile texte bas-gauche (
+                  {Math.round((state.effects.textVeil ?? 0) * 100)}%)
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.02}
+                    value={state.effects.textVeil ?? 0}
+                    onChange={(e) =>
+                      patchEffects({ textVeil: Number(e.target.value) })
                     }
                     className="mt-2 w-full"
                   />

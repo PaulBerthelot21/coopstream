@@ -63,6 +63,8 @@ export type TextItem = {
 /** Effets fond / sujet (lisibilité sur ciné & gameplay) */
 export type ThumbnailEffects = {
   leftShade: number
+  /** Voile ombré bas-gauche (zone titres) 0–1 */
+  textVeil: number
   vignette: number
   headShadow: boolean
   headShadowBlur: number
@@ -99,8 +101,9 @@ export type ThumbnailEditorState = {
 export type SelectedId = ImageLayerId | string
 
 export const DEFAULT_EFFECTS: ThumbnailEffects = {
-  leftShade: 0.55,
-  vignette: 0.35,
+  leftShade: 0.4,
+  textVeil: 0.65,
+  vignette: 0.25,
   headShadow: true,
   headShadowBlur: 28,
   headShadowOpacity: 0.55,

@@ -32,11 +32,12 @@ export const THUMBNAIL_TEMPLATES: ThumbnailTemplate[] = [
     head: { x: 0.42, y: 0.08, w: 0.62, h: 0.98, fit: "contain" },
     prop: { x: 0.04, y: 0.72, w: 0.16, h: 0.2, fit: "contain" },
     effects: {
-      leftShade: 0.72,
-      vignette: 0.42,
+      leftShade: 0.35,
+      textVeil: 0.78,
+      vignette: 0.18,
       headShadow: true,
-      headShadowBlur: 36,
-      headShadowOpacity: 0.62,
+      headShadowBlur: 26,
+      headShadowOpacity: 0.45,
     },
   },
   {
