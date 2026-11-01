@@ -35,10 +35,10 @@ type Socials = {
   instagram: string | null
 }
 
-const SOCIAL_TONES = {
-  tt: { border: "#7c6cf0", glow: "#a78bfa", iconBg: "linear-gradient(145deg, #25f4ee33, #fe2c5533)", handle: "#c4b5fd" },
-  ig: { border: "#c084fc", glow: "#e879f9", iconBg: "linear-gradient(145deg, #f58529aa, #dd2a7b99, #8134af99)", handle: "#e9d5ff" },
-  yt: { border: "#f87171", glow: "#fb7185", iconBg: "linear-gradient(145deg, #ff000066, #ff444433)", handle: "#fecaca" },
+const SOCIAL_ICON_BG = {
+  tt: "linear-gradient(145deg, #25f4ee44, #fe2c5544)",
+  ig: "linear-gradient(145deg, #f58529aa, #dd2a7b99, #8134af99)",
+  yt: "linear-gradient(145deg, #ff000066, #ff444433)",
 } as const
 
 function SocialCard({
@@ -46,75 +46,85 @@ function SocialCard({
   handle,
   icon,
   delay,
-  index,
   toneKey,
+  marbleBg,
+  accent,
 }: {
   label: string
   handle: string
   icon: React.ReactNode
   delay: number
-  index: number
-  toneKey: keyof typeof SOCIAL_TONES
+  toneKey: keyof typeof SOCIAL_ICON_BG
+  marbleBg?: string
+  accent: string
 }) {
-  const tone = SOCIAL_TONES[toneKey]
   return (
     <motion.div
       initial={{ opacity: 0, x: 24 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.55, delay, ease: [0.22, 1, 0.36, 1] }}
-      className="relative min-w-0 flex-1 overflow-hidden rounded-2xl border bg-[#12081f]/85 px-4 py-4 backdrop-blur-md"
-      style={{
-        borderColor: `${tone.border}aa`,
-        boxShadow: `0 0 0 1px ${tone.glow}22, 0 12px 30px rgba(0,0,0,0.55)`,
-      }}
+      className="relative min-w-0 flex-1"
+      style={{ minHeight: 108 }}
     >
-      <motion.div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-2xl"
-        style={{ boxShadow: `inset 0 0 0 1px ${tone.glow}44` }}
-        animate={{
-          boxShadow: [
-            `inset 0 0 0 1px ${tone.glow}28`,
-            `inset 0 0 0 1px ${tone.glow}aa`,
-            `inset 0 0 0 1px ${tone.glow}28`,
-          ],
-        }}
-        transition={{
-          duration: 2.6 + index * 0.35,
-          delay: delay + 0.25,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-      <motion.div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[2px]"
+      <div
+        className="relative flex h-full w-full flex-col overflow-hidden rounded-[28px] border-[3px] border-[#2a1f5c] bg-[#1a1035]"
         style={{
-          background: `linear-gradient(90deg, transparent, ${tone.glow}, transparent)`,
+          boxShadow:
+            "0 0 0 1.5px rgba(236,240,255,0.95), 0 14px 36px rgba(0,0,0,0.55)",
         }}
-        animate={{ x: ["-100%", "100%"] }}
-        transition={{
-          duration: 2.4 + index * 0.3,
-          delay: delay + 0.4,
-          repeat: Infinity,
-          ease: "easeInOut",
-          repeatDelay: 0.8,
-        }}
-      />
-      <div className="relative flex items-center gap-3.5 overflow-visible">
-        <div
-          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-white ring-1 ring-white/20 [&_svg]:h-6 [&_svg]:w-6"
-          style={{ background: tone.iconBg }}
-        >
-          {icon}
+      >
+        {marbleBg ? (
+          <Image
+            src={marbleBg}
+            alt=""
+            fill
+            className="object-cover"
+            sizes="280px"
+            unoptimized
+          />
+        ) : null}
+        {/* Contenu clipé, bordure au-dessus du marbre */}
+        <div className="pointer-events-none absolute inset-[3px] overflow-hidden rounded-[24px]">
+          <div className="absolute inset-0 bg-[#0c061c]/45" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0c061c]/40 via-transparent to-[#0c061c]/25" />
         </div>
-        <div className="min-w-0 py-0.5">
-          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">{label}</div>
-          <div
-            className="mt-0.5 overflow-hidden text-ellipsis whitespace-nowrap pb-1 text-[19px] font-black leading-[1.2] tracking-tight"
-            style={{ color: tone.handle, textShadow: "0 2px 8px rgba(0,0,0,0.85)" }}
-          >
-            {handle}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-[2] rounded-[28px]"
+          style={{ boxShadow: "inset 0 0 0 1px rgba(236,240,255,0.35)" }}
+        />
+
+        <div className="relative z-10 flex h-full flex-col items-center justify-center px-4 py-3.5 text-center">
+          <div className="flex w-full items-center gap-2">
+            <div
+              className="h-[2px] min-w-[10px] flex-1 rounded-full"
+              style={{ backgroundColor: accent, boxShadow: `0 0 8px ${accent}` }}
+            />
+            <div
+              className="shrink-0 text-[10px] font-black uppercase tracking-[0.18em] text-white"
+              style={{ textShadow: "0 2px 10px rgba(0,0,0,0.85)" }}
+            >
+              {label}
+            </div>
+            <div
+              className="h-[2px] min-w-[10px] flex-1 rounded-full"
+              style={{ backgroundColor: accent, boxShadow: `0 0 8px ${accent}` }}
+            />
+          </div>
+
+          <div className="mt-2 flex w-full items-center justify-center gap-3">
+            <div
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white ring-1 ring-white/20 [&_svg]:h-5 [&_svg]:w-5"
+              style={{ background: SOCIAL_ICON_BG[toneKey] }}
+            >
+              {icon}
+            </div>
+            <div
+              className="max-w-[70%] truncate pb-0.5 text-left text-[18px] font-black leading-[1.2] tracking-tight text-white"
+              style={{ textShadow: "0 3px 14px rgba(0,0,0,0.9)" }}
+            >
+              {handle}
+            </div>
           </div>
         </div>
       </div>
@@ -387,7 +397,7 @@ export function OverlayIntroRebrand({
         }
       : null,
   ].filter(Boolean) as Array<{
-    key: keyof typeof SOCIAL_TONES
+    key: keyof typeof SOCIAL_ICON_BG
     label: string
     handle: string
     icon: React.ReactNode
@@ -644,15 +654,16 @@ export function OverlayIntroRebrand({
           {socialCards.length > 0 ? (
             <div className="flex w-full flex-nowrap items-stretch gap-3">
               {socialCards.map((card, i) => (
-                <SocialCard
-                  key={card.key}
-                  label={card.label}
-                  handle={card.handle}
-                  icon={card.icon}
-                  delay={0.85 + i * 0.1}
-                  index={i}
-                  toneKey={card.key}
-                />
+                  <SocialCard
+                    key={card.key}
+                    label={card.label}
+                    handle={card.handle}
+                    icon={card.icon}
+                    delay={0.85 + i * 0.1}
+                    toneKey={card.key}
+                    marbleBg={marbleBg}
+                    accent={accent}
+                  />
               ))}
             </div>
           ) : (
