@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import Image from "next/image"
-import { motion } from "framer-motion"
 
 import { OverlayCamera } from "@/components/overlay/overlay-camera"
 import { OverlayTwitchChat } from "@/components/overlay/overlay-twitch-chat"
@@ -54,9 +53,9 @@ export function OverlaySceneChat({
 }) {
   const visual = getOverlayPresetTheme(preset)
   const accent = visual.accentColor ?? "#ffc4a8"
-  const bg =
-    visual.assets?.introBackgroundUrl ?? visual.assets?.backgroundUrl ?? null
   const marbleBg = visual.assets?.backgroundUrl
+  /** Fond pré-rendu (marbre + voiles CSS) — à utiliser aussi en image OBS */
+  const bakedBg = "/overlays/lecalme-rebrand/scene-chat-bg.jpg"
   const isRebrand = preset === "lecalme-rebrand"
 
   const showBg = layer === "preview" || layer === "bg"
@@ -166,34 +165,16 @@ export function OverlaySceneChat({
 
   return (
     <div className="pointer-events-none relative h-full w-full overflow-hidden bg-transparent">
-      {showBg && bg ? (
+      {showBg ? (
         <div className="absolute inset-0 z-0 overflow-hidden">
-          <motion.div
-            className="absolute inset-[-6%]"
-            animate={
-              layer === "preview"
-                ? { scale: [1.03, 1.08, 1.03], x: [0, -10, 0] }
-                : undefined
-            }
-            transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <Image
-              src={bg}
-              alt=""
-              fill
-              priority
-              className="object-cover"
-              sizes="100vw"
-              unoptimized
-            />
-          </motion.div>
-          <div className="absolute inset-0 bg-[#0c061c]/28" />
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(100deg, rgba(6,3,14,0.12) 0%, transparent 30%, transparent 52%, rgba(8,4,18,0.4) 72%, rgba(4,2,10,0.7) 100%)",
-            }}
+          <Image
+            src={bakedBg}
+            alt=""
+            fill
+            priority
+            className="object-cover"
+            sizes="100vw"
+            unoptimized
           />
         </div>
       ) : null}

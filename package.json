@@ -8,7 +8,9 @@
     "prisma:generate": "node scripts/prisma-generate.mjs",
     "build": "npm run prisma:generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "export:scene-chat-bg": "node scripts/export-scene-chat-bg.mjs",
+    "export:scene-chat-bg-brand": "node scripts/export-scene-chat-bg-brand.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.5.0",

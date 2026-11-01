@@ -670,7 +670,7 @@ export function OverlaySelector({
                         }
                         className="h-8 rounded-md border border-input bg-background px-2 text-xs"
                       >
-                        <option value="bg">bg — fond marbre seul</option>
+                        <option value="bg">bg — fond (ou image OBS scene-chat-bg)</option>
                         <option value="frame">frame — cadres (centres transparents)</option>
                         <option value="chat">chat — widget chat seul</option>
                         <option value="preview">preview — tout-en-un</option>
