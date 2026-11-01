@@ -143,7 +143,7 @@ const OVERLAYS: OverlayDef[] = [
     title: "Chat",
     description:
       "Scène Just Chatting : écran à gauche, cam en haut à droite, chat dessous.",
-    hint: "Optionnel : `?channel=...` + `coopstreamKey`. En OBS : game dans le cadre gauche, webcam dans le cadre cam.",
+    hint: "OBS (bas→haut) : `bg` → Firefox/game + Webcam → `frame` → `chat`. Centres des cadres = transparents.",
     group: "scenes",
   },
 ]
@@ -236,6 +236,9 @@ export function OverlaySelector({
   const [pauseTitle, setPauseTitle] = React.useState<string>("Pause")
   const [pauseSubtitle, setPauseSubtitle] = React.useState<string>("")
   const [pauseFx, setPauseFx] = React.useState<"low" | "medium" | "high" | "off">("medium")
+  const [sceneChatLayer, setSceneChatLayer] = React.useState<
+    "preview" | "bg" | "frame" | "chat"
+  >("frame")
   React.useEffect(() => {
     try {
       setOrigin(window.location.origin)
@@ -649,6 +652,40 @@ export function OverlaySelector({
                     </div>
                   ) : null}
 
+                  {o.href === "/overlay-scene-chat" ? (
+                    <div className="flex flex-col gap-2">
+                      <div className="text-xs font-semibold text-muted-foreground">
+                        Calque OBS
+                      </div>
+                      <select
+                        value={sceneChatLayer}
+                        onChange={(e) =>
+                          setSceneChatLayer(
+                            (e.target.value as
+                              | "preview"
+                              | "bg"
+                              | "frame"
+                              | "chat") ?? "frame",
+                          )
+                        }
+                        className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                      >
+                        <option value="bg">bg — fond marbre seul</option>
+                        <option value="frame">frame — cadres (centres transparents)</option>
+                        <option value="chat">chat — widget chat seul</option>
+                        <option value="preview">preview — tout-en-un</option>
+                      </select>
+                      <div className="text-[11px] leading-snug text-muted-foreground">
+                        Ordre OBS (bas → haut) :{" "}
+                        <span className="font-medium text-foreground">bg</span> →
+                        Firefox/game + Webcam →{" "}
+                        <span className="font-medium text-foreground">frame</span> →{" "}
+                        <span className="font-medium text-foreground">chat</span>.
+                        Sources navigateur 1920×1080, fond transparent cochée.
+                      </div>
+                    </div>
+                  ) : null}
+
                   {(() => {
                     const baseHref = buildOverlayHref(o.href)
                     const relativeHref = (() => {
@@ -712,6 +749,9 @@ export function OverlaySelector({
                         if (pauseFx !== "medium") {
                           url.searchParams.set("fx", pauseFx)
                         }
+                      }
+                      if (o.href === "/overlay-scene-chat") {
+                        url.searchParams.set("layer", sceneChatLayer)
                       }
 
                       if (!url.searchParams.toString()) return url.pathname

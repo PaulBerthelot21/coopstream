@@ -1,11 +1,19 @@
 import type { Metadata } from "next"
 
 import { OverlayBodyMode } from "@/components/overlay/overlay-body-mode"
-import { OverlaySceneChat } from "@/components/overlay/overlay-scene-chat"
+import {
+  OverlaySceneChat,
+  type SceneChatLayer,
+} from "@/components/overlay/overlay-scene-chat"
 import { parseOverlayPreset } from "@/lib/overlay/presets"
 
 export const metadata: Metadata = {
   title: "Overlay Scène Chat",
+}
+
+function parseSceneChatLayer(raw?: string | null): SceneChatLayer {
+  if (raw === "frame" || raw === "chat" || raw === "bg") return raw
+  return "preview"
 }
 
 export default async function OverlaySceneChatPage({
@@ -15,6 +23,7 @@ export default async function OverlaySceneChatPage({
     channel?: string
     preset?: string
     coopstreamKey?: string
+    layer?: string
   }>
 }) {
   const sp = searchParams ? await searchParams : undefined
@@ -25,6 +34,7 @@ export default async function OverlaySceneChatPage({
       ? sp.coopstreamKey.trim()
       : undefined
   const preset = parseOverlayPreset(sp?.preset)
+  const layer = parseSceneChatLayer(sp?.layer)
 
   return (
     <div className="h-dvh w-dvw bg-transparent pointer-events-none">
@@ -33,6 +43,7 @@ export default async function OverlaySceneChatPage({
         channel={channel}
         coopstreamKey={coopstreamKey}
         preset={preset}
+        layer={layer}
       />
     </div>
   )
