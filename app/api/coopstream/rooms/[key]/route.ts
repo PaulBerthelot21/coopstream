@@ -48,6 +48,9 @@ export async function GET(
         followerGoalTitle: true,
         followerGoalTarget: true,
         followerGoalUnit: true,
+        socialYoutube: true,
+        socialTiktok: true,
+        socialInstagram: true,
       },
     })
 
@@ -60,6 +63,9 @@ export async function GET(
         followerGoalTitle: null as string | null,
         followerGoalTarget: null as number | null,
         followerGoalUnit: null as string | null,
+        socialYoutube: null as string | null,
+        socialTiktok: null as string | null,
+        socialInstagram: null as string | null,
       })
     }
 
@@ -87,6 +93,9 @@ export async function GET(
       followerGoalTitle: room.followerGoalTitle,
       followerGoalTarget: room.followerGoalTarget,
       followerGoalUnit: room.followerGoalUnit,
+      socialYoutube: room.socialYoutube,
+      socialTiktok: room.socialTiktok,
+      socialInstagram: room.socialInstagram,
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)

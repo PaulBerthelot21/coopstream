@@ -15,4 +15,12 @@ export type CoopStreamEvent =
       type: "UPSERT_FOLLOWER_GOAL"
       payload: { title: string; target: number; unit?: string }
     }
+  | {
+      type: "UPSERT_SOCIAL_LINKS"
+      payload: {
+        youtube?: string
+        tiktok?: string
+        instagram?: string
+      }
+    }
 

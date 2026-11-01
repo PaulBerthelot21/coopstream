@@ -371,7 +371,8 @@ export function OverlaySelector({
           href === "/overlay-last-follower" ||
           href === "/overlay-new-follower" ||
           href === "/overlay-new-sub" ||
-          href === "/overlay-new-raid") &&
+          href === "/overlay-new-raid" ||
+          href === "/overlay-intro") &&
         coopstreamKey
       ) {
         url.searchParams.set("coopstreamKey", coopstreamKey)
@@ -738,7 +739,8 @@ export function OverlaySelector({
                           o.href === "/overlay-new-follower" ||
                           o.href === "/overlay-new-sub" ||
                           o.href === "/overlay-new-raid" ||
-                          o.href === "/overlay-wheel-texte")
+                          o.href === "/overlay-wheel-texte" ||
+                          o.href === "/overlay-intro")
                       ) {
                         url.searchParams.set("preset", preset)
                       }

@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Target, Sparkles, Zap } from "lucide-react"
+import { Share2, Target, Sparkles, Zap } from "lucide-react"
 
 import { AdminProtected } from "@/components/auth/admin-protected"
 
@@ -69,6 +69,23 @@ export default async function AdminPage() {
             <CardContent className="flex justify-end">
               <Button asChild size="sm" variant="secondary">
                 <Link href="/admin/wheel">Ouvrir</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-background/60">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Share2 className="h-4 w-4 text-primary" />
+                Réseaux sociaux
+              </CardTitle>
+              <CardDescription>
+                YouTube, TikTok, Instagram pour l’écran d’intro.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-end">
+              <Button asChild size="sm" variant="secondary">
+                <Link href="/admin/social">Ouvrir</Link>
               </Button>
             </CardContent>
           </Card>

@@ -77,6 +77,7 @@ export async function POST(
       "UPDATE_PROGRESS",
       "TRIGGER_REWARD",
       "UPSERT_FOLLOWER_GOAL",
+      "UPSERT_SOCIAL_LINKS",
     ].includes(type)
   ) {
     return NextResponse.json({ error: "type d'event invalide" }, { status: 400 })
@@ -252,6 +253,26 @@ export async function POST(
             followerGoalTitle: title || null,
             followerGoalTarget: target ?? null,
             followerGoalUnit: unit || null,
+          },
+        })
+
+        return NextResponse.json({ ok: true })
+      }
+
+      case "UPSERT_SOCIAL_LINKS": {
+        const youtube =
+          typeof payload?.youtube === "string" ? payload.youtube.trim() : ""
+        const tiktok =
+          typeof payload?.tiktok === "string" ? payload.tiktok.trim() : ""
+        const instagram =
+          typeof payload?.instagram === "string" ? payload.instagram.trim() : ""
+
+        await prisma.coopStreamRoom.update({
+          where: { id: roomId },
+          data: {
+            socialYoutube: youtube || null,
+            socialTiktok: tiktok || null,
+            socialInstagram: instagram || null,
           },
         })
 

@@ -30,6 +30,11 @@ model CoopStreamRoom {
   followerGoalTarget Int?
   followerGoalUnit String?
 
+  /// Pseudos / handles réseaux (intro & overlays).
+  socialYoutube String?
+  socialTiktok String?
+  socialInstagram String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
