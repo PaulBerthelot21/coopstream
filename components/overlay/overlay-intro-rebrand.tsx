@@ -239,10 +239,13 @@ export function OverlayIntroRebrand({
   subtitle?: string
   coopstreamKey?: string
   channel?: string
-  /** `outro` = même DA que l’intro, planning à la place du minuteur, titre MERCI / D'AVOIR / SUIVI */
-  variant?: "intro" | "outro"
+  /** `outro` = planning à la place du minuteur ; `pause` = sans minuteur ni planning */
+  variant?: "intro" | "outro" | "pause"
 }) {
   const isOutro = variant === "outro"
+  const isPause = variant === "pause"
+  const showPlanning = isOutro
+  const hideTimer = isOutro || isPause
   const visual = getOverlayPresetTheme("lecalme-rebrand")
   const accent = visual.accentColor ?? "#ffc4a8"
   const bg = visual.assets?.introBackgroundUrl ?? visual.assets?.backgroundUrl
@@ -266,12 +269,12 @@ export function OverlayIntroRebrand({
   const [goalUnit, setGoalUnit] = React.useState("followers")
 
   React.useEffect(() => {
-    if (isOutro) return
+    if (hideTimer) return
     setRemaining(Math.max(0, startSeconds))
-  }, [startSeconds, isOutro])
+  }, [startSeconds, hideTimer])
 
   React.useEffect(() => {
-    if (isOutro) return
+    if (hideTimer) return
     if (remaining <= 0) return
     const id = window.setInterval(() => {
       setRemaining((prev) => Math.max(0, prev - 1))
@@ -457,7 +460,7 @@ export function OverlayIntroRebrand({
         {/* Droite : followers (+ planning en outro, espaces égaux jusqu’aux réseaux) */}
         <div
           className={
-            isOutro
+            showPlanning
               ? "absolute right-6 top-6 bottom-[10.5rem] z-20 flex w-[min(100%,380px)] flex-col sm:right-10 sm:top-8 sm:bottom-[12rem]"
               : "absolute right-6 top-6 z-20 w-[min(100%,380px)] sm:right-10 sm:top-8"
           }
@@ -578,7 +581,7 @@ export function OverlayIntroRebrand({
           </div>
         </motion.div>
 
-        {isOutro ? (
+        {showPlanning ? (
           <>
             <div className="min-h-3 flex-1" aria-hidden />
             <motion.div
@@ -660,6 +663,62 @@ export function OverlayIntroRebrand({
                       </motion.div>
                     ) : null}
                   </>
+                ) : isPause ? (
+                  <>
+                    <TitleWord
+                      from={-160}
+                      meet={22}
+                      delay={0.05}
+                      className="ml-[8%]"
+                      style={{ ...outlineStyle, fontSize: "clamp(3.2rem, 11vmin, 8.5rem)" }}
+                    >
+                      PETITE
+                    </TitleWord>
+                    <TitleWord
+                      from={180}
+                      meet={-26}
+                      delay={0.05}
+                      className="-mt-1 ml-[10%]"
+                      style={{ ...outlineStyle, fontSize: "clamp(4rem, 14vmin, 10rem)" }}
+                    >
+                      PAUSE
+                    </TitleWord>
+                    <TitleWord
+                      from={-140}
+                      meet={18}
+                      delay={0.28}
+                      className="mt-2 ml-[20%] text-white"
+                      style={{
+                        fontSize: "clamp(2rem, 6.5vmin, 4.4rem)",
+                        textShadow: "0 4px 22px rgba(0,0,0,0.9)",
+                      }}
+                    >
+                      ON REVIENT
+                    </TitleWord>
+                    <TitleWord
+                      from={150}
+                      meet={-20}
+                      delay={0.28}
+                      className="mt-3 ml-[28%] text-white sm:mt-4"
+                      style={{
+                        fontSize: "clamp(2rem, 6.5vmin, 4.4rem)",
+                        textShadow: "0 4px 22px rgba(0,0,0,0.9)",
+                      }}
+                    >
+                      BIENTÔT
+                    </TitleWord>
+                    {subtitle.trim() ? (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.55 }}
+                        className="mt-4 ml-[12%] max-w-[90%] text-[clamp(1rem,2.2vmin,1.35rem)] font-semibold not-italic normal-case tracking-normal text-white/70"
+                        style={{ textShadow: "0 2px 12px rgba(0,0,0,0.85)" }}
+                      >
+                        {subtitle.trim()}
+                      </motion.div>
+                    ) : null}
+                  </>
                 ) : (
                   <>
                     <TitleWord
@@ -710,8 +769,8 @@ export function OverlayIntroRebrand({
             </div>
           </div>
 
-          {/* Compteur — droite (intro only) ; spacer pour garder le titre centré en outro */}
-          {isOutro ? (
+          {/* Compteur — droite (intro only) ; spacer pour garder le titre centré sans minuteur */}
+          {hideTimer ? (
             <div className="w-[22%] shrink-0" aria-hidden />
           ) : (
             <motion.div

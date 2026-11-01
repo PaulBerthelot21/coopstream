@@ -346,6 +346,7 @@ export function OverlaySelector({
           href === "/overlay-new-raid" ||
           href === "/overlay-intro" ||
           href === "/overlay-outro" ||
+          href === "/overlay-pause" ||
           href === "/overlay-planning") &&
         coopstreamKey
       ) {
@@ -360,7 +361,10 @@ export function OverlaySelector({
           href === "/overlay-last-follower" ||
           href === "/overlay-new-follower" ||
           href === "/overlay-new-sub" ||
-          href === "/overlay-new-raid") &&
+          href === "/overlay-new-raid" ||
+          href === "/overlay-intro" ||
+          href === "/overlay-outro" ||
+          href === "/overlay-pause") &&
         channel
       ) {
         url.searchParams.set("channel", normalizeChannel(channel))
@@ -652,7 +656,8 @@ export function OverlaySelector({
                           o.href === "/overlay-new-raid" ||
                           o.href === "/overlay-wheel-texte" ||
                           o.href === "/overlay-intro" ||
-                          o.href === "/overlay-outro")
+                          o.href === "/overlay-outro" ||
+                          o.href === "/overlay-pause")
                       ) {
                         url.searchParams.set("preset", preset)
                       }
