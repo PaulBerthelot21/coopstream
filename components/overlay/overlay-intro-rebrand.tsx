@@ -232,12 +232,16 @@ export function OverlayIntroRebrand({
   subtitle = "",
   coopstreamKey,
   channel,
+  variant = "intro",
 }: {
   startSeconds?: number
   subtitle?: string
   coopstreamKey?: string
   channel?: string
+  /** `outro` = même DA que l’intro, sans minuteur, titre MERCI / D'AVOIR / SUIVI */
+  variant?: "intro" | "outro"
 }) {
+  const isOutro = variant === "outro"
   const visual = getOverlayPresetTheme("lecalme-rebrand")
   const accent = visual.accentColor ?? "#ffc4a8"
   const bg = visual.assets?.introBackgroundUrl ?? visual.assets?.backgroundUrl
@@ -261,16 +265,18 @@ export function OverlayIntroRebrand({
   const [goalUnit, setGoalUnit] = React.useState("followers")
 
   React.useEffect(() => {
+    if (isOutro) return
     setRemaining(Math.max(0, startSeconds))
-  }, [startSeconds])
+  }, [startSeconds, isOutro])
 
   React.useEffect(() => {
+    if (isOutro) return
     if (remaining <= 0) return
     const id = window.setInterval(() => {
       setRemaining((prev) => Math.max(0, prev - 1))
     }, 1000)
     return () => window.clearInterval(id)
-  }, [remaining])
+  }, [remaining, isOutro])
 
   React.useEffect(() => {
     const STORAGE_KEY = "coopstream-twitch-channel"
@@ -581,80 +587,132 @@ export function OverlayIntroRebrand({
           <div className="flex min-w-0 flex-1 justify-center px-2">
             <div className="w-full max-w-[560px]">
               <div className="flex flex-col font-black uppercase italic leading-[0.82] tracking-[-0.04em]">
-                <TitleWord
-                  from={-160}
-                  meet={22}
-                  delay={0.05}
-                  className="ml-[8%]"
-                  style={{ ...outlineStyle, fontSize: "clamp(3.2rem, 11vmin, 8.5rem)" }}
-                >
-                  LE
-                </TitleWord>
-                <TitleWord
-                  from={180}
-                  meet={-26}
-                  delay={0.05}
-                  className="-mt-1 ml-[12%]"
-                  style={{ ...outlineStyle, fontSize: "clamp(4rem, 14vmin, 10rem)" }}
-                >
-                  CALME
-                </TitleWord>
-                <TitleWord
-                  from={-140}
-                  meet={18}
-                  delay={0.28}
-                  className="mt-2 ml-[28%] text-white"
-                  style={{
-                    fontSize: "clamp(2rem, 6.5vmin, 4.4rem)",
-                    textShadow: "0 4px 22px rgba(0,0,0,0.9)",
-                  }}
-                >
-                  ARRIVE
-                </TitleWord>
-                <TitleWord
-                  from={150}
-                  meet={-20}
-                  delay={0.28}
-                  className="mt-3 ml-[16%] text-white sm:mt-4"
-                  style={{
-                    fontSize: "clamp(2rem, 6.5vmin, 4.4rem)",
-                    textShadow: "0 4px 22px rgba(0,0,0,0.9)",
-                  }}
-                >
-                  BIENTÔT
-                </TitleWord>
+                {isOutro ? (
+                  <>
+                    <TitleWord
+                      from={-160}
+                      meet={22}
+                      delay={0.05}
+                      className="ml-[8%]"
+                      style={{ ...outlineStyle, fontSize: "clamp(3.2rem, 11vmin, 8.5rem)" }}
+                    >
+                      MERCI
+                    </TitleWord>
+                    <TitleWord
+                      from={180}
+                      meet={-26}
+                      delay={0.05}
+                      className="-mt-1 ml-[12%]"
+                      style={{ ...outlineStyle, fontSize: "clamp(3.6rem, 12vmin, 9rem)" }}
+                    >
+                      D&apos;AVOIR
+                    </TitleWord>
+                    <TitleWord
+                      from={-140}
+                      meet={18}
+                      delay={0.28}
+                      className="mt-2 ml-[22%] text-white"
+                      style={{
+                        fontSize: "clamp(2.4rem, 8vmin, 5.2rem)",
+                        textShadow: "0 4px 22px rgba(0,0,0,0.9)",
+                      }}
+                    >
+                      SUIVI
+                    </TitleWord>
+                    {subtitle.trim() ? (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.55 }}
+                        className="mt-4 ml-[12%] max-w-[90%] text-[clamp(1rem,2.2vmin,1.35rem)] font-semibold not-italic normal-case tracking-normal text-white/70"
+                        style={{ textShadow: "0 2px 12px rgba(0,0,0,0.85)" }}
+                      >
+                        {subtitle.trim()}
+                      </motion.div>
+                    ) : null}
+                  </>
+                ) : (
+                  <>
+                    <TitleWord
+                      from={-160}
+                      meet={22}
+                      delay={0.05}
+                      className="ml-[8%]"
+                      style={{ ...outlineStyle, fontSize: "clamp(3.2rem, 11vmin, 8.5rem)" }}
+                    >
+                      LE
+                    </TitleWord>
+                    <TitleWord
+                      from={180}
+                      meet={-26}
+                      delay={0.05}
+                      className="-mt-1 ml-[12%]"
+                      style={{ ...outlineStyle, fontSize: "clamp(4rem, 14vmin, 10rem)" }}
+                    >
+                      CALME
+                    </TitleWord>
+                    <TitleWord
+                      from={-140}
+                      meet={18}
+                      delay={0.28}
+                      className="mt-2 ml-[28%] text-white"
+                      style={{
+                        fontSize: "clamp(2rem, 6.5vmin, 4.4rem)",
+                        textShadow: "0 4px 22px rgba(0,0,0,0.9)",
+                      }}
+                    >
+                      ARRIVE
+                    </TitleWord>
+                    <TitleWord
+                      from={150}
+                      meet={-20}
+                      delay={0.28}
+                      className="mt-3 ml-[16%] text-white sm:mt-4"
+                      style={{
+                        fontSize: "clamp(2rem, 6.5vmin, 4.4rem)",
+                        textShadow: "0 4px 22px rgba(0,0,0,0.9)",
+                      }}
+                    >
+                      BIENTÔT
+                    </TitleWord>
+                  </>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Compteur — droite */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.55, delay: 0.45 }}
-            className="flex w-[22%] shrink-0 flex-col items-center justify-center"
-          >
+          {/* Compteur — droite (intro only) */}
+          {isOutro ? (
+            <div className="w-[22%] shrink-0" aria-hidden />
+          ) : (
             <motion.div
-              key={remaining}
-              initial={{ opacity: 0.55 }}
-              animate={{ opacity: 1 }}
-              className="font-black tabular-nums leading-none tracking-tight text-white"
-              style={{
-                fontSize: "clamp(3rem, 6.5vmin + 0.4rem, 5rem)",
-                textShadow: `0 0 28px ${accent}55, 0 4px 22px rgba(0,0,0,0.9)`,
-              }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.55, delay: 0.45 }}
+              className="flex w-[22%] shrink-0 flex-col items-center justify-center"
             >
-              {formatClock(remaining)}
-            </motion.div>
-            <div className="mt-2 h-[3px] w-[min(100%,160px)] overflow-hidden rounded-full bg-white/15">
               <motion.div
-                className="h-full rounded-full"
-                animate={{ width: `${progress.toFixed(1)}%` }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                style={{ backgroundColor: accent }}
-              />
-            </div>
-          </motion.div>
+                key={remaining}
+                initial={{ opacity: 0.55 }}
+                animate={{ opacity: 1 }}
+                className="font-black tabular-nums leading-none tracking-tight text-white"
+                style={{
+                  fontSize: "clamp(3rem, 6.5vmin + 0.4rem, 5rem)",
+                  textShadow: `0 0 28px ${accent}55, 0 4px 22px rgba(0,0,0,0.9)`,
+                }}
+              >
+                {formatClock(remaining)}
+              </motion.div>
+              <div className="mt-2 h-[3px] w-[min(100%,160px)] overflow-hidden rounded-full bg-white/15">
+                <motion.div
+                  className="h-full rounded-full"
+                  animate={{ width: `${progress.toFixed(1)}%` }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  style={{ backgroundColor: accent }}
+                />
+              </div>
+            </motion.div>
+          )}
         </div>
 
         {/* Petit chat — bas gauche, absolute (ne décale pas tête / titre / réseaux) */}

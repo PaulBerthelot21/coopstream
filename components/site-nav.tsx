@@ -50,7 +50,7 @@ const links = [
 const OVERLAY_ONLY_PATHS = [
   "/overlay-defi-carrousel",
   "/overlay-chat",
-  "/overlay-talk",
+  "/overlay-planning",
   "/overlay-camera",
   "/overlay-follower-goal",
   "/overlay-intro",

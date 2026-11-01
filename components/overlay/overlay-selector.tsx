@@ -14,8 +14,6 @@ import {
   parseOverlayPreset,
   type OverlayPreset,
 } from "@/lib/overlay/presets"
-import { INTRO_3D_SCENES, type Intro3dSceneId } from "@/lib/intro-3d-scenes"
-import { STINGER_VARIANTS, type StingerVariantId } from "@/lib/stinger-variants"
 import {
   Card,
   CardContent,
@@ -54,10 +52,10 @@ const OVERLAYS: OverlayDef[] = [
     group: "live",
   },
   {
-    href: "/overlay-talk",
-    title: "Talk tranquille",
-    description: "Affiche les derniers messages chat dans un style calme.",
-    hint: "Optionnel : `?channel=...` ; preset possible.",
+    href: "/overlay-planning",
+    title: "Planning",
+    description: "Affiche les prochains lives du planning Twitch.",
+    hint: "Optionnel : `?channel=...` ; `coopstreamKey` recommandé. Configure le planning sur Twitch.",
     group: "live",
   },
   {
@@ -121,32 +119,9 @@ const OVERLAYS: OverlayDef[] = [
   },
   {
     href: "/overlay-intro",
-    title: "Intro + Minuteur",
+    title: "Intro",
     description: "Affiche un fond animé élégant avec un compte à rebours.",
     hint: "Optionnel : `?seconds=300&subtitle=Le%20live%20commence%20bientot&fx=off|low|medium|high`.",
-    group: "scenes",
-  },
-  {
-    href: "/overlay-intro-3d",
-    title: "Intro 3D (WebGL)",
-    description:
-      "Quatre ambiances Three.js (portail, élégance, nébuleuse, vitesse) + minuteur et bloom selon fx.",
-    hint: "`?scene=portal|elegance|nebula|pulse` — minuteur / sous-titre / fx : carte « Intro + Minuteur ».",
-    group: "scenes",
-  },
-  {
-    href: "/overlay-intro-cs",
-    title: "Intro tactique (style CS)",
-    description:
-      "Scène désert / CT : couteau animé type inspect, caisses, poussière. Pas d’asset Valve — GLB perso optionnel.",
-    hint: "Place un modèle en `public/models/cs-intro.glb` pour le remplacer. Sinon minuteur / sous-titre / fx : carte « Intro + Minuteur ».",
-    group: "scenes",
-  },
-  {
-    href: "/stinger",
-    title: "Stinger OBS (capture)",
-    description: "Animation 1920×1080 fond vert pour transition Stinger + chrominance dans OBS.",
-    hint: "`?v=diagonal|vertical|iris|glitch` — enregistre l’écran en mode capture puis importe le clip dans OBS.",
     group: "scenes",
   },
   {
@@ -171,7 +146,7 @@ const OVERLAY_GROUP_STORAGE = "coopstream-overlay-group"
 
 const CHANNEL_OVERLAY_HREFS = new Set([
   "/overlay-chat",
-  "/overlay-talk",
+  "/overlay-planning",
   "/overlay-follower-goal",
   "/overlay-last-follower",
   "/overlay-new-follower",
@@ -252,9 +227,6 @@ export function OverlaySelector({
   const [pauseTitle, setPauseTitle] = React.useState<string>("Pause")
   const [pauseSubtitle, setPauseSubtitle] = React.useState<string>("")
   const [pauseFx, setPauseFx] = React.useState<"low" | "medium" | "high" | "off">("medium")
-  const [stingerVariant, setStingerVariant] = React.useState<StingerVariantId>("iris")
-  const [intro3dScene, setIntro3dScene] = React.useState<Intro3dSceneId>("elegance")
-
   React.useEffect(() => {
     try {
       setOrigin(window.location.origin)
@@ -372,7 +344,9 @@ export function OverlaySelector({
           href === "/overlay-new-follower" ||
           href === "/overlay-new-sub" ||
           href === "/overlay-new-raid" ||
-          href === "/overlay-intro") &&
+          href === "/overlay-intro" ||
+          href === "/overlay-outro" ||
+          href === "/overlay-planning") &&
         coopstreamKey
       ) {
         url.searchParams.set("coopstreamKey", coopstreamKey)
@@ -381,7 +355,7 @@ export function OverlaySelector({
 
       if (
         (href === "/overlay-chat" ||
-          href === "/overlay-talk" ||
+          href === "/overlay-planning" ||
           href === "/overlay-follower-goal" ||
           href === "/overlay-last-follower" ||
           href === "/overlay-new-follower" ||
@@ -560,69 +534,6 @@ export function OverlaySelector({
                     <div className="text-xs text-muted-foreground">{o.hint}</div>
                   ) : null}
 
-                  {o.href === "/overlay-intro-cs" ? (
-                    <div className="rounded-md border border-dashed border-border/80 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-                      Minuteur, sous-titre et fx : carte{" "}
-                      <span className="font-medium text-foreground">Intro + Minuteur</span>. Fichier
-                      optionnel :{" "}
-                      <code className="rounded bg-muted px-1 py-0.5 text-[10px]">
-                        public/models/cs-intro.glb
-                      </code>
-                    </div>
-                  ) : null}
-
-                  {o.href === "/overlay-intro-3d" ? (
-                    <div className="flex flex-col gap-2">
-                      <div className="rounded-md border border-dashed border-border/80 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-                        Minuteur, sous-titre et fx : carte{" "}
-                        <span className="font-medium text-foreground">Intro + Minuteur</span>.
-                      </div>
-                      <div className="text-xs font-semibold text-muted-foreground">
-                        Scène 3D
-                      </div>
-                      <select
-                        value={intro3dScene}
-                        onChange={(e) =>
-                          setIntro3dScene(e.target.value as Intro3dSceneId)
-                        }
-                        className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-                      >
-                        {INTRO_3D_SCENES.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.label}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="text-xs leading-relaxed text-muted-foreground">
-                        {
-                          INTRO_3D_SCENES.find((s) => s.id === intro3dScene)
-                            ?.description
-                        }
-                      </p>
-                    </div>
-                  ) : null}
-
-                  {o.href === "/stinger" ? (
-                    <div className="flex flex-col gap-2">
-                      <div className="text-xs font-semibold text-muted-foreground">
-                        Variante stinger
-                      </div>
-                      <select
-                        value={stingerVariant}
-                        onChange={(e) =>
-                          setStingerVariant(e.target.value as StingerVariantId)
-                        }
-                        className="h-8 rounded-md border border-input bg-background px-2 text-xs"
-                      >
-                        {STINGER_VARIANTS.map((v) => (
-                          <option key={v.id} value={v.id}>
-                            {v.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : null}
-
                   {o.href === "/overlay-intro" ? (
                     <div className="flex flex-col gap-2">
                       <div className="text-xs font-semibold text-muted-foreground">
@@ -731,7 +642,7 @@ export function OverlaySelector({
                         showPresetSelector &&
                         preset !== "default" &&
                         (o.href === "/overlay-chat" ||
-                          o.href === "/overlay-talk" ||
+                          o.href === "/overlay-planning" ||
                           o.href === "/overlay-camera" ||
                           o.href === "/overlay-defi-carrousel" ||
                           o.href === "/overlay-follower-goal" ||
@@ -740,16 +651,13 @@ export function OverlaySelector({
                           o.href === "/overlay-new-sub" ||
                           o.href === "/overlay-new-raid" ||
                           o.href === "/overlay-wheel-texte" ||
-                          o.href === "/overlay-intro")
+                          o.href === "/overlay-intro" ||
+                          o.href === "/overlay-outro")
                       ) {
                         url.searchParams.set("preset", preset)
                       }
 
-                      if (
-                        o.href === "/overlay-intro" ||
-                        o.href === "/overlay-intro-3d" ||
-                        o.href === "/overlay-intro-cs"
-                      ) {
+                      if (o.href === "/overlay-intro") {
                         const sec = Number(introSeconds)
                         if (Number.isFinite(sec) && sec > 0) {
                           url.searchParams.set("seconds", String(Math.floor(sec)))
@@ -761,12 +669,6 @@ export function OverlaySelector({
                         if (introFx !== "medium") {
                           url.searchParams.set("fx", introFx)
                         }
-                      }
-                      if (o.href === "/overlay-intro-3d") {
-                        url.searchParams.set("scene", intro3dScene)
-                      }
-                      if (o.href === "/stinger") {
-                        url.searchParams.set("v", stingerVariant)
                       }
                       if (o.href === "/overlay-outro") {
                         const t = outroTitle.trim()

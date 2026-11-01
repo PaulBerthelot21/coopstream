@@ -4,6 +4,8 @@ import * as React from "react"
 import { motion } from "framer-motion"
 
 import { OverlayIntroParticles } from "@/components/overlay/overlay-intro-particles"
+import { OverlayIntroRebrand } from "@/components/overlay/overlay-intro-rebrand"
+import type { OverlayPreset } from "@/lib/overlay/presets"
 
 type IntroFxLevel = "off" | "low" | "medium" | "high"
 
@@ -11,11 +13,28 @@ export function OverlayOutro({
   title = "Merci d'avoir suivi",
   subtitle = "",
   fx = "medium",
+  preset = "default",
+  coopstreamKey,
+  channel,
 }: {
   title?: string
   subtitle?: string
   fx?: IntroFxLevel
+  preset?: OverlayPreset
+  coopstreamKey?: string
+  channel?: string
 }) {
+  if (preset === "lecalme-rebrand") {
+    return (
+      <OverlayIntroRebrand
+        variant="outro"
+        subtitle={subtitle}
+        coopstreamKey={coopstreamKey}
+        channel={channel}
+      />
+    )
+  }
+
   return (
     <div className="pointer-events-none relative h-full w-full overflow-hidden bg-black">
       <div className="absolute inset-0 bg-[radial-gradient(1200px_700px_at_90%_100%,rgba(76,29,149,0.3),transparent_60%),radial-gradient(900px_500px_at_0%_0%,rgba(56,189,248,0.16),transparent_60%),linear-gradient(to_bottom,rgba(2,6,23,0.96),rgba(2,6,23,0.88))]" />
@@ -52,4 +71,3 @@ export function OverlayOutro({
     </div>
   )
 }
-
