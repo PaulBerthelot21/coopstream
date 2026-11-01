@@ -5,6 +5,7 @@ import Image from "next/image"
 import { motion } from "framer-motion"
 import { Instagram, Youtube } from "lucide-react"
 import { getOverlayPresetTheme } from "@/lib/overlay/presets"
+import { OverlayPlanning } from "@/components/overlay/overlay-planning"
 import { OverlayTwitchChat } from "@/components/overlay/overlay-twitch-chat"
 
 function normalizeChannel(input: string) {
@@ -238,7 +239,7 @@ export function OverlayIntroRebrand({
   subtitle?: string
   coopstreamKey?: string
   channel?: string
-  /** `outro` = même DA que l’intro, sans minuteur, titre MERCI / D'AVOIR / SUIVI */
+  /** `outro` = même DA que l’intro, planning à la place du minuteur, titre MERCI / D'AVOIR / SUIVI */
   variant?: "intro" | "outro"
 }) {
   const isOutro = variant === "outro"
@@ -453,12 +454,19 @@ export function OverlayIntroRebrand({
 
       {/* Contenu */}
       <div className="relative z-10 flex h-full w-full flex-col px-7 py-8 sm:px-12 sm:py-10">
-        {/* Followers + dernier — une seule case DA rebrand */}
+        {/* Droite : followers (+ planning en outro, espaces égaux jusqu’aux réseaux) */}
+        <div
+          className={
+            isOutro
+              ? "absolute right-6 top-6 bottom-[10.5rem] z-20 flex w-[min(100%,380px)] flex-col sm:right-10 sm:top-8 sm:bottom-[12rem]"
+              : "absolute right-6 top-6 z-20 w-[min(100%,380px)] sm:right-10 sm:top-8"
+          }
+        >
         <motion.div
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.35 }}
-          className="absolute right-6 top-6 z-20 w-[min(100%,380px)] sm:right-10 sm:top-8"
+          className="w-full shrink-0"
         >
           <div
             className="relative flex w-full flex-col overflow-hidden rounded-[28px] border-[3px] border-[#2a1f5c] bg-[#1a1035]"
@@ -569,6 +577,27 @@ export function OverlayIntroRebrand({
             </div>
           </div>
         </motion.div>
+
+        {isOutro ? (
+          <>
+            <div className="min-h-3 flex-1" aria-hidden />
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.5 }}
+              className="w-full shrink-0"
+            >
+              <OverlayPlanning
+                channel={channelNormalized || channel}
+                coopstreamKey={coopstreamKey}
+                preset="lecalme-rebrand"
+                limit={3}
+              />
+            </motion.div>
+            <div className="min-h-3 flex-1" aria-hidden />
+          </>
+        ) : null}
+        </div>
 
         {/* Gauche tête · milieu titre · droite compteur */}
         <div className="relative flex flex-1 items-center gap-4 pt-2 sm:gap-6">
@@ -681,7 +710,7 @@ export function OverlayIntroRebrand({
             </div>
           </div>
 
-          {/* Compteur — droite (intro only) */}
+          {/* Compteur — droite (intro only) ; spacer pour garder le titre centré en outro */}
           {isOutro ? (
             <div className="w-[22%] shrink-0" aria-hidden />
           ) : (
