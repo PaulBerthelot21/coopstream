@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Share2, Target, Sparkles, Zap } from "lucide-react"
+import { ImageIcon, Share2, Target, Sparkles, Zap } from "lucide-react"
 
 import { AdminProtected } from "@/components/auth/admin-protected"
 
@@ -90,7 +90,24 @@ export default async function AdminPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-background/60 md:col-span-2">
+          <Card className="bg-background/60">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ImageIcon className="h-4 w-4 text-primary" />
+                Miniatures YouTube
+              </CardTitle>
+              <CardDescription>
+                Templates 1280×720 : fond, titre, tête, élément — export PNG local.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-end">
+              <Button asChild size="sm" variant="secondary">
+                <Link href="/admin/thumbnails">Ouvrir</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-background/60">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Zap className="h-4 w-4 text-primary" />
