@@ -138,6 +138,14 @@ const OVERLAYS: OverlayDef[] = [
     hint: "Optionnel : `?title=Pause&subtitle=Je%20reviens%20dans%205%20min&fx=off|low|medium|high`.",
     group: "scenes",
   },
+  {
+    href: "/overlay-scene-chat",
+    title: "Chat",
+    description:
+      "Scène Just Chatting : écran à gauche, cam en haut à droite, chat dessous.",
+    hint: "Optionnel : `?channel=...` + `coopstreamKey`. En OBS : game dans le cadre gauche, webcam dans le cadre cam.",
+    group: "scenes",
+  },
 ]
 
 const COOPSTREAM_KEY_STORAGE = "coopstream-last-coopstreamKey"
@@ -152,6 +160,7 @@ const CHANNEL_OVERLAY_HREFS = new Set([
   "/overlay-new-follower",
   "/overlay-new-sub",
   "/overlay-new-raid",
+  "/overlay-scene-chat",
 ])
 
 function parseOverlayGroup(raw?: string | null): OverlayGroupId | "all" {
@@ -347,6 +356,7 @@ export function OverlaySelector({
           href === "/overlay-intro" ||
           href === "/overlay-outro" ||
           href === "/overlay-pause" ||
+          href === "/overlay-scene-chat" ||
           href === "/overlay-planning") &&
         coopstreamKey
       ) {
@@ -364,7 +374,8 @@ export function OverlaySelector({
           href === "/overlay-new-raid" ||
           href === "/overlay-intro" ||
           href === "/overlay-outro" ||
-          href === "/overlay-pause") &&
+          href === "/overlay-pause" ||
+          href === "/overlay-scene-chat") &&
         channel
       ) {
         url.searchParams.set("channel", normalizeChannel(channel))
@@ -657,7 +668,8 @@ export function OverlaySelector({
                           o.href === "/overlay-wheel-texte" ||
                           o.href === "/overlay-intro" ||
                           o.href === "/overlay-outro" ||
-                          o.href === "/overlay-pause")
+                          o.href === "/overlay-pause" ||
+                          o.href === "/overlay-scene-chat")
                       ) {
                         url.searchParams.set("preset", preset)
                       }
