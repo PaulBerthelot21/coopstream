@@ -24,6 +24,9 @@ export default async function OverlaySceneChatPage({
     preset?: string
     coopstreamKey?: string
     layer?: string
+    sound?: string
+    soundUrl?: string
+    volume?: string
   }>
 }) {
   const sp = searchParams ? await searchParams : undefined
@@ -36,6 +39,18 @@ export default async function OverlaySceneChatPage({
   const preset = parseOverlayPreset(sp?.preset)
   const layer = parseSceneChatLayer(sp?.layer)
 
+  const soundRaw = typeof sp?.sound === "string" ? sp.sound.trim().toLowerCase() : ""
+  const chatSound = soundRaw === "1" || soundRaw === "true" || soundRaw === "on"
+  const chatSoundUrl =
+    typeof sp?.soundUrl === "string" && sp.soundUrl.trim()
+      ? sp.soundUrl.trim()
+      : undefined
+  const volumeRaw = typeof sp?.volume === "string" ? Number(sp.volume) : NaN
+  const chatSoundVolume =
+    Number.isFinite(volumeRaw) && volumeRaw >= 0 && volumeRaw <= 1
+      ? volumeRaw
+      : 0.35
+
   return (
     <div className="h-dvh w-dvw bg-transparent pointer-events-none">
       <OverlayBodyMode />
@@ -44,6 +59,9 @@ export default async function OverlaySceneChatPage({
         coopstreamKey={coopstreamKey}
         preset={preset}
         layer={layer}
+        chatSound={chatSound}
+        chatSoundUrl={chatSoundUrl}
+        chatSoundVolume={chatSoundVolume}
       />
     </div>
   )

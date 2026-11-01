@@ -4,6 +4,7 @@ import * as React from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { Heart, Sparkles } from "lucide-react"
 import { getOverlayPresetTheme, type OverlayPreset } from "@/lib/overlay/presets"
+import { playAlertSound } from "@/lib/overlay/play-alert-sound"
 import { OverlayNewFollowerRebrand } from "@/components/overlay/overlay-new-follower-rebrand"
 import { useOverlayTestEvent } from "@/lib/overlay/use-overlay-test-event"
 
@@ -39,10 +40,18 @@ export function OverlayNewFollowerToast({
   channel,
   coopstreamKey,
   preset = "default",
+  sound = true,
+  soundUrl,
+  soundVolume = 0.7,
 }: {
   channel?: string
   coopstreamKey?: string
   preset?: OverlayPreset
+  /** Joue un son à chaque nouveau follow (OBS : ne pas mute la source navigateur). */
+  sound?: boolean
+  /** Fichier custom, ex. `/overlays/sounds/follow.mp3` */
+  soundUrl?: string
+  soundVolume?: number
 }) {
   const [channelNormalized, setChannelNormalized] = React.useState<string>("")
   const [toast, setToast] = React.useState<ToastState | null>(null)
@@ -110,6 +119,10 @@ export function OverlayNewFollowerToast({
       lastFollowedAtRef.current = followedAt
       lastLoginRef.current = login
 
+      if (sound) {
+        playAlertSound({ soundUrl, volume: soundVolume })
+      }
+
       setToast({
         id: `${Date.now()}`,
         login,
@@ -117,20 +130,26 @@ export function OverlayNewFollowerToast({
         followedAt,
       })
     }
-  }, [channelNormalized, coopstreamKey])
+  }, [channelNormalized, coopstreamKey, sound, soundUrl, soundVolume])
 
-  const triggerDevToast = React.useCallback((displayName = "Dev follower") => {
-    const followedAt = new Date().toISOString()
-    const login = "dev_follower"
-    lastFollowedAtRef.current = followedAt
-    lastLoginRef.current = login
-    setToast({
-      id: `${Date.now()}`,
-      login,
-      displayName,
-      followedAt,
-    })
-  }, [])
+  const triggerDevToast = React.useCallback(
+    (displayName = "Dev follower") => {
+      const followedAt = new Date().toISOString()
+      const login = "dev_follower"
+      lastFollowedAtRef.current = followedAt
+      lastLoginRef.current = login
+      if (sound) {
+        playAlertSound({ soundUrl, volume: soundVolume })
+      }
+      setToast({
+        id: `${Date.now()}`,
+        login,
+        displayName,
+        followedAt,
+      })
+    },
+    [sound, soundUrl, soundVolume],
+  )
 
   useOverlayTestEvent("follow", (event) => {
     triggerDevToast(event.displayName)

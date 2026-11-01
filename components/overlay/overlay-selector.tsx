@@ -48,7 +48,7 @@ const OVERLAYS: OverlayDef[] = [
     href: "/overlay-chat",
     title: "Chat Twitch",
     description: "Affiche le chat en mode navigateur dans OBS.",
-    hint: "Optionnel : tu peux passer `?channel=...`.",
+    hint: "Optionnel : `?channel=...`. Son : `sound=1` (off par défaut) ; `soundUrl=/ton.mp3`.",
     group: "live",
   },
   {
@@ -84,7 +84,7 @@ const OVERLAYS: OverlayDef[] = [
     title: "Nouveau follower (toast)",
     description:
       "Affiche un toast animé quand un nouveau follow arrive pendant le live.",
-    hint: "Optionnel : `channel` ; pour éviter la config ajoute `coopstreamKey`.",
+    hint: "Optionnel : `channel` + `coopstreamKey`. Son activé par défaut ; `soundUrl=/ton.mp3` ou `sound=0` pour couper. OBS : ne pas mute la source.",
     group: "followers",
   },
   {

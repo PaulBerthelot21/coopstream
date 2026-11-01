@@ -11,7 +11,13 @@ export const metadata: Metadata = {
 export default async function OverlayChatPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ channel?: string; preset?: string }>
+  searchParams?: Promise<{
+    channel?: string
+    preset?: string
+    sound?: string
+    soundUrl?: string
+    volume?: string
+  }>
 }) {
   const sp = searchParams ? await searchParams : undefined
 
@@ -21,6 +27,18 @@ export default async function OverlayChatPage({
       : undefined
   const presetFromQuery = parseOverlayPreset(sp?.preset)
 
+  const soundRaw = typeof sp?.sound === "string" ? sp.sound.trim().toLowerCase() : ""
+  const sound = soundRaw === "1" || soundRaw === "true" || soundRaw === "on"
+  const soundUrl =
+    typeof sp?.soundUrl === "string" && sp.soundUrl.trim()
+      ? sp.soundUrl.trim()
+      : undefined
+  const volumeRaw = typeof sp?.volume === "string" ? Number(sp.volume) : NaN
+  const soundVolume =
+    Number.isFinite(volumeRaw) && volumeRaw >= 0 && volumeRaw <= 1
+      ? volumeRaw
+      : 0.35
+
   return (
     <div className="flex h-dvh w-dvw items-start justify-end bg-transparent pointer-events-none pr-6 pt-6">
       <OverlayBodyMode />
@@ -28,11 +46,12 @@ export default async function OverlayChatPage({
         <OverlayTwitchChat
           channel={channelFromQuery}
           preset={presetFromQuery}
-          // Kept for size; actual parsing/loading is handled in the component.
           maxMessages={32}
+          sound={sound}
+          soundUrl={soundUrl}
+          soundVolume={soundVolume}
         />
       </div>
     </div>
   )
 }
-

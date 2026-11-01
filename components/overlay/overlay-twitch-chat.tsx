@@ -6,6 +6,7 @@ import * as React from "react"
 import Image from "next/image"
 import { AnimatePresence, motion } from "framer-motion"
 import { getOverlayPresetTheme, type OverlayPreset } from "@/lib/overlay/presets"
+import { playAlertSound } from "@/lib/overlay/play-alert-sound"
 
 type TwitchChatMessage = {
   id: string
@@ -145,15 +146,24 @@ export function OverlayTwitchChat({
   channel,
   maxMessages = 16,
   preset = "default",
+  sound = false,
+  soundUrl,
+  soundVolume = 0.35,
 }: {
   channel?: string
   maxMessages?: number
   preset?: OverlayPreset
+  /** Son à chaque message (défaut off — trop bruyant en live). `sound=1` dans l’URL. */
+  sound?: boolean
+  soundUrl?: string
+  soundVolume?: number
 }) {
   const [messages, setMessages] = React.useState<TwitchChatMessage[]>([])
   const [channelNormalized, setChannelNormalized] = React.useState<string>("")
   const listRef = React.useRef<HTMLDivElement | null>(null)
   const visual = getOverlayPresetTheme(preset)
+  const soundRef = React.useRef({ sound, soundUrl, soundVolume })
+  soundRef.current = { sound, soundUrl, soundVolume }
 
   React.useEffect(() => {
     const STORAGE_KEY = "coopstream-twitch-channel"
@@ -245,6 +255,15 @@ export function OverlayTwitchChat({
             tags?.["emotes"] ?? tags?.["emotes-raw"],
             message,
           )
+
+          const cfg = soundRef.current
+          if (cfg.sound) {
+            playAlertSound({
+              kind: "chat",
+              soundUrl: cfg.soundUrl,
+              volume: cfg.soundVolume,
+            })
+          }
 
           setMessages((prev) => {
             const next = [

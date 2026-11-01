@@ -11,7 +11,14 @@ export const metadata: Metadata = {
 export default async function OverlayNewFollowerPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ channel?: string; coopstreamKey?: string; preset?: string }>
+  searchParams?: Promise<{
+    channel?: string
+    coopstreamKey?: string
+    preset?: string
+    sound?: string
+    soundUrl?: string
+    volume?: string
+  }>
 }) {
   const sp = searchParams ? await searchParams : undefined
   const channelFromQuery =
@@ -24,6 +31,18 @@ export default async function OverlayNewFollowerPage({
       : undefined
   const presetFromQuery = parseOverlayPreset(sp?.preset)
   const isRebrand = presetFromQuery === "lecalme-rebrand"
+
+  const soundRaw = typeof sp?.sound === "string" ? sp.sound.trim().toLowerCase() : ""
+  const sound = !(soundRaw === "0" || soundRaw === "false" || soundRaw === "off")
+  const soundUrl =
+    typeof sp?.soundUrl === "string" && sp.soundUrl.trim()
+      ? sp.soundUrl.trim()
+      : undefined
+  const volumeRaw = typeof sp?.volume === "string" ? Number(sp.volume) : NaN
+  const soundVolume =
+    Number.isFinite(volumeRaw) && volumeRaw >= 0 && volumeRaw <= 1
+      ? volumeRaw
+      : 0.7
 
   return (
     <div className="flex h-dvh w-dvw items-start justify-end bg-transparent pointer-events-none pr-6 pt-6">
@@ -39,6 +58,9 @@ export default async function OverlayNewFollowerPage({
           channel={channelFromQuery}
           coopstreamKey={coopstreamKeyFromQuery}
           preset={presetFromQuery}
+          sound={sound}
+          soundUrl={soundUrl}
+          soundVolume={soundVolume}
         />
       </div>
     </div>

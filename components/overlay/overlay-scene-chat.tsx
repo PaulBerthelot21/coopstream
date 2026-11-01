@@ -45,11 +45,17 @@ export function OverlaySceneChat({
   channel,
   preset = "default",
   layer = "preview",
+  chatSound = false,
+  chatSoundUrl,
+  chatSoundVolume = 0.35,
 }: {
   channel?: string
   coopstreamKey?: string
   preset?: OverlayPreset
   layer?: SceneChatLayer
+  chatSound?: boolean
+  chatSoundUrl?: string
+  chatSoundVolume?: number
 }) {
   const visual = getOverlayPresetTheme(preset)
   const accent = visual.accentColor ?? "#ffc4a8"
@@ -140,7 +146,14 @@ export function OverlaySceneChat({
 
       {showChat ? (
         <div className="min-h-0 w-full flex-1">
-          <OverlayTwitchChat channel={channel} preset={preset} maxMessages={22} />
+          <OverlayTwitchChat
+            channel={channel}
+            preset={preset}
+            maxMessages={22}
+            sound={chatSound}
+            soundUrl={chatSoundUrl}
+            soundVolume={chatSoundVolume}
+          />
         </div>
       ) : (
         <div className="min-h-0 w-full flex-1" aria-hidden />
