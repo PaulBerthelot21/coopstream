@@ -5,6 +5,7 @@ import Image from "next/image"
 import { motion } from "framer-motion"
 import { Instagram, Youtube } from "lucide-react"
 import { getOverlayPresetTheme } from "@/lib/overlay/presets"
+import { OverlayTwitchChat } from "@/components/overlay/overlay-twitch-chat"
 
 function normalizeChannel(input: string) {
   let ch = input.trim()
@@ -656,7 +657,21 @@ export function OverlayIntroRebrand({
           </motion.div>
         </div>
 
-        {/* Réseaux — bas droite (zone noire) */}
+        {/* Petit chat — bas gauche, absolute (ne décale pas tête / titre / réseaux) */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.7 }}
+          className="absolute bottom-10 left-7 z-20 h-[200px] w-[min(100%,480px)] sm:bottom-14 sm:left-10 sm:h-[220px] sm:w-[520px]"
+        >
+          <OverlayTwitchChat
+            channel={channelNormalized || channel}
+            preset="lecalme-rebrand"
+            maxMessages={12}
+          />
+        </motion.div>
+
+        {/* Réseaux — bas droite (inchangé) */}
         <div className="mb-12 ml-auto w-full max-w-[64%] sm:mb-16 sm:max-w-[58%]">
           {socialCards.length > 0 ? (
             <div className="flex w-full flex-nowrap items-stretch gap-3">

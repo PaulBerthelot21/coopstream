@@ -322,8 +322,8 @@ export function OverlayTwitchChat({
                 unoptimized
               />
             ) : null}
-            <div className="absolute inset-0 bg-[#0c061c]/55" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0c061c]/75 via-[#0c061c]/25 to-[#0c061c]/45" />
+            <div className="absolute inset-0 bg-[#0c061c]/40" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0c061c]/35 via-transparent to-[#0c061c]/25" />
           </div>
           <div
             aria-hidden
@@ -360,9 +360,9 @@ export function OverlayTwitchChat({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -6 }}
                     transition={{ duration: 0.2 }}
-                    className="rounded-2xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm"
+                    className="rounded-2xl border border-white/10 bg-black/30 px-3 py-2 backdrop-blur-sm"
                     style={{
-                      boxShadow: `inset 0 0 0 1px ${accent}18, 0 8px 18px rgba(0,0,0,0.35)`,
+                      boxShadow: `inset 0 0 0 1px ${accent}18, 0 8px 18px rgba(0,0,0,0.28)`,
                     }}
                   >
                     <div className="flex items-start gap-2.5">
