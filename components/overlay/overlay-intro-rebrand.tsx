@@ -454,24 +454,31 @@ export function OverlayIntroRebrand({
           className="absolute right-6 top-6 z-20 w-[min(100%,380px)] sm:right-10 sm:top-8"
         >
           <div
-            className={visual.panelClassName}
+            className="relative flex w-full flex-col overflow-hidden rounded-[28px] border-[3px] border-[#2a1f5c] bg-[#1a1035]"
             style={{
               boxShadow:
-                "0 0 0 1.5px rgba(236,240,255,0.9), 0 14px 36px rgba(0,0,0,0.55)",
+                "0 0 0 1.5px rgba(236,240,255,0.95), 0 14px 36px rgba(0,0,0,0.55)",
             }}
           >
-            {marbleBg ? (
-              <Image
-                src={marbleBg}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="380px"
-                unoptimized
-              />
-            ) : null}
-            <div className="pointer-events-none absolute inset-0 bg-[#0c061c]/45" />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#0c061c]/40 via-transparent to-[#0c061c]/25" />
+            <div className="pointer-events-none absolute inset-[3px] overflow-hidden rounded-[24px]">
+              {marbleBg ? (
+                <Image
+                  src={marbleBg}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="380px"
+                  unoptimized
+                />
+              ) : null}
+              <div className="absolute inset-0 bg-[#0c061c]/45" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#0c061c]/40 via-transparent to-[#0c061c]/25" />
+            </div>
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 z-[2] rounded-[28px]"
+              style={{ boxShadow: "inset 0 0 0 1px rgba(236,240,255,0.4)" }}
+            />
 
             <div className="relative z-10 flex flex-col px-5 py-4">
               <div className="flex w-full items-center gap-2">
