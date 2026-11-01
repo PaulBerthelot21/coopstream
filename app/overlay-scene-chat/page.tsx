@@ -40,7 +40,7 @@ export default async function OverlaySceneChatPage({
   const layer = parseSceneChatLayer(sp?.layer)
 
   const soundRaw = typeof sp?.sound === "string" ? sp.sound.trim().toLowerCase() : ""
-  const chatSound = soundRaw === "1" || soundRaw === "true" || soundRaw === "on"
+  const chatSound = !(soundRaw === "0" || soundRaw === "false" || soundRaw === "off")
   const chatSoundUrl =
     typeof sp?.soundUrl === "string" && sp.soundUrl.trim()
       ? sp.soundUrl.trim()
@@ -49,7 +49,7 @@ export default async function OverlaySceneChatPage({
   const chatSoundVolume =
     Number.isFinite(volumeRaw) && volumeRaw >= 0 && volumeRaw <= 1
       ? volumeRaw
-      : 0.35
+      : 0.55
 
   return (
     <div className="h-dvh w-dvw bg-transparent pointer-events-none">

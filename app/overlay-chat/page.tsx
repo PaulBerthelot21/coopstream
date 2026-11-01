@@ -28,7 +28,7 @@ export default async function OverlayChatPage({
   const presetFromQuery = parseOverlayPreset(sp?.preset)
 
   const soundRaw = typeof sp?.sound === "string" ? sp.sound.trim().toLowerCase() : ""
-  const sound = soundRaw === "1" || soundRaw === "true" || soundRaw === "on"
+  const sound = !(soundRaw === "0" || soundRaw === "false" || soundRaw === "off")
   const soundUrl =
     typeof sp?.soundUrl === "string" && sp.soundUrl.trim()
       ? sp.soundUrl.trim()
@@ -37,7 +37,7 @@ export default async function OverlayChatPage({
   const soundVolume =
     Number.isFinite(volumeRaw) && volumeRaw >= 0 && volumeRaw <= 1
       ? volumeRaw
-      : 0.35
+      : 0.55
 
   return (
     <div className="flex h-dvh w-dvw items-start justify-end bg-transparent pointer-events-none pr-6 pt-6">

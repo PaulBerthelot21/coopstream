@@ -148,12 +148,12 @@ export function OverlayTwitchChat({
   preset = "default",
   sound = false,
   soundUrl,
-  soundVolume = 0.35,
+  soundVolume = 0.55,
 }: {
   channel?: string
   maxMessages?: number
   preset?: OverlayPreset
-  /** Son à chaque message (défaut off — trop bruyant en live). `sound=1` dans l’URL. */
+  /** Son à chaque message. Activé depuis `/overlay-chat` (couper : `sound=0`). */
   sound?: boolean
   soundUrl?: string
   soundVolume?: number

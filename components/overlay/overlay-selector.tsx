@@ -48,7 +48,7 @@ const OVERLAYS: OverlayDef[] = [
     href: "/overlay-chat",
     title: "Chat Twitch",
     description: "Affiche le chat en mode navigateur dans OBS.",
-    hint: "Optionnel : `?channel=...`. Son : `sound=1` (off par défaut) ; `soundUrl=/ton.mp3`.",
+    hint: "Optionnel : `?channel=...`. Son on par défaut ; `sound=0` pour couper ; `soundUrl=/ton.mp3`.",
     group: "live",
   },
   {

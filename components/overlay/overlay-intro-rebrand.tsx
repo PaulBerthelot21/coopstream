@@ -814,6 +814,7 @@ export function OverlayIntroRebrand({
             channel={channelNormalized || channel}
             preset="lecalme-rebrand"
             maxMessages={12}
+            sound={false}
           />
         </motion.div>
 

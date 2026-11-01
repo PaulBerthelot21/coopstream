@@ -47,7 +47,7 @@ export function OverlaySceneChat({
   layer = "preview",
   chatSound = false,
   chatSoundUrl,
-  chatSoundVolume = 0.35,
+  chatSoundVolume = 0.55,
 }: {
   channel?: string
   coopstreamKey?: string
