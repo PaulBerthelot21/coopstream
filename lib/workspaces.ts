@@ -10,6 +10,7 @@ export const workspaces = [
   { href: "/studio", label: "Studio", links: [
     { href: "/studio", label: "Vue d’ensemble" },
     { href: "/studio/thumbnails", label: "Miniatures YouTube" },
+    { href: "/studio/planning", label: "Planning" },
   ] },
   { href: "/overlay", label: "Overlays", links: [
     { href: "/overlay", label: "Bibliothèque OBS" },

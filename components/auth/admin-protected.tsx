@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/button"
 import { signInWithTwitch } from "@/lib/auth.client"
 import { useAuthSession } from "@/lib/useAuthSession"
 
+const subscribeHydration = () => () => {}
+
 export function AdminProtected({ children }: { children: React.ReactNode }) {
   const session = useAuthSession()
-  const isAuthed = Boolean((session as any)?.user)
+  const hydrated = React.useSyncExternalStore(subscribeHydration, () => true, () => false)
+  const isAuthed = hydrated && Boolean((session as { user?: unknown } | null)?.user)
 
   if (!isAuthed) {
     return (
