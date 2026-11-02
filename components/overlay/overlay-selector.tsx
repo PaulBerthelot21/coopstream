@@ -557,6 +557,18 @@ export function OverlaySelector({
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
                   {o.href === "/overlay-brand-title" && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={animateTitle} onChange={e => setAnimateTitle(e.target.checked)} />Animer le titre</label>}
+                  {o.href === "/overlay-brand-title" && (
+                    <div className="overflow-hidden rounded-xl border border-border bg-muted/30">
+                      <div className="border-b border-border px-3 py-2 text-xs text-muted-foreground">Aperçu en direct · {animateTitle ? "Animation activée" : "Titre fixe"}</div>
+                      <iframe
+                        key={animateTitle ? "animated" : "still"}
+                        title="Aperçu du titre Le Calme"
+                        src={`/overlay-brand-title?animate=${animateTitle ? "1" : "0"}`}
+                        className="pointer-events-none aspect-[700/620] w-full border-0"
+                        tabIndex={-1}
+                      />
+                    </div>
+                  )}
                   {o.webmUrl && <Button asChild size="sm" variant="outline" className="self-start"><a href={o.webmUrl} download="le-calme-titre-anime.webm"><Download className="mr-2 h-4 w-4" />Exporter le titre complet animé · WebM transparent</a></Button>}
                   {o.pngUrl && <Button asChild size="sm" variant="outline" className="self-start"><a href={o.pngUrl} download="fond-scene-chat-rebrand-1920x1080.png"><Download className="mr-2 h-4 w-4" />Exporter PNG · 1920 × 1080</a></Button>}
                   {o.hint ? (

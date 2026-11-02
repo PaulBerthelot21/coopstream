@@ -9,8 +9,5 @@
 }
 .enter { animation: brand-title-enter .7s cubic-bezier(.16,1,.3,1) var(--title-delay, .05s) both; }
 .drift { animation: brand-title-drift 2.4s cubic-bezier(.37,0,.63,1) var(--title-idle-delay, .8s) infinite alternate both; }
-@media (prefers-reduced-motion: reduce) {
-  .enter, .drift { animation: none; }
-}
-
+/* The explicit "Animer le titre" control owns animation for this OBS asset. */
 .still .enter, .still .drift { animation: none; }
