@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Copy } from "lucide-react"
+import { SOCIAL_PLATFORMS, CHIBI_VARIANTS, parseSocialPlatform, parseChibiVariant } from "@/lib/overlay/live-elements"
+import { Copy, Download } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -22,12 +23,15 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-type OverlayGroupId = "live" | "followers" | "challenges" | "scenes"
+type OverlayGroupId = "live" | "followers" | "challenges" | "scenes" | "elements"
 
 type OverlayDef = {
   href: string
   title: string
   description: string
+  webmUrl?: string
+  pngUrl?: string
+  rebrandOnly?: boolean
   hint?: string
   group: OverlayGroupId
 }
@@ -41,9 +45,16 @@ const OVERLAY_GROUPS: {
   { id: "followers", label: "Followers" },
   { id: "challenges", label: "Défis" },
   { id: "scenes", label: "Scènes" },
+  { id: "elements", label: "Éléments" },
 ]
 
 const OVERLAYS: OverlayDef[] = [
+  { href: "/overlay-background", title: "Fond de scène Chat", description: "Le fond marbré de la scène Chat, séparé des cadres et des widgets.", hint: "Place cette source tout en bas dans OBS, en 1920 × 1080. Le PNG est aussi utilisable comme source Image.", group: "elements", rebrandOnly: true, pngUrl: "/overlays/lecalme-rebrand/scene-chat-bg.png" },
+  { href: "/overlay-social", title: "Carte réseau social", description: "La carte de l’intro, indépendante : choisis le réseau et le compte à afficher.", hint: "Compte personnalisé ou compte enregistré dans Live → Infos à l’écran. OBS : 440 × 180.", group: "live" },
+  { href: "/overlay-followers-summary", title: "Followers · compteur & dernier", description: "Le compteur, l’objectif et le dernier follower réunis dans la carte de l’intro.", hint: "Utilise ton canal Twitch et l’objectif configuré dans Live. OBS : 440 × 340.", group: "live" },
+  { href: "/overlay-brand-title", title: "Titre Le Calme", webmUrl: "/overlays/lecalme-rebrand/title-animated.webm", description: "Le titre complet de l’intro : LE CALME ARRIVE BIENTÔT, avec ses entrées et mouvements d’origine.", hint: "Titre complet indépendant du rebrand. Source OBS : 1920 × 1080 ; WebM transparent : 700 × 620.", group: "elements", rebrandOnly: true },
+  { href: "/overlay-chibi", title: "Chibi", description: "Un chibi du rebrand, seul et repositionnable dans OBS.", hint: "Choisis la variante et active ou coupe le flottement. OBS : 400 × 400.", group: "elements", rebrandOnly: true },
+  { href: "/overlay-timer", title: "Minuteur", description: "Le compte à rebours de l’intro en source indépendante, sans fond.", hint: "Démarre au chargement de la source, reste à 00:00 en fin de décompte. OBS : 480 × 200.", group: "elements" },
   {
     href: "/overlay-chat",
     title: "Chat Twitch",
@@ -142,8 +153,8 @@ const OVERLAYS: OverlayDef[] = [
     href: "/overlay-scene-chat",
     title: "Chat",
     description:
-      "Scène Just Chatting : écran à gauche, cam en haut à droite, chat dessous.",
-    hint: "OBS (bas→haut) : `bg` → Firefox/game + Webcam → `frame` → `chat`. Centres des cadres = transparents.",
+      "Scène complète : fond, titre animé, écran, webcam, chat et objectif followers.",
+    hint: "Scène assemblée en 1920 × 1080. Dans OBS, place tes captures écran et webcam au-dessus du fond dans les emplacements prévus.",
     group: "scenes",
   },
 ]
@@ -153,6 +164,7 @@ const TWITCH_CHANNEL_STORAGE = "coopstream-twitch-channel"
 const OVERLAY_GROUP_STORAGE = "coopstream-overlay-group"
 
 const CHANNEL_OVERLAY_HREFS = new Set([
+  "/overlay-followers-summary",
   "/overlay-chat",
   "/overlay-planning",
   "/overlay-follower-goal",
@@ -169,6 +181,7 @@ function parseOverlayGroup(raw?: string | null): OverlayGroupId | "all" {
     raw === "followers" ||
     raw === "challenges" ||
     raw === "scenes" ||
+    raw === "elements" ||
     raw === "all"
   ) {
     return raw
@@ -221,12 +234,19 @@ export function OverlaySelector({
 }) {
   const [origin, setOrigin] = React.useState<string>("")
   const session = useAuthSession()
-  const isAuthed = Boolean((session as any)?.user)
+  const sessionUser = (session as { user?: { name?: string; email?: string } } | null)?.user
+  const isAuthed = Boolean(sessionUser)
 
   const [coopstreamKey, setCoopstreamKey] = React.useState<string>("")
   const [channel, setChannel] = React.useState<string>("")
   const [preset, setPreset] = React.useState<OverlayPreset>("default")
   const [overlayGroup, setOverlayGroup] = React.useState<OverlayGroupId | "all">("live")
+  const [socialPlatform, setSocialPlatform] = React.useState("youtube")
+  const [socialHandle, setSocialHandle] = React.useState("")
+  const [chibiVariant, setChibiVariant] = React.useState("goal")
+  const [animateTitle, setAnimateTitle] = React.useState(true)
+  const [animateChibi, setAnimateChibi] = React.useState(true)
+  const [timerSeconds, setTimerSeconds] = React.useState("300")
   const [introSeconds, setIntroSeconds] = React.useState<string>("300")
   const [introSubtitle, setIntroSubtitle] = React.useState<string>("")
   const [introFx, setIntroFx] = React.useState<"low" | "medium" | "high" | "off">("medium")
@@ -236,9 +256,6 @@ export function OverlaySelector({
   const [pauseTitle, setPauseTitle] = React.useState<string>("Pause")
   const [pauseSubtitle, setPauseSubtitle] = React.useState<string>("")
   const [pauseFx, setPauseFx] = React.useState<"low" | "medium" | "high" | "off">("medium")
-  const [sceneChatLayer, setSceneChatLayer] = React.useState<
-    "preview" | "bg" | "frame" | "chat"
-  >("frame")
   React.useEffect(() => {
     try {
       setOrigin(window.location.origin)
@@ -274,17 +291,9 @@ export function OverlaySelector({
     }
   }, [])
 
-  const visibleOverlays = React.useMemo(
-    () =>
-      overlayGroup === "all"
-        ? OVERLAYS
-        : OVERLAYS.filter((o) => o.group === overlayGroup),
-    [overlayGroup],
-  )
-
-  const showSharedChannel =
-    isAuthed &&
-    visibleOverlays.some((o) => CHANNEL_OVERLAY_HREFS.has(o.href))
+  const availableOverlays = React.useMemo(() => OVERLAYS.filter(o => !o.rebrandOnly || preset === "lecalme-rebrand"), [preset])
+  const visibleOverlays = React.useMemo(() => overlayGroup === "all" ? availableOverlays : availableOverlays.filter(o => o.group === overlayGroup), [overlayGroup, availableOverlays])
+  const showSharedChannel = visibleOverlays.some(o => CHANNEL_OVERLAY_HREFS.has(o.href))
 
   React.useEffect(() => {
     if (!isAuthed) {
@@ -305,9 +314,6 @@ export function OverlaySelector({
     // Pré-remplissage du channel Twitch.
     try {
       const stored = window.localStorage.getItem(TWITCH_CHANNEL_STORAGE) ?? ""
-      const sessionUser = (session as any)?.user as
-        | { name?: string; email?: string }
-        | undefined
       const candidate =
         stored.trim() ||
         sessionUser?.name?.toString()?.trim() ||
@@ -338,7 +344,7 @@ export function OverlaySelector({
         // ignore
       }
     })()
-  }, [isAuthed, session])
+  }, [isAuthed, session, sessionUser?.name, sessionUser?.email])
 
   const buildOverlayHref = React.useCallback(
     (href: string) => {
@@ -349,7 +355,9 @@ export function OverlaySelector({
       let changed = false
 
       if (
-        (href === "/overlay-defi-carrousel" ||
+        (href === "/overlay-social" ||
+          href === "/overlay-followers-summary" ||
+          href === "/overlay-defi-carrousel" ||
           href === "/overlay-follower-goal" ||
           href === "/overlay-wheel-texte" ||
           href === "/overlay-last-follower" ||
@@ -368,7 +376,7 @@ export function OverlaySelector({
       }
 
       if (
-        (href === "/overlay-chat" ||
+        (href === "/overlay-followers-summary" || href === "/overlay-chat" ||
           href === "/overlay-planning" ||
           href === "/overlay-follower-goal" ||
           href === "/overlay-last-follower" ||
@@ -487,8 +495,8 @@ export function OverlaySelector({
                   const selected = overlayGroup === group.id
                   const count =
                     group.id === "all"
-                      ? OVERLAYS.length
-                      : OVERLAYS.filter((o) => o.group === group.id).length
+                      ? availableOverlays.length
+                      : availableOverlays.filter((o) => o.group === group.id).length
                   return (
                     <button
                       key={group.id}
@@ -548,10 +556,16 @@ export function OverlaySelector({
                   <CardDescription>{o.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
+                  {o.href === "/overlay-brand-title" && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={animateTitle} onChange={e => setAnimateTitle(e.target.checked)} />Animer le titre</label>}
+                  {o.webmUrl && <Button asChild size="sm" variant="outline" className="self-start"><a href={o.webmUrl} download="le-calme-titre-anime.webm"><Download className="mr-2 h-4 w-4" />Exporter le titre complet animé · WebM transparent</a></Button>}
+                  {o.pngUrl && <Button asChild size="sm" variant="outline" className="self-start"><a href={o.pngUrl} download="fond-scene-chat-rebrand-1920x1080.png"><Download className="mr-2 h-4 w-4" />Exporter PNG · 1920 × 1080</a></Button>}
                   {o.hint ? (
                     <div className="text-xs text-muted-foreground">{o.hint}</div>
                   ) : null}
 
+                  {o.href === "/overlay-social" && <div className="space-y-3"><label className="block space-y-1 text-xs text-muted-foreground">Réseau<select aria-label="Réseau social" value={socialPlatform} onChange={e => setSocialPlatform(parseSocialPlatform(e.target.value))} className="h-9 w-full rounded-md border border-input bg-background px-2">{SOCIAL_PLATFORMS.map(value => <option key={value} value={value}>{value === "youtube" ? "YouTube" : value === "tiktok" ? "TikTok" : value === "twitch" ? "Twitch" : "Instagram"}</option>)}</select></label><Input aria-label="Compte du réseau social" placeholder="@toncompte · vide = compte enregistré" value={socialHandle} onChange={e => setSocialHandle(e.target.value)} /></div>}
+                  {o.href === "/overlay-chibi" && <div className="space-y-3"><label className="block space-y-1 text-xs text-muted-foreground">Variante<select aria-label="Variante du chibi" value={chibiVariant} onChange={e => setChibiVariant(parseChibiVariant(e.target.value))} className="h-9 w-full rounded-md border border-input bg-background px-2">{CHIBI_VARIANTS.map(value => <option key={value} value={value}>{({ goal: "Objectif", follow: "Follow", sub: "Sub", raid: "Raid" })[value]}</option>)}</select></label><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={animateChibi} onChange={e => setAnimateChibi(e.target.checked)} />Animation de flottement</label></div>}
+                  {o.href === "/overlay-timer" && <label className="space-y-1 text-xs text-muted-foreground">Durée en secondes<Input aria-label="Durée du minuteur en secondes" type="number" min={0} max={86400} value={timerSeconds} onChange={e => setTimerSeconds(e.target.value)} /></label>}
                   {o.href === "/overlay-intro" ? (
                     <div className="flex flex-col gap-2">
                       <div className="text-xs font-semibold text-muted-foreground">
@@ -652,40 +666,6 @@ export function OverlaySelector({
                     </div>
                   ) : null}
 
-                  {o.href === "/overlay-scene-chat" ? (
-                    <div className="flex flex-col gap-2">
-                      <div className="text-xs font-semibold text-muted-foreground">
-                        Calque OBS
-                      </div>
-                      <select
-                        value={sceneChatLayer}
-                        onChange={(e) =>
-                          setSceneChatLayer(
-                            (e.target.value as
-                              | "preview"
-                              | "bg"
-                              | "frame"
-                              | "chat") ?? "frame",
-                          )
-                        }
-                        className="h-8 rounded-md border border-input bg-background px-2 text-xs"
-                      >
-                        <option value="bg">bg — fond (ou image OBS scene-chat-bg)</option>
-                        <option value="frame">frame — cadres (centres transparents)</option>
-                        <option value="chat">chat — widget chat seul</option>
-                        <option value="preview">preview — tout-en-un</option>
-                      </select>
-                      <div className="text-[11px] leading-snug text-muted-foreground">
-                        Ordre OBS (bas → haut) :{" "}
-                        <span className="font-medium text-foreground">bg</span> →
-                        Firefox/game + Webcam →{" "}
-                        <span className="font-medium text-foreground">frame</span> →{" "}
-                        <span className="font-medium text-foreground">chat</span>.
-                        Sources navigateur 1920×1080, fond transparent cochée.
-                      </div>
-                    </div>
-                  ) : null}
-
                   {(() => {
                     const baseHref = buildOverlayHref(o.href)
                     const relativeHref = (() => {
@@ -693,7 +673,7 @@ export function OverlaySelector({
                       if (
                         showPresetSelector &&
                         preset !== "default" &&
-                        (o.href === "/overlay-chat" ||
+                        (o.href === "/overlay-social" || o.href === "/overlay-followers-summary" || o.href === "/overlay-timer" || o.href === "/overlay-background" || o.href === "/overlay-chat" ||
                           o.href === "/overlay-planning" ||
                           o.href === "/overlay-camera" ||
                           o.href === "/overlay-defi-carrousel" ||
@@ -711,6 +691,14 @@ export function OverlaySelector({
                         url.searchParams.set("preset", preset)
                       }
 
+                      if (o.href === "/overlay-brand-title") url.searchParams.set("animate", animateTitle ? "1" : "0")
+                      if (o.href === "/overlay-social") {
+                        url.searchParams.set("platform", socialPlatform)
+                        if (socialHandle.trim()) url.searchParams.set("handle", socialHandle.trim())
+                      }
+                      if (o.href === "/overlay-followers-summary" && channel.trim()) url.searchParams.set("channel", normalizeChannel(channel))
+                      if (o.href === "/overlay-chibi") { url.searchParams.set("variant", chibiVariant); url.searchParams.set("animate", animateChibi ? "1" : "0") }
+                      if (o.href === "/overlay-timer") { const value = Number(timerSeconds); url.searchParams.set("seconds", String(Number.isFinite(value) ? Math.max(0, Math.min(86400, Math.floor(value))) : 300)) }
                       if (o.href === "/overlay-intro") {
                         const sec = Number(introSeconds)
                         if (Number.isFinite(sec) && sec > 0) {
@@ -750,9 +738,6 @@ export function OverlaySelector({
                           url.searchParams.set("fx", pauseFx)
                         }
                       }
-                      if (o.href === "/overlay-scene-chat") {
-                        url.searchParams.set("layer", sceneChatLayer)
-                      }
 
                       if (!url.searchParams.toString()) return url.pathname
                       return `${url.pathname}?${url.searchParams.toString()}`
@@ -781,7 +766,7 @@ export function OverlaySelector({
                         </div>
 
                         <Button asChild size="sm" variant="secondary">
-                          <Link href={relativeHref}>Ouvrir l'overlay</Link>
+                          <Link href={relativeHref}>Ouvrir l’overlay</Link>
                         </Button>
                       </div>
                     )

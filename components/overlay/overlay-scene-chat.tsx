@@ -3,12 +3,14 @@
 import * as React from "react"
 import Image from "next/image"
 
+import { AnimatedChatSignature } from "@/components/overlay/overlay-intro-title"
+import { OverlayFollowerGoal } from "@/components/overlay/overlay-follower-goal"
 import { OverlayCamera } from "@/components/overlay/overlay-camera"
 import { OverlayTwitchChat } from "@/components/overlay/overlay-twitch-chat"
 import { getOverlayPresetTheme, type OverlayPreset } from "@/lib/overlay/presets"
 
-/** Épaisseur du cadre en % de la largeur viewport (~22px @ 1920) */
-const SCREEN_FRAME = "1.15%"
+/** Fine bordure de marbre, ~8 px sur le cadre écran d’une scène 1080p. */
+const SCREEN_FRAME = "0.6%"
 
 /**
  * Layout en % du viewport — scale sur n’importe quelle résol 16:9 (1080p, 1440p…).
@@ -18,7 +20,7 @@ const LAYOUT = {
     left: "3.2%",
     top: "14.1%",
     width: "74%",
-    height: "67.4%",
+    height: "61.4%",
   },
   right: {
     top: "14.1%",
@@ -26,23 +28,26 @@ const LAYOUT = {
     width: "18.5%",
     bottom: "3%",
   },
+  goal: { left: "3.2%", bottom: "3%", width: "36%", height: "16%" },
   brand: {
     left: "3.2%",
     top: "3.3%",
   },
 } as const
 
-export type SceneChatLayer = "preview" | "bg" | "frame" | "chat"
+export type SceneChatLayer = "preview" | "frame" | "chat"
 
 /**
- * Calques OBS (bas → haut), fond transparent :
- * 1. `bg` → 2. Firefox + Webcam → 3. `frame` → 4. `chat`
+ * Scène complète par défaut : fond, titre animé, cadres, chat et objectif.
+ * Les anciennes sources frame/chat conservent leurs fonds transparents.
+ * Les anciens liens frame/chat restent compatibles.
  *
  * Important : source navigateur = taille du canvas OBS (ex. 1920×1080).
  * Firefox / cam : même proportions en % que le cadre.
  */
 export function OverlaySceneChat({
   channel,
+  coopstreamKey,
   preset = "default",
   layer = "preview",
   chatSound = false,
@@ -60,22 +65,15 @@ export function OverlaySceneChat({
   const visual = getOverlayPresetTheme(preset)
   const accent = visual.accentColor ?? "#ffc4a8"
   const marbleBg = visual.assets?.backgroundUrl
-  /** Fond pré-rendu (marbre + voiles CSS) — à utiliser aussi en image OBS */
-  const bakedBg = "/overlays/lecalme-rebrand/scene-chat-bg.jpg"
   const isRebrand = preset === "lecalme-rebrand"
 
-  const showBg = layer === "preview" || layer === "bg"
+  const showBackground = layer === "preview"
   const showFrames = layer === "preview" || layer === "frame"
   const showChat = layer === "preview" || layer === "chat"
 
-  const outlineStyle: React.CSSProperties = {
-    color: "transparent",
-    WebkitTextStroke: "2px rgba(255,255,255,0.88)",
-    textShadow: "0 6px 22px rgba(0,0,0,0.4)",
-  }
-
   const screenFrame = (
     <div
+      data-scene-screen
       className="absolute z-20"
       style={{
         left: LAYOUT.screen.left,
@@ -105,7 +103,7 @@ export function OverlaySceneChat({
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-[1.5vw] border-[0.16vw] border-[#2a1f5c]"
+        className="pointer-events-none absolute inset-0 rounded-[1.5vw] border-[0.1vw] border-[#2a1f5c]"
         style={{
           boxShadow:
             "0 0 0 0.08vw rgba(236,240,255,0.95), inset 0 0 0 1px rgba(236,240,255,0.28)",
@@ -113,14 +111,14 @@ export function OverlaySceneChat({
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute rounded-[0.9vw]"
+        className="pointer-events-none absolute rounded-[1.1vw]"
         style={{
           inset: SCREEN_FRAME,
           boxShadow: `inset 0 0 0 0.1vw ${accent}99, 0 0 0.8vw ${accent}18`,
         }}
       />
       <div
-        className="absolute rounded-[0.75vw] bg-transparent"
+        className="absolute rounded-[1.05vw] bg-transparent"
         style={{ inset: SCREEN_FRAME }}
       />
     </div>
@@ -128,16 +126,17 @@ export function OverlaySceneChat({
 
   const rightColumn = (
     <div
-      className="absolute z-20 flex flex-col gap-[1.2%]"
+      className="absolute z-20 flex flex-col"
       style={{
         top: LAYOUT.right.top,
         right: LAYOUT.right.right,
         bottom: LAYOUT.right.bottom,
         width: LAYOUT.right.width,
+        gap: "clamp(16px, 1.6vw, 32px)",
       }}
     >
       {showFrames ? (
-        <div className="w-full shrink-0">
+        <div data-scene-camera className="w-full shrink-0">
           <OverlayCamera preset={preset} aspect="4/3" />
         </div>
       ) : (
@@ -145,7 +144,7 @@ export function OverlaySceneChat({
       )}
 
       {showChat ? (
-        <div className="min-h-0 w-full flex-1">
+        <div data-scene-chat className="min-h-0 w-full flex-1">
           <OverlayTwitchChat
             channel={channel}
             preset={preset}
@@ -164,7 +163,7 @@ export function OverlaySceneChat({
   if (!isRebrand) {
     return (
       <div className="pointer-events-none relative h-full w-full overflow-hidden bg-transparent">
-        {showBg ? <div className="absolute inset-0 bg-[#020617]" /> : null}
+        {showBackground && <div className="absolute inset-0 bg-[#020617]" />}
         {showFrames ? (
           <div
             className="absolute rounded-2xl border-2 border-white/30"
@@ -172,51 +171,27 @@ export function OverlaySceneChat({
           />
         ) : null}
         {rightColumn}
+        {showBackground && <div data-scene-goal className="absolute z-20" style={LAYOUT.goal}><OverlayFollowerGoal channel={channel} coopstreamKey={coopstreamKey} preset={preset} /></div>}
       </div>
     )
   }
 
   return (
     <div className="pointer-events-none relative h-full w-full overflow-hidden bg-transparent">
-      {showBg ? (
-        <div className="absolute inset-0 z-0 overflow-hidden">
-          <Image
-            src={bakedBg}
-            alt=""
-            fill
-            priority
-            className="object-cover"
-            sizes="100vw"
-            unoptimized
-          />
-        </div>
-      ) : null}
-
-      {(showFrames || showBg) && (
+      {showBackground && <Image src="/overlays/lecalme-rebrand/scene-chat-bg.png" alt="" fill priority unoptimized sizes="100vw" className="object-cover" />}
+      {showFrames && (
         <div
           className={`absolute z-20 ${showFrames ? "" : "opacity-0"}`}
           style={{ left: LAYOUT.brand.left, top: LAYOUT.brand.top }}
           aria-hidden={!showFrames}
         >
-          <div className="flex flex-col font-black uppercase italic leading-[0.82] tracking-[-0.04em]">
-            <span
-              className="text-[clamp(1.2rem,2.6vmin,1.9rem)]"
-              style={outlineStyle}
-            >
-              LE
-            </span>
-            <span
-              className="-mt-0.5 ml-[8%] text-[clamp(1.6rem,3.6vmin,2.6rem)]"
-              style={outlineStyle}
-            >
-              CALME
-            </span>
-          </div>
+          <AnimatedChatSignature />
         </div>
       )}
 
       {showFrames ? screenFrame : null}
       {rightColumn}
+      {showBackground && <div data-scene-goal className="absolute z-20" style={LAYOUT.goal}><OverlayFollowerGoal channel={channel} coopstreamKey={coopstreamKey} preset={preset} /></div>}
     </div>
   )
 }

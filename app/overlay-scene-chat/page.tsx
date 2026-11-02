@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { redirect } from "next/navigation"
 
 import { OverlayBodyMode } from "@/components/overlay/overlay-body-mode"
 import {
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 }
 
 function parseSceneChatLayer(raw?: string | null): SceneChatLayer {
-  if (raw === "frame" || raw === "chat" || raw === "bg") return raw
+  if (raw === "frame" || raw === "chat") return raw
   return "preview"
 }
 
@@ -37,6 +38,9 @@ export default async function OverlaySceneChatPage({
       ? sp.coopstreamKey.trim()
       : undefined
   const preset = parseOverlayPreset(sp?.preset)
+  if (sp?.layer === "bg") {
+    redirect(`/overlay-background?preset=${preset}`)
+  }
   const layer = parseSceneChatLayer(sp?.layer)
 
   const soundRaw = typeof sp?.sound === "string" ? sp.sound.trim().toLowerCase() : ""

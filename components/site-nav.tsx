@@ -45,6 +45,12 @@ function TwitchLogo({ className }: { className?: string }) {
 const links = workspaces
 
 const OVERLAY_ONLY_PATHS = [
+  "/overlay-background",
+  "/overlay-social",
+  "/overlay-followers-summary",
+  "/overlay-brand-title",
+  "/overlay-chibi",
+  "/overlay-timer",
   "/overlay-defi-carrousel",
   "/overlay-chat",
   "/overlay-planning",

@@ -4,7 +4,7 @@ import * as React from "react"
 import { Camera } from "lucide-react"
 import { getOverlayPresetTheme, type OverlayPreset } from "@/lib/overlay/presets"
 
-const FRAME_PX = 26
+const FRAME_PX = 12
 
 export function OverlayCamera({
   aspect = "4/3",
@@ -60,7 +60,7 @@ export function OverlayCamera({
           {/* Contour externe (même DA que chat / planning) */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 rounded-[32px] border-[3px] border-[#2a1f5c]"
+            className="pointer-events-none absolute inset-0 rounded-[32px] border-2 border-[#2a1f5c]"
             style={{
               boxShadow:
                 "0 0 0 1.5px rgba(236,240,255,0.95), inset 0 0 0 1px rgba(236,240,255,0.28)",
@@ -70,7 +70,7 @@ export function OverlayCamera({
           {/* Lèvre intérieure pêche, fine */}
           <div
             aria-hidden
-            className="pointer-events-none absolute rounded-[18px]"
+            className="pointer-events-none absolute rounded-[21px]"
             style={{
               inset: FRAME_PX - 1,
               boxShadow: `inset 0 0 0 2px ${accent}aa, 0 0 18px ${accent}22`,
@@ -80,7 +80,7 @@ export function OverlayCamera({
           {/* Filet sombre entre marbre et webcam */}
           <div
             aria-hidden
-            className="pointer-events-none absolute rounded-[17px]"
+            className="pointer-events-none absolute rounded-[19px]"
             style={{
               inset: FRAME_PX + 3,
               boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.55)",
@@ -89,7 +89,7 @@ export function OverlayCamera({
 
           {/* Trou webcam */}
           <div
-            className="absolute rounded-[16px] bg-transparent"
+            className="absolute rounded-[20px] bg-transparent"
             style={{ inset: FRAME_PX }}
           />
         </div>

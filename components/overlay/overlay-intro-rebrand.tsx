@@ -3,6 +3,9 @@
 import * as React from "react"
 import Image from "next/image"
 import { motion } from "framer-motion"
+import { SocialCard, TikTokIcon } from "@/components/overlay/overlay-social-card"
+import { OverlayIntroTitle } from "@/components/overlay/overlay-intro-title"
+import { FollowersCard } from "@/components/overlay/overlay-followers-card"
 import { Instagram, Youtube } from "lucide-react"
 import { getOverlayPresetTheme } from "@/lib/overlay/presets"
 import { OverlayPlanning } from "@/components/overlay/overlay-planning"
@@ -23,115 +26,10 @@ function formatClock(totalSeconds: number) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
 }
 
-function TikTokIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
-      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15.3a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.73a8.2 8.2 0 0 0 4.76 1.52V6.8a4.85 4.85 0 0 1-1-.11Z" />
-    </svg>
-  )
-}
-
 type Socials = {
   youtube: string | null
   tiktok: string | null
   instagram: string | null
-}
-
-const SOCIAL_ICON_BG = {
-  tt: "linear-gradient(145deg, #25f4ee44, #fe2c5544)",
-  ig: "linear-gradient(145deg, #f58529aa, #dd2a7b99, #8134af99)",
-  yt: "linear-gradient(145deg, #ff000066, #ff444433)",
-} as const
-
-function SocialCard({
-  label,
-  handle,
-  icon,
-  delay,
-  toneKey,
-  marbleBg,
-  accent,
-}: {
-  label: string
-  handle: string
-  icon: React.ReactNode
-  delay: number
-  toneKey: keyof typeof SOCIAL_ICON_BG
-  marbleBg?: string
-  accent: string
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: 24 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.55, delay, ease: [0.22, 1, 0.36, 1] }}
-      className="relative min-w-0 flex-1"
-      style={{ minHeight: 108 }}
-    >
-      <div
-        className="relative flex h-full w-full flex-col overflow-hidden rounded-[28px] border-[3px] border-[#2a1f5c] bg-[#1a1035]"
-        style={{
-          boxShadow:
-            "0 0 0 1.5px rgba(236,240,255,0.95), 0 14px 36px rgba(0,0,0,0.55)",
-        }}
-      >
-        {marbleBg ? (
-          <Image
-            src={marbleBg}
-            alt=""
-            fill
-            className="object-cover"
-            sizes="280px"
-            unoptimized
-          />
-        ) : null}
-        {/* Contenu clipé, bordure au-dessus du marbre */}
-        <div className="pointer-events-none absolute inset-[3px] overflow-hidden rounded-[24px]">
-          <div className="absolute inset-0 bg-[#0c061c]/45" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0c061c]/40 via-transparent to-[#0c061c]/25" />
-        </div>
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 z-[2] rounded-[28px]"
-          style={{ boxShadow: "inset 0 0 0 1px rgba(236,240,255,0.35)" }}
-        />
-
-        <div className="relative z-10 flex h-full flex-col items-center justify-center px-4 py-3.5 text-center">
-          <div className="flex w-full items-center gap-2">
-            <div
-              className="h-[2px] min-w-[10px] flex-1 rounded-full"
-              style={{ backgroundColor: accent, boxShadow: `0 0 8px ${accent}` }}
-            />
-            <div
-              className="shrink-0 text-[10px] font-black uppercase tracking-[0.18em] text-white"
-              style={{ textShadow: "0 2px 10px rgba(0,0,0,0.85)" }}
-            >
-              {label}
-            </div>
-            <div
-              className="h-[2px] min-w-[10px] flex-1 rounded-full"
-              style={{ backgroundColor: accent, boxShadow: `0 0 8px ${accent}` }}
-            />
-          </div>
-
-          <div className="mt-2 flex w-full items-center justify-center gap-3">
-            <div
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white ring-1 ring-white/20 [&_svg]:h-5 [&_svg]:w-5"
-              style={{ background: SOCIAL_ICON_BG[toneKey] }}
-            >
-              {icon}
-            </div>
-            <div
-              className="max-w-[70%] truncate pb-0.5 text-left text-[18px] font-black leading-[1.2] tracking-tight text-white"
-              style={{ textShadow: "0 3px 14px rgba(0,0,0,0.9)" }}
-            >
-              {handle}
-            </div>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  )
 }
 
 function FlyingChibi({
@@ -178,52 +76,6 @@ function FlyingChibi({
           unoptimized
         />
       </motion.div>
-    </motion.div>
-  )
-}
-
-function TitleWord({
-  children,
-  from,
-  meet,
-  delay,
-  className,
-  style,
-}: {
-  children: React.ReactNode
-  /** Direction d'entrée (négatif = gauche, positif = droite) */
-  from: number
-  /** Drift idle vers le partenaire (LE +, CALME -) */
-  meet: number
-  delay: number
-  className?: string
-  style?: React.CSSProperties
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: from, filter: "blur(12px)" }}
-      animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-      transition={{
-        duration: 0.7,
-        delay,
-        ease: [0.16, 1, 0.3, 1],
-      }}
-      className={["w-fit will-change-transform", className].filter(Boolean).join(" ")}
-      style={style}
-    >
-      <motion.span
-        className="inline-block will-change-transform"
-        animate={{ x: [0, meet] }}
-        transition={{
-          duration: 2.4,
-          delay: delay + 0.75,
-          repeat: Infinity,
-          repeatType: "mirror",
-          ease: [0.37, 0, 0.63, 1],
-        }}
-      >
-        {children}
-      </motion.span>
     </motion.div>
   )
 }
@@ -280,7 +132,7 @@ export function OverlayIntroRebrand({
       setRemaining((prev) => Math.max(0, prev - 1))
     }, 1000)
     return () => window.clearInterval(id)
-  }, [remaining, isOutro])
+  }, [remaining, hideTimer])
 
   React.useEffect(() => {
     const STORAGE_KEY = "coopstream-twitch-channel"
@@ -377,10 +229,6 @@ export function OverlayIntroRebrand({
 
   const total = Math.max(1, startSeconds)
   const progress = Math.min(100, Math.max(0, ((total - remaining) / total) * 100))
-  const followProgress =
-    goalTarget && followersTotal != null
-      ? Math.min(100, Math.max(0, (followersTotal / Math.max(1, goalTarget)) * 100))
-      : 0
   const marbleBg = visual.assets?.backgroundUrl
   const socialCards = [
     socials.youtube
@@ -408,17 +256,12 @@ export function OverlayIntroRebrand({
         }
       : null,
   ].filter(Boolean) as Array<{
-    key: keyof typeof SOCIAL_ICON_BG
+    key: "yt" | "ig" | "tt"
     label: string
     handle: string
     icon: React.ReactNode
   }>
 
-  const outlineStyle: React.CSSProperties = {
-    color: "transparent",
-    WebkitTextStroke: "2.5px rgba(255,255,255,0.92)",
-    textShadow: "0 8px 28px rgba(0,0,0,0.45)",
-  }
 
   return (
     <div className="pointer-events-none relative h-full w-full overflow-hidden bg-black">
@@ -471,114 +314,7 @@ export function OverlayIntroRebrand({
           transition={{ duration: 0.55, delay: 0.35 }}
           className="w-full shrink-0"
         >
-          <div
-            className="relative flex w-full flex-col overflow-hidden rounded-[28px] border-[3px] border-[#2a1f5c] bg-[#1a1035]"
-            style={{
-              boxShadow:
-                "0 0 0 1.5px rgba(236,240,255,0.95), 0 14px 36px rgba(0,0,0,0.55)",
-            }}
-          >
-            <div className="pointer-events-none absolute inset-[3px] overflow-hidden rounded-[24px]">
-              {marbleBg ? (
-                <Image
-                  src={marbleBg}
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="380px"
-                  unoptimized
-                />
-              ) : null}
-              <div className="absolute inset-0 bg-[#0c061c]/45" />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#0c061c]/40 via-transparent to-[#0c061c]/25" />
-            </div>
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 z-[2] rounded-[28px]"
-              style={{ boxShadow: "inset 0 0 0 1px rgba(236,240,255,0.4)" }}
-            />
-
-            <div className="relative z-10 flex flex-col px-5 py-4">
-              <div className="flex w-full items-center gap-2">
-                <div
-                  className="h-[2px] min-w-[12px] flex-1 rounded-full"
-                  style={{ backgroundColor: accent, boxShadow: `0 0 8px ${accent}` }}
-                />
-                <div
-                  className="shrink-0 text-[10px] font-black uppercase tracking-[0.2em] text-white"
-                  style={{ textShadow: "0 2px 10px rgba(0,0,0,0.85)" }}
-                >
-                  Followers
-                </div>
-                <div
-                  className="h-[2px] min-w-[12px] flex-1 rounded-full"
-                  style={{ backgroundColor: accent, boxShadow: `0 0 8px ${accent}` }}
-                />
-              </div>
-
-              <div className="mt-2">
-                <div
-                  className="font-black leading-none tracking-tight text-white"
-                  style={{ textShadow: "0 3px 14px rgba(0,0,0,0.9)" }}
-                >
-                  <span className="text-[30px] tabular-nums">
-                    {followersTotal != null ? followersTotal.toLocaleString("fr-FR") : "—"}
-                  </span>
-                  {goalTarget != null ? (
-                    <>
-                      <span className="mx-1 text-[18px] text-white/75">/</span>
-                      <span className="text-[30px] tabular-nums">
-                        {goalTarget.toLocaleString("fr-FR")}
-                      </span>
-                    </>
-                  ) : null}
-                </div>
-                <div
-                  className="mt-1 text-[9px] font-bold uppercase tracking-[0.28em] text-white/75"
-                  style={{ textShadow: "0 1px 6px rgba(0,0,0,0.8)" }}
-                >
-                  {goalUnit}
-                </div>
-              </div>
-
-              {goalTarget != null ? (
-                <div className="mt-2.5 w-full">
-                  <div className="h-[8px] w-full overflow-hidden rounded-full border border-white/85 bg-black/75">
-                    <motion.div
-                      className="h-full rounded-full"
-                      animate={{ width: `${followProgress.toFixed(1)}%` }}
-                      transition={{ type: "spring", stiffness: 120, damping: 20 }}
-                      style={{ backgroundImage: visual.progressGradient }}
-                    />
-                  </div>
-                </div>
-              ) : null}
-
-              <div
-                className="mt-3 rounded-xl border px-3 py-2.5"
-                style={{
-                  borderColor: `${accent}66`,
-                  background: `linear-gradient(135deg, ${accent}22, rgba(0,0,0,0.35))`,
-                  boxShadow: `inset 0 0 0 1px ${accent}33, 0 0 18px ${accent}18`,
-                }}
-              >
-                <div
-                  className="text-[9px] font-bold uppercase tracking-[0.22em]"
-                  style={{ color: accent, textShadow: "0 1px 6px rgba(0,0,0,0.8)" }}
-                >
-                  Dernier follower
-                </div>
-                <div
-                  className="mt-1 truncate text-[22px] font-black leading-[1.15] tracking-tight text-white"
-                  style={{
-                    textShadow: `0 0 20px ${accent}55, 0 3px 14px rgba(0,0,0,0.9)`,
-                  }}
-                >
-                  {lastFollower ?? "—"}
-                </div>
-              </div>
-            </div>
-          </div>
+          <FollowersCard visual={visual} followersTotal={followersTotal} goalTarget={goalTarget} goalUnit={goalUnit} lastFollower={lastFollower} />
         </motion.div>
 
         {showPlanning ? (
@@ -618,154 +354,7 @@ export function OverlayIntroRebrand({
           {/* Titre — milieu */}
           <div className="flex min-w-0 flex-1 justify-center px-2">
             <div className="w-full max-w-[560px]">
-              <div className="flex flex-col font-black uppercase italic leading-[0.82] tracking-[-0.04em]">
-                {isOutro ? (
-                  <>
-                    <TitleWord
-                      from={-160}
-                      meet={22}
-                      delay={0.05}
-                      className="ml-[8%]"
-                      style={{ ...outlineStyle, fontSize: "clamp(3.2rem, 11vmin, 8.5rem)" }}
-                    >
-                      MERCI
-                    </TitleWord>
-                    <TitleWord
-                      from={180}
-                      meet={-26}
-                      delay={0.05}
-                      className="-mt-1 ml-[12%]"
-                      style={{ ...outlineStyle, fontSize: "clamp(3.6rem, 12vmin, 9rem)" }}
-                    >
-                      D&apos;AVOIR
-                    </TitleWord>
-                    <TitleWord
-                      from={-140}
-                      meet={18}
-                      delay={0.28}
-                      className="mt-2 ml-[22%] text-white"
-                      style={{
-                        fontSize: "clamp(2.4rem, 8vmin, 5.2rem)",
-                        textShadow: "0 4px 22px rgba(0,0,0,0.9)",
-                      }}
-                    >
-                      SUIVI
-                    </TitleWord>
-                    {subtitle.trim() ? (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.55 }}
-                        className="mt-4 ml-[12%] max-w-[90%] text-[clamp(1rem,2.2vmin,1.35rem)] font-semibold not-italic normal-case tracking-normal text-white/70"
-                        style={{ textShadow: "0 2px 12px rgba(0,0,0,0.85)" }}
-                      >
-                        {subtitle.trim()}
-                      </motion.div>
-                    ) : null}
-                  </>
-                ) : isPause ? (
-                  <>
-                    <TitleWord
-                      from={-160}
-                      meet={22}
-                      delay={0.05}
-                      className="ml-[8%]"
-                      style={{ ...outlineStyle, fontSize: "clamp(3.2rem, 11vmin, 8.5rem)" }}
-                    >
-                      PETITE
-                    </TitleWord>
-                    <TitleWord
-                      from={180}
-                      meet={-26}
-                      delay={0.05}
-                      className="-mt-1 ml-[10%]"
-                      style={{ ...outlineStyle, fontSize: "clamp(4rem, 14vmin, 10rem)" }}
-                    >
-                      PAUSE
-                    </TitleWord>
-                    <TitleWord
-                      from={-140}
-                      meet={18}
-                      delay={0.28}
-                      className="mt-2 ml-[20%] text-white"
-                      style={{
-                        fontSize: "clamp(2rem, 6.5vmin, 4.4rem)",
-                        textShadow: "0 4px 22px rgba(0,0,0,0.9)",
-                      }}
-                    >
-                      ON REVIENT
-                    </TitleWord>
-                    <TitleWord
-                      from={150}
-                      meet={-20}
-                      delay={0.28}
-                      className="mt-3 ml-[28%] text-white sm:mt-4"
-                      style={{
-                        fontSize: "clamp(2rem, 6.5vmin, 4.4rem)",
-                        textShadow: "0 4px 22px rgba(0,0,0,0.9)",
-                      }}
-                    >
-                      BIENTÔT
-                    </TitleWord>
-                    {subtitle.trim() ? (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.55 }}
-                        className="mt-4 ml-[12%] max-w-[90%] text-[clamp(1rem,2.2vmin,1.35rem)] font-semibold not-italic normal-case tracking-normal text-white/70"
-                        style={{ textShadow: "0 2px 12px rgba(0,0,0,0.85)" }}
-                      >
-                        {subtitle.trim()}
-                      </motion.div>
-                    ) : null}
-                  </>
-                ) : (
-                  <>
-                    <TitleWord
-                      from={-160}
-                      meet={22}
-                      delay={0.05}
-                      className="ml-[8%]"
-                      style={{ ...outlineStyle, fontSize: "clamp(3.2rem, 11vmin, 8.5rem)" }}
-                    >
-                      LE
-                    </TitleWord>
-                    <TitleWord
-                      from={180}
-                      meet={-26}
-                      delay={0.05}
-                      className="-mt-1 ml-[12%]"
-                      style={{ ...outlineStyle, fontSize: "clamp(4rem, 14vmin, 10rem)" }}
-                    >
-                      CALME
-                    </TitleWord>
-                    <TitleWord
-                      from={-140}
-                      meet={18}
-                      delay={0.28}
-                      className="mt-2 ml-[28%] text-white"
-                      style={{
-                        fontSize: "clamp(2rem, 6.5vmin, 4.4rem)",
-                        textShadow: "0 4px 22px rgba(0,0,0,0.9)",
-                      }}
-                    >
-                      ARRIVE
-                    </TitleWord>
-                    <TitleWord
-                      from={150}
-                      meet={-20}
-                      delay={0.28}
-                      className="mt-3 ml-[16%] text-white sm:mt-4"
-                      style={{
-                        fontSize: "clamp(2rem, 6.5vmin, 4.4rem)",
-                        textShadow: "0 4px 22px rgba(0,0,0,0.9)",
-                      }}
-                    >
-                      BIENTÔT
-                    </TitleWord>
-                  </>
-                )}
-              </div>
+              <OverlayIntroTitle variant={variant} subtitle={subtitle} />
             </div>
           </div>
 
