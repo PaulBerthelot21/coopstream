@@ -177,28 +177,18 @@ body.overlay-body {
     transform: translateX(-50%);
   }
 }
-/* Le Calme creative studio */
+/* The editing interface follows the user's theme; artwork keeps its own palette. */
 .thumbnail-studio {
-  --primary: #a78bfa;
-  --primary-foreground: #150e25;
-  --background: #100c18;
-  --foreground: #f7f5ff;
-  --muted: #241b33;
-  --muted-foreground: #a49aae;
-  --border: #342840;
-  --input: #342840;
-  --secondary: #2b1f3e;
-  --secondary-foreground: #eee6ff;
   color: var(--foreground);
-  background: radial-gradient(ellipse at 10% 0%, #39215040, transparent 55%), #100c18;
-  border: 1px solid #ffffff0a;
+  background: var(--background);
+  border: 1px solid var(--border);
   border-radius: 24px;
   padding: clamp(16px, 2vw, 28px);
 }
-.thumbnail-studio input[type="range"], .thumbnail-studio input[type="checkbox"] { accent-color: #a78bfa; }
+.thumbnail-studio input[type="range"], .thumbnail-studio input[type="checkbox"] { accent-color: var(--primary); }
 .studio-workspace {
-  background-color: #0b0810;
-  background-image: radial-gradient(#ffffff12 1px, transparent 1px);
+  background-color: var(--muted);
+  background-image: radial-gradient(color-mix(in srgb, var(--foreground) 8%, transparent) 1px, transparent 1px);
   background-size: 18px 18px;
 }
-.thumbnail-studio canvas { box-shadow: 0 16px 50px #00000050; }
+.thumbnail-studio canvas { box-shadow: 0 16px 50px #00000030; }

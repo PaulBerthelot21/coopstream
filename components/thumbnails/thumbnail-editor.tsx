@@ -181,7 +181,7 @@ function TextControls({
         { label: "Contour", color: "transparent", stroke: "#ffffff", mode: "outline" as const },
         { label: "Blanc", color: "#ffffff", stroke: "transparent", mode: "solid" as const },
         { label: "Lavande", color: "#d8b4fe", stroke: "transparent", mode: "solid" as const },
-      ].map(style => <button type="button" key={style.label} onClick={() => patch({ color: style.color, stroke: style.stroke, fillMode: style.mode, strokeWidth: style.mode === "outline" ? 2.5 : 0, fontId: "lecalme", italic: true, tightTracking: true })} className="rounded-lg border border-violet-300/20 bg-violet-400/5 px-2 py-3 text-xs font-black uppercase italic text-violet-100 hover:bg-violet-400/15">{style.label}</button>)}</div>}
+      ].map(style => <button type="button" key={style.label} onClick={() => patch({ color: style.color, stroke: style.stroke, fillMode: style.mode, strokeWidth: style.mode === "outline" ? 2.5 : 0, fontId: "lecalme", italic: true, tightTracking: true })} className="rounded-lg border border-primary/20 bg-primary/5 px-2 py-3 text-xs font-black uppercase italic text-foreground hover:bg-primary/15">{style.label}</button>)}</div>}
       <label className="block text-xs text-muted-foreground">Ombre du texte ({Math.round((item.shadow ?? .75) * 100)}%)<input type="range" min={0} max={1} step={.05} value={item.shadow ?? .75} onChange={e => patch({ shadow: Number(e.target.value) })} className="mt-2 w-full" /></label>
       <Input
         aria-label="Contenu du texte"
@@ -670,7 +670,7 @@ export function ThumbnailEditor() {
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border/60 pb-4">
         <div className="min-w-0 space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            Le Calme <span className="font-light text-violet-300">/ Studio</span>
+            Miniatures <span className="font-light text-primary">/ Studio</span>
           </h1>
           <p className="text-sm text-muted-foreground">
             Ton univers. Tes images. Ta signature.
@@ -703,7 +703,7 @@ export function ThumbnailEditor() {
       </header>
 
       <section aria-label="Modèles prêts à personnaliser" className="space-y-3">
-        <div className="flex items-center justify-between"><h2 className="text-xs font-semibold uppercase tracking-[.18em] text-violet-300">Choisir une composition</h2><span className="text-xs text-muted-foreground">Tes images et tes titres suivent le modèle</span></div>
+        <div className="flex items-center justify-between"><h2 className="text-xs font-semibold uppercase tracking-[.18em] text-primary">Choisir une composition</h2><span className="text-xs text-muted-foreground">Tes images et tes titres suivent le modèle</span></div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {THUMBNAIL_TEMPLATES.filter(t => t.studio).map(t => (
             <TemplateCard key={t.id} id={t.id} label={t.label} description={t.description} active={state.templateId === t.id} onClick={() => {
@@ -742,7 +742,7 @@ export function ThumbnailEditor() {
             <div className="flex gap-2"><Button size="sm" variant="secondary" onClick={addText}><Plus className="mr-1 h-3 w-3" />Texte</Button><Button size="sm" variant="ghost" onClick={() => setMobilePreview(v => !v)}>{mobilePreview ? "Masquer l’aperçu mobile" : "Vérifier sur mobile"}</Button></div>
             <span className="text-[11px] text-muted-foreground">1280 × 720 · 16:9</span>
           </div>
-          {mobilePreview && <div className="mx-auto w-full max-w-[320px] overflow-hidden rounded-xl border border-white/10 bg-[#18131f]"><StudioPreview state={state} /><div className="p-3"><p className="text-sm font-semibold">{state.texts.filter(t => t.kind === "text").map(t => t.text).join(" ") || "Ta prochaine vidéo"}</p><p className="mt-1 text-xs text-white/40">Le Calme · Aperçu de lisibilité</p></div></div>}
+          {mobilePreview && <div className="mx-auto w-full max-w-[320px] overflow-hidden rounded-xl border border-border bg-card"><StudioPreview state={state} /><div className="p-3"><p className="text-sm font-semibold">{state.texts.filter(t => t.kind === "text").map(t => t.text).join(" ") || "Ta prochaine vidéo"}</p><p className="mt-1 text-xs text-muted-foreground">Aperçu de lisibilité</p></div></div>}
         </section>
 
         {/* Side panel */}
@@ -973,7 +973,7 @@ export function ThumbnailEditor() {
 
             {panel === "media" ? (
               <div className="space-y-6">
-                <div className="rounded-xl border border-violet-400/15 bg-violet-400/5 p-3"><p className="text-sm font-medium">Trois changements, une miniature.</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">Choisis ton fond, remplace le visage et écris ton titre. Les réglages avancés restent à portée de main.</p></div>
+                <div className="rounded-xl border border-primary/15 bg-primary/5 p-3"><p className="text-sm font-medium">Trois changements, une miniature.</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">Choisis ton fond, remplace le visage et écris ton titre. Les réglages avancés restent à portée de main.</p></div>
                 <FileOrDemo
                   label="Fond (ciné / gameplay)"
                   icon={<ImageIcon className="h-4 w-4" />}
@@ -1193,8 +1193,8 @@ export function ThumbnailEditor() {
 
 function TemplateCard({ id, label, description, active, onClick }: { id: string; label: string; description: string; active: boolean; onClick: () => void }) {
   const preview = React.useMemo(() => createStudioState(id), [id])
-  return <button type="button" onClick={onClick} aria-pressed={active} className={`group overflow-hidden rounded-xl border text-left transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-violet-300 ${active ? "border-violet-400 bg-violet-500/10 ring-1 ring-violet-400/30" : "border-white/10 bg-white/[.025] hover:border-violet-400/50"}`}>
-    <div className="relative overflow-hidden"><StudioPreview state={preview} />{active && <span className="absolute right-2 top-2 rounded-full bg-violet-500 p-1 text-white"><Check className="h-3 w-3" /></span>}</div>
+  return <button type="button" onClick={onClick} aria-pressed={active} className={`group overflow-hidden rounded-xl border text-left transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-primary ${active ? "border-primary bg-primary/10 ring-1 ring-primary/30" : "border-border bg-card hover:border-primary/50"}`}>
+    <div className="relative overflow-hidden"><StudioPreview state={preview} />{active && <span className="absolute right-2 top-2 rounded-full bg-primary p-1 text-primary-foreground"><Check className="h-3 w-3" /></span>}</div>
     <div className="p-3"><p className="text-sm font-semibold">{label}</p><p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{description}</p></div>
   </button>
 }

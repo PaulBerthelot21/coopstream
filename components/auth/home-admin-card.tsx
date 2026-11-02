@@ -11,18 +11,18 @@ import { useAuthSession } from "@/lib/useAuthSession"
 
 export function HomeAdminCard() {
   const session = useAuthSession()
-  const isAuthed = Boolean((session as any)?.user)
+  const isAuthed = Boolean((session as { user?: unknown } | null)?.user)
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Admin</CardTitle>
-        <CardDescription>Créer, choisir et déclencher les rewards.</CardDescription>
+        <CardTitle>Live</CardTitle>
+        <CardDescription>Piloter les objectifs, la roue et les défis du live.</CardDescription>
       </CardHeader>
       <CardContent className="flex justify-end">
         {isAuthed ? (
           <Button asChild>
-            <Link href="/admin">Ouvrir l&apos;admin</Link>
+            <Link href="/admin">Ouvrir le Live</Link>
           </Button>
         ) : (
           <Button variant="outline" onClick={() => void signInWithTwitch()}>

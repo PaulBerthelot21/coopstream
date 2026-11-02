@@ -1,54 +1,10 @@
-import Link from "next/link";
-
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { HomeAdminCard } from "@/components/auth/home-admin-card";
+import { Radio, Palette, MonitorPlay } from "lucide-react"
+import { WorkspaceHub } from "@/components/workspace-hub"
 
 export default function HomePage() {
-  return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-8">
-      <section className="grid gap-4 md:grid-cols-2">
-        <Card className="bg-background/60">
-          <CardHeader>
-            <CardTitle>Overlay</CardTitle>
-            <CardDescription>Ouvrir la vue OBS pour ajouter les overlays.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-end">
-            <Button variant="outline" asChild>
-              <Link href="/overlay">Ouvrir l'overlay</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <HomeAdminCard />
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-2">
-        <Card className="bg-background/60">
-          <CardHeader>
-            <CardTitle>Skins</CardTitle>
-            <CardDescription>Gérer et sélectionner les skins disponibles.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-end">
-            <Button variant="outline" asChild>
-              <Link href="/skins">Ouvrir les skins</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-background/60">
-          <CardHeader>
-            <CardTitle>Paramètres</CardTitle>
-            <CardDescription>Clair / sombre et options d’interface.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-end">
-            <Button variant="outline" asChild>
-              <Link href="/settings">Ouvrir les paramètres</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </section>
-    </main>
-  );
+  return <WorkspaceHub eyebrow="CoopStream" title="Du live à la publication." description="Un seul endroit pour piloter ton stream, créer tes visuels et préparer tes scènes OBS. Choisis ton espace." tools={[
+    { title: "Live", description: "Objectifs, roue, défis et commandes rapides : le poste de contrôle de ton stream.", href: "/admin", icon: Radio },
+    { title: "Studio", description: "Miniatures et futurs plannings : les outils pour donner une signature à tes contenus.", href: "/studio", icon: Palette },
+    { title: "Overlays", description: "Explore les habillages, teste les alertes et récupère tes liens OBS.", href: "/overlay", icon: MonitorPlay },
+  ]} />
 }
-

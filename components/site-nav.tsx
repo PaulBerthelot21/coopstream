@@ -6,10 +6,12 @@ import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
   MonitorPlay,
-  Settings2,
+  Palette,
   Menu,
   X,
 } from "lucide-react"
+
+import { workspaces, workspaceForPath } from "@/lib/workspaces"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -40,12 +42,7 @@ function TwitchLogo({ className }: { className?: string }) {
   )
 }
 
-const links = [
-  { href: "/admin", label: "Admin" },
-  { href: "/overlay", label: "Overlay" },
-  { href: "/overlay-test", label: "Test overlays" },
-  { href: "/skins", label: "Skins" },
-] as const
+const links = workspaces
 
 const OVERLAY_ONLY_PATHS = [
   "/overlay-defi-carrousel",
@@ -70,10 +67,8 @@ export function SiteNav() {
   const pathname = usePathname()
   const [open, setOpen] = React.useState(false)
   const session = useAuthSession()
-  const isAuthed = Boolean((session as any)?.user)
-  const user = (session as any)?.user as
-    | { name?: string; email?: string; image?: string }
-    | undefined
+  const user = (session as { user?: { name?: string; email?: string; image?: string } } | null)?.user
+  const isAuthed = Boolean(user)
   const displayName = user?.name ?? user?.email ?? "Twitch"
   const avatarUrl = user?.image ?? null
 
@@ -110,20 +105,21 @@ export function SiteNav() {
 
   if (OVERLAY_ONLY_PATHS.some((p) => pathname.startsWith(p))) return null
 
+  const space = workspaceForPath(pathname)
+
   const getIconFor = (href: string) => {
     if (href === "/admin") return LayoutDashboard
     if (href === "/overlay") return MonitorPlay
-    if (href === "/recap") return LayoutDashboard
-    if (href === "/skins") return MonitorPlay
-    return Settings2
+    return Palette
   }
 
   return (
+    <>
     <header className="sticky top-0 z-30 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl" suppressHydrationWarning>
-      <div className="mx-auto flex h-12 w-full max-w-5xl items-center justify-between px-4">
+      <div className="mx-auto flex h-12 w-full max-w-6xl items-center justify-between px-4">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2 rounded-full bg-primary/5 px-3 py-1 ring-1 ring-primary/25">
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_14px_rgba(79,70,229,0.9)]">
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_14px_color-mix(in_srgb,var(--primary)_60%,transparent)]">
               <LayoutDashboard className="h-3 w-3" />
             </span>
             <span className="hidden text-xs font-semibold uppercase tracking-[0.2em] text-primary sm:inline">
@@ -133,11 +129,10 @@ export function SiteNav() {
         </div>
         <div className="flex items-center gap-2">
           <div className="hidden items-center gap-3 md:flex">
-            <nav className="flex gap-1 pr-1">
+            <nav aria-label="Navigation principale" className="flex gap-1 pr-1">
               {links
-                .filter((l) => (l.href === "/admin" ? isAuthed : true))
                 .map((link) => {
-                  const active = pathname.startsWith(link.href)
+                  const active = space?.href === link.href
                   const Icon = getIconFor(link.href)
                   return (
                     <Button
@@ -147,7 +142,7 @@ export function SiteNav() {
                       size="sm"
                       className="gap-1.5"
                     >
-                      <Link href={link.href}>
+                      <Link href={link.href} aria-current={active ? "page" : undefined}>
                         <Icon className="h-3.5 w-3.5" />
                         <span>{link.label}</span>
                       </Link>
@@ -211,26 +206,24 @@ export function SiteNav() {
                 <TwitchLogo className="h-4 w-4 text-[#9146FF]" />
               </Button>
             )}
-          <div className="flex gap-1 rounded-full bg-background/80 p-0.5 ring-1 ring-border/60">
-            {/* Le sélecteur clair/sombre est dans la page Paramètres. */}
-          </div>
           <button
             type="button"
             className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:text-foreground md:hidden"
             onClick={() => setOpen((v) => !v)}
-            aria-label="Ouvrir la navigation"
+            aria-label={open ? "Fermer la navigation" : "Ouvrir la navigation"}
+            aria-expanded={open}
+            aria-controls="mobile-navigation"
           >
             {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
         </div>
       </div>
       {open && (
-        <div className="border-t border-border/60 bg-background/95 backdrop-blur-xl md:hidden">
-          <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-4 py-3">
+        <nav id="mobile-navigation" aria-label="Navigation mobile" className="border-t border-border/60 bg-background/95 backdrop-blur-xl md:hidden">
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-4 py-3">
             {links
-              .filter((l) => (l.href === "/admin" ? isAuthed : true))
               .map((link) => {
-                const active = pathname.startsWith(link.href)
+                const active = space?.href === link.href
                 const Icon = getIconFor(link.href)
                 return (
                   <Button
@@ -241,7 +234,7 @@ export function SiteNav() {
                     className="justify-start gap-1.5"
                     onClick={() => setOpen(false)}
                   >
-                    <Link href={link.href}>
+                    <Link href={link.href} aria-current={active ? "page" : undefined}>
                       <Icon className="h-3.5 w-3.5" />
                       <span>{link.label}</span>
                     </Link>
@@ -249,9 +242,19 @@ export function SiteNav() {
                 )
               })}
           </div>
-        </div>
+        </nav>
       )}
     </header>
+    {space && <nav aria-label={`Outils ${space.label}`} className="border-b border-border/50 bg-background/60">
+      <div className="mx-auto flex max-w-6xl items-center gap-1 overflow-x-auto px-4 py-2">
+        <span className="mr-3 shrink-0 border-r border-border pr-4 text-[10px] font-semibold uppercase tracking-[.18em] text-muted-foreground">{space.label}</span>
+        {space.links.map(link => {
+          const active = pathname === link.href
+          return <Link key={link.href} href={link.href} aria-current={active ? "page" : undefined} className={`shrink-0 rounded-lg px-3 py-2 text-xs font-medium transition focus-visible:outline-2 focus-visible:outline-primary ${active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"}`}>{link.label}</Link>
+        })}
+      </div>
+    </nav>}
+    </>
   )
 }
 

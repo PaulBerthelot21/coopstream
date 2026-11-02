@@ -80,7 +80,7 @@ export function OverlayWheelTextRebrand({
   const viewportH = ROW_H * VISIBLE
 
   return (
-    <div className="pointer-events-none relative h-full w-full select-none overflow-hidden">
+    <div className="pointer-events-none relative h-full w-full select-none">
       <div
         className={visual.panelClassName}
         style={{
@@ -129,7 +129,7 @@ export function OverlayWheelTextRebrand({
 
           <div className="relative mt-4 flex flex-1 flex-col items-center justify-center">
             <div
-              className="relative w-full max-w-[420px] overflow-hidden rounded-2xl border-[3px] border-[#2a1f5c] bg-black/45"
+              className="relative box-content w-full max-w-[420px] overflow-hidden rounded-2xl border-[3px] border-[#2a1f5c] bg-black/45"
               style={{
                 height: viewportH,
                 boxShadow: `0 0 0 1.5px rgba(236,240,255,0.85), inset 0 0 40px rgba(0,0,0,0.45)`,

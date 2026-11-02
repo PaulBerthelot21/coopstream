@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { usePrimaryColor } from "@/components/primary-color-provider";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
@@ -150,6 +151,11 @@ export default function SettingsPage() {
             Sombre
           </Button>
         </div>
+      </section>
+      <section className="rounded-2xl border border-border/60 bg-background/60 p-4">
+        <h2 className="text-sm font-semibold">Outils secondaires</h2>
+        <p className="mt-1 text-xs text-muted-foreground">La bibliothèque de skins CS2 reste disponible ici.</p>
+        <Button asChild variant="outline" size="sm" className="mt-3"><Link href="/skins">Bibliothèque de skins</Link></Button>
       </section>
     </main>
   );

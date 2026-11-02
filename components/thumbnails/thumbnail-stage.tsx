@@ -227,7 +227,7 @@ export function ThumbnailStage({
         const isSel = selected === item.id
         const r = item.rect
         const borderColor = isSel
-          ? item.accent || "#a78bfa"
+          ? item.accent || "var(--primary)"
           : "transparent"
         return (
           <div
@@ -249,7 +249,7 @@ export function ThumbnailStage({
               borderStyle: "solid",
               borderColor,
               boxShadow: isSel
-                ? `0 0 0 1px ${item.accent || "rgba(167,139,250,0.35)"}`
+                ? `0 0 0 1px ${item.accent || "color-mix(in srgb, var(--primary) 35%, transparent)"}`
                 : undefined,
             }}
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(item.id) } }}
@@ -259,7 +259,7 @@ export function ThumbnailStage({
               className={`pointer-events-none absolute left-1 top-1 max-w-[90%] truncate rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${isSel ? "" : "opacity-0 group-hover:opacity-100"}`}
               style={{
                 background: isSel
-                  ? item.accent || "#a78bfa"
+                  ? item.accent || "var(--primary)"
                   : "rgba(0,0,0,0.55)",
                 color: isSel && item.accent === "#EAB308" ? "#111" : isSel ? "#fff" : "rgba(255,255,255,0.9)",
               }}
@@ -279,7 +279,7 @@ export function ThumbnailStage({
                       h.className,
                     ].join(" ")}
                     style={{
-                      background: item.accent || "#a78bfa",
+                      background: item.accent || "var(--primary)",
                     }}
                     onPointerDown={(e) => startDrag(e, item.id, h.id)}
                   />
