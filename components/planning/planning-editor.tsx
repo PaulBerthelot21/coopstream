@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuthSession } from "@/lib/useAuthSession"
 import { usePrimaryColor } from "@/components/primary-color-provider"
+import { autoTimelineRange, hiddenTimelineDays } from "@/lib/planning/timeline"
 import { composePlanning, exportPlanning } from "@/lib/planning/compose"
 import { DAY_NAMES, PLANNING_FORMATS, PLANNING_TEMPLATES, PlanningSchema, defaultPlanning, emptyDays, isCalendarDate, mondayOf, shiftDate, weekLabel, type PlanningDay, type PlanningState } from "@/lib/planning/model"
 
@@ -33,7 +34,7 @@ export function PlanningEditor() {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) {
         const parsed = PlanningSchema.safeParse(JSON.parse(raw))
-        if (parsed.success) setState(parsed.data)
+        if (parsed.success) setState({ ...parsed.data, ...(parsed.data.layout === "timeline" ? { layout: "vertical", eventView: "timeline" } : {}) })
         else toast.info("Le brouillon n’a pas pu être restauré. Une nouvelle semaine est prête.")
       } else if (localStorage.getItem("coopstream-overlay-preset") === "lecalme-rebrand") {
         setState(previous => ({ ...previous, template: "rebrand" }))
@@ -88,6 +89,8 @@ export function PlanningEditor() {
     finally { setExporting(false) }
   }
   const dimensions = PLANNING_FORMATS[state.format]
+  const invalidDays = state.days.map((day, i) => day.status === "live" && day.time === day.endTime ? DAY_NAMES[i] : null).filter(Boolean)
+  const outsideAxis = state.eventView === "timeline" ? hiddenTimelineDays(state) : []
   const liveDays = state.days.filter(day => day.status === "live").length
 
   return (
@@ -100,11 +103,12 @@ export function PlanningEditor() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setResetOpen(true)} disabled={!ready}><RotateCcw className="h-4 w-4" />Vider la semaine</Button>
-          <Button variant="outline" disabled={exporting || !ready} onClick={() => void download("jpeg")}><Download className="h-4 w-4" />Exporter JPG</Button>
-          <Button disabled={exporting || !ready} onClick={() => void download("png")}><Download className="h-4 w-4" />{exporting ? "Export en cours…" : "Exporter PNG"}</Button>
+          <Button variant="outline" disabled={exporting || !ready || invalidDays.length > 0} onClick={() => void download("jpeg")}><Download className="h-4 w-4" />Exporter JPG</Button>
+          <Button disabled={exporting || !ready || invalidDays.length > 0} onClick={() => void download("png")}><Download className="h-4 w-4" />{exporting ? "Export en cours…" : "Exporter PNG"}</Button>
         </div>
       </header>
 
+      {invalidDays.length > 0 && <p role="alert" className="text-sm text-destructive">Corrige l’heure de fin : {invalidDays.join(", ")}.</p>}
       <div className="grid items-start gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
         <div className="min-w-0 space-y-5">
           <section aria-label="Réglages du planning" className="space-y-4 rounded-2xl border border-border/70 bg-card/50 p-5">
@@ -137,6 +141,8 @@ export function PlanningEditor() {
                   <label className="block space-y-1.5 text-xs text-muted-foreground">Statut du {DAY_NAMES[index].toLowerCase()}<select aria-label={`Statut du ${DAY_NAMES[index].toLowerCase()}`} className={controlClass} value={day.status} onChange={event => updateDay(index, { status: event.target.value as PlanningDay["status"] })}><option value="live">Live</option><option value="off">Repos</option><option value="tba">À annoncer</option></select></label>
                   {day.status === "live" && <>
                     <label className="block space-y-1.5 text-xs text-muted-foreground">Horaire du {DAY_NAMES[index].toLowerCase()}<input className={controlClass} type="time" value={day.time} onChange={event => { if (event.target.value) updateDay(index, { time: event.target.value }) }} /></label>
+                    <label className="block space-y-1.5 text-xs text-muted-foreground">Fin du {DAY_NAMES[index].toLowerCase()}<input className={controlClass} type="time" value={day.endTime} onChange={event => { if (event.target.value) updateDay(index, { endTime: event.target.value }) }} /></label>
+                    {day.time === day.endTime && <p role="alert" className="text-xs text-destructive">Choisis une fin différente du début.</p>}
                     <label className="block space-y-1.5 text-xs text-muted-foreground">Jeu ou activité du {DAY_NAMES[index].toLowerCase()}<Input maxLength={70} placeholder="CS2, Just Chatting, découverte…" value={day.game} onChange={event => updateDay(index, { game: event.target.value })} /></label>
                     <label className="block space-y-1.5 text-xs text-muted-foreground">Diffusion du {DAY_NAMES[index].toLowerCase()}<select aria-label={`Diffusion du ${DAY_NAMES[index].toLowerCase()}`} className={controlClass} value={day.onOtherChannel ? "other" : "mine"} onChange={event => updateDay(index, { onOtherChannel: event.target.value === "other" })}><option value="mine">Sur ma chaîne</option><option value="other">Sur une autre chaîne</option></select></label>
                     {day.onOtherChannel ? <label className="block space-y-1.5 text-xs text-muted-foreground">Chaîne du {DAY_NAMES[index].toLowerCase()}<Input maxLength={60} placeholder="@pseudo ou twitch.tv/pseudo" value={day.channel} onChange={event => updateDay(index, { channel: event.target.value })} /></label> : <p className="text-xs text-muted-foreground">{state.creator.trim() || "Renseigne ta chaîne en haut du planning."}</p>}
@@ -153,12 +159,28 @@ export function PlanningEditor() {
           <div className="grid gap-2 sm:grid-cols-3" aria-label="Modèles de planning">
             {PLANNING_TEMPLATES.map(template => <button type="button" key={template.id} aria-pressed={state.template === template.id} onClick={() => patch({ template: template.id })} className={`rounded-xl border p-4 text-left transition ${state.template === template.id ? "border-primary bg-primary/5" : "border-border/70 bg-card/50 hover:border-primary/40"}`}><p className="text-sm font-semibold">{template.label}</p><p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{template.description}</p></button>)}
           </div>
+          <section aria-label="Présentation du contenu des jours" className="space-y-2">
+            <h2 className="text-xs font-medium text-muted-foreground">À l’intérieur des jours</h2>
+            <div className="grid grid-cols-2 gap-2">{[
+              { id: "balanced" as const, title: "Équilibré", detail: "Chaîne et horaire côte à côte, dans deux badges dédiés." },
+              { id: "timeline" as const, title: "Agenda horaire", detail: "Des cartes positionnées selon l’heure et la durée du live." },
+            ].map(view => <button key={view.id} type="button" aria-pressed={state.eventView === view.id} onClick={() => patch({ eventView: view.id })} className={`rounded-xl border px-4 py-3 text-left transition ${state.eventView === view.id ? "border-primary bg-primary/5" : "border-border/60 bg-card/50 hover:border-primary/40"}`}><span className="text-sm font-semibold">{view.title}</span><p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{view.detail}</p></button>)}</div>
+          </section>
           <div className="overflow-hidden rounded-2xl border border-border/70 bg-card/50">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 px-4 py-3">
               <h2 className="text-sm font-medium">Aperçu du planning</h2>
               <select aria-label="Disposition du planning" className={`${controlClass} w-auto max-w-full`} value={state.layout} onChange={event => patch({ layout: event.target.value as PlanningState["layout"] })}><option value="poster">Affiche · titre sur le côté</option><option value="vertical">Liste verticale · titre en haut</option><option value="columns">Colonnes · une carte par jour</option></select>
               <select aria-label="Format du planning" className={`${controlClass} w-auto max-w-full`} value={state.format} onChange={event => patch({ format: event.target.value as PlanningState["format"] })}>{Object.entries(PLANNING_FORMATS).map(([id, format]) => <option key={id} value={id}>{format.label}</option>)}</select>
             </div>
+            {state.eventView === "timeline" && <div className="space-y-3 border-b border-border/60 px-4 py-4">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <label className="space-y-1 text-xs text-muted-foreground">Axe des heures<select aria-label="Axe des heures" className={controlClass} value={state.timelineAxis} onChange={event => patch({ timelineAxis: event.target.value as PlanningState["timelineAxis"] })}><option value="horizontal">Horizontal · heures en haut</option><option value="vertical">Vertical · heures à gauche</option></select></label>
+                <label className="space-y-1 text-xs text-muted-foreground">Début de l’axe<input type="time" className={controlClass} value={state.timelineStart} onChange={event => { if (event.target.value) patch({ timelineStart: event.target.value }) }} /></label>
+                <label className="space-y-1 text-xs text-muted-foreground">Fin de l’axe<input type="time" className={controlClass} value={state.timelineEnd} onChange={event => { if (event.target.value) patch({ timelineEnd: event.target.value }) }} /></label>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-[11px] text-muted-foreground">La taille des cartes suit la durée du live. Une fin après minuit est comptée le lendemain.</p><Button variant="outline" size="sm" onClick={() => patch(autoTimelineRange(state))}>Adapter l’axe aux lives</Button></div>
+              {outsideAxis.length > 0 && <p role="alert" className="text-xs text-destructive">Hors de l’axe affiché : {outsideAxis.join(", ")}. Adapte les heures pour voir ces créneaux.</p>}
+            </div>}
             <div className="flex min-h-[300px] items-center justify-center bg-muted/20 p-4 sm:p-6">
               <canvas ref={canvasRef} width={dimensions.width} height={dimensions.height} role="img" aria-label="Aperçu du planning de la semaine" className={`h-auto w-full rounded-lg shadow-lg ${state.format === "story" ? "max-w-[360px]" : state.format === "portrait" ? "max-w-[460px]" : ""}`} />
             </div>

@@ -1,3 +1,6 @@
+import { fittedText } from "./fit-text"
+import { drawLiveBadges } from "./badges"
+import { drawTimeline } from "./timeline"
 import { ensureThumbnailFont, getThumbnailFont } from "@/lib/thumbnails/fonts"
 import { DAY_NAMES, PLANNING_FORMATS, channelLabel, shiftDate, weekLabel, type PlanningState } from "./model"
 
@@ -13,7 +16,7 @@ function loadMarble() {
   return marblePromise
 }
 
-function box(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number, fill: string, stroke?: string) {
+function box(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number, fill: string | CanvasGradient, stroke?: string) {
   ctx.beginPath()
   ctx.roundRect(x, y, w, h, r)
   ctx.fillStyle = fill
@@ -81,7 +84,7 @@ export async function composePlanning(canvas: HTMLCanvasElement, state: Planning
   const titleW = side ? 555 : w - pad * 2
   let titleSize = wide ? 105 : 94
   let lines = titleLines(ctx, state.title, titleW, titleSize, font, rebrand)
-  while ((lines.length > 2 || lines.some(line => ctx.measureText(line).width > titleW)) && titleSize > 38) {
+  while ((lines.length > 2 || lines.some(line => ctx.measureText(line).width > titleW)) && titleSize > 18) {
     titleSize -= 2
     lines = titleLines(ctx, state.title, titleW, titleSize, font, rebrand)
   }
@@ -107,7 +110,9 @@ export async function composePlanning(canvas: HTMLCanvasElement, state: Planning
   const gap = story ? 18 : 14
   const maxHeight = story ? 154 : wide ? 112 : 104
   const rowH = Math.min(maxHeight, (h - startY - (wide ? 90 : 150) - gap * Math.max(0, rows.length - 1)) / Math.max(1, rows.length))
-  if (state.layout === "columns") {
+  if (state.eventView === "timeline" || state.layout === "timeline") {
+    drawTimeline(ctx, state, { x, y: startY, width: rowW, height: h - startY - 145, accent, light, rebrand })
+  } else if (state.layout === "columns") {
     const cols = wide ? 7 : 2
     const columnGap = wide ? 14 : 18
     const countRows = Math.ceil(rows.length / cols)
@@ -125,31 +130,17 @@ export async function composePlanning(canvas: HTMLCanvasElement, state: Planning
       if (live) box(ctx, cardX + 22, cardY, cardW - 44, 4, 2, accent)
       text(ctx, DAY_NAMES[day.index].toUpperCase(), cardX + 22, cardY + 22, cardW - (wide || !live ? 44 : 148), wide ? 23 : 24, live ? fg : muted, 800)
       if (state.showDates) text(ctx, shiftDate(state.weekStart, day.index).slice(5).split("-").reverse().join("/"), cardX + 22, cardY + 57, cardW - 44, 18, muted, 500)
-      if (live && !wide) {
-        box(ctx, cardX + cardW - 120, cardY + 20, 100, 37, 10, `${accent}20`)
-        text(ctx, day.time, cardX + cardW - 108, cardY + 26, 85, 23, light ? fg : accent, 800)
-      }
-      if (live && wide) text(ctx, day.time, cardX + 22, cardY + 116, cardW - 44, 39, light ? fg : accent, 850)
-      const gameY = cardY + (wide ? 196 : state.showDates ? 91 : 76)
+      const host = channelLabel(day.onOtherChannel ? day.channel : state.creator) || (day.onOtherChannel ? "À préciser" : "Ma chaîne")
+      const badgeY = cardY + (wide ? 109 : state.showDates ? 80 : 57)
+      const badgeH = wide ? 62 : 44
+      if (live) drawLiveBadges(ctx, host, day.time, cardX + 22, badgeY, cardW - 44, badgeH, { accent, light })
+      const gameY = live ? badgeY + badgeH + 14 : cardY + (state.showDates ? 91 : 76)
       const label = live ? day.game.trim() || "Live à préciser" : day.status === "off" ? "Repos" : "À annoncer"
-      const size = wide ? 30 : 26
-      ctx.font = `800 ${size}px system-ui, sans-serif`
-      const words = label.split(/(?<=-)|\s+/)
-      const lines: string[] = []
-      let line = ""
-      words.forEach(word => {
-        if (line && ctx.measureText(`${line} ${word}`).width > cardW - 44) { lines.push(line); line = word }
-        else line = line ? `${line} ${word}` : word
-      })
-      if (line) lines.push(line)
-      const maxLines = wide ? 4 : cardHeight > 260 ? 3 : cardHeight >= 195 ? 2 : 1
-      lines.slice(0, maxLines).forEach((labelLine, i) => text(ctx, labelLine, cardX + 22, gameY + i * (size + 7), cardW - 44, size, live ? fg : muted, live ? 800 : 500))
-      if (live) {
-        const host = day.onOtherChannel ? `Chez ${channelLabel(day.channel) || "chaîne à préciser"}` : channelLabel(state.creator) || "Ma chaîne"
-        const channelY = wide ? gameY + Math.min(maxLines, lines.length) * (size + 7) + 25 : cardY + cardHeight - (day.note.trim() && cardHeight > 260 ? 68 : 36)
-        text(ctx, host, cardX + 22, channelY, cardW - 44, wide ? 20 : 17, accent, 700)
-        if (day.note.trim() && (wide || cardHeight > 260)) text(ctx, day.note, cardX + 22, wide ? channelY + 40 : channelY + 30, cardW - 44, 17, muted, 500)
-      }
+      const noteSpace = live && day.note.trim() && cardY + cardHeight - gameY > 90 ? 32 : 0
+      const titleHeight = Math.max(24, cardY + cardHeight - gameY - 16 - noteSpace)
+      fittedText(ctx, label, cardX + 22, gameY, cardW - 44, titleHeight, wide ? 30 : 26, live ? fg : muted, live ? 800 : 500)
+      if (noteSpace) text(ctx, day.note, cardX + 22, cardY + cardHeight - 33, cardW - 44, 17, muted, 500)
+
     })
   } else rows.forEach((day, pos) => {
     const y = startY + pos * (rowH + gap)
@@ -161,18 +152,16 @@ export async function composePlanning(canvas: HTMLCanvasElement, state: Planning
     const dayY = y + (rowH - (state.showDates ? compact ? 47 : 57 : 30)) / 2
     text(ctx, DAY_NAMES[day.index].toUpperCase(), x + 26, dayY, labelW - 36, compact ? 21 : story ? 27 : 23, live ? fg : muted, 800)
     if (state.showDates) text(ctx, shiftDate(state.weekStart, day.index).slice(5).split("-").reverse().join("/"), x + 26, dayY + (compact ? 27 : 34), labelW - 36, compact ? 16 : 18, muted, 500)
+    const badgeW = Math.min(470, rowW * .46)
     const contentX = x + labelW
-    const contentW = rowW - labelW - (live ? 150 : 30)
+    const contentW = rowW - labelW - (live ? badgeW + 48 : 30)
     const label = live ? day.game.trim() || "Live à préciser" : day.status === "off" ? "Repos" : "À annoncer"
-    const host = day.onOtherChannel ? `Chez ${channelLabel(day.channel) || "chaîne à préciser"}` : channelLabel(state.creator)
-    const detail = [host, day.note.trim()].filter(Boolean).join(" · ")
-    const hasNote = live && Boolean(detail)
-    text(ctx, label, contentX, y + (rowH - (hasNote ? compact ? 48 : 61 : compact ? 27 : 34)) / 2, contentW, compact ? 24 : story ? 33 : 29, live ? fg : muted, live ? 800 : 500)
-    if (hasNote) text(ctx, detail, contentX, y + rowH / 2 + (compact ? 7 : 11), contentW, compact ? 16 : 18, muted, 500)
-    if (live) {
-      box(ctx, x + rowW - 132, y + (rowH - 42) / 2, 108, 42, 12, light ? `${accent}15` : `${accent}20`)
-      text(ctx, day.time, x + rowW - 118, y + (rowH - 28) / 2, 85, 25, light ? fg : accent, 800)
-    }
+    const host = channelLabel(day.onOtherChannel ? day.channel : state.creator) || (day.onOtherChannel ? "À préciser" : "Ma chaîne")
+    const hasNote = live && Boolean(day.note.trim())
+    const noteSpace = hasNote ? compact ? 18 : 24 : 0
+    fittedText(ctx, label, contentX, y + 12, contentW, rowH - 24 - noteSpace, compact ? 24 : story ? 33 : 29, live ? fg : muted, live ? 800 : 500)
+    if (hasNote) text(ctx, day.note, contentX, y + rowH - (compact ? 21 : 29), contentW, compact ? 13 : 16, muted, 500)
+    if (live) drawLiveBadges(ctx, host, day.time, x + rowW - badgeW - 24, y + (rowH - (compact ? 46 : 66)) / 2, badgeW, compact ? 46 : 66, { accent, light })
   })
   if (!rows.length) text(ctx, "Une pause cette semaine.", x, startY + 70, rowW, 36, muted, 600)
   ctx.fillStyle = light ? "#d9dfe9" : "#ffffff22"
