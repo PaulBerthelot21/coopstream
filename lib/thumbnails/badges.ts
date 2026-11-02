@@ -1,4 +1,4 @@
-export type BadgeVariant = "rediff" | "episode" | "resume"
+export type BadgeVariant = "rediff" | "episode" | "resume" | "bestof"
 
 export type BadgePreset = {
   id: BadgeVariant
@@ -13,21 +13,22 @@ export const BADGE_PRESETS: BadgePreset[] = [
   {
     id: "rediff",
     label: "REDIFF",
-    bg: "#C41E3A",
+    bg: "#4C1D95",
     fg: "#FFFFFF",
   },
   {
     id: "episode",
-    label: "EPISODE",
-    bg: "#1E3A8A",
+    label: "ÉPISODE",
+    bg: "#5B21B6",
     fg: "#FFFFFF",
   },
   {
     id: "resume",
-    label: "RESUME",
-    bg: "#E8B923",
-    fg: "#111111",
+    label: "RÉSUMÉ",
+    bg: "#DDD6FE",
+    fg: "#2E1065",
   },
+  { id: "bestof", label: "BEST-OF", bg: "#7C3AED", fg: "#FFFFFF" },
 ]
 
 export function getBadgePreset(id: BadgeVariant): BadgePreset {

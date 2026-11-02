@@ -55,6 +55,7 @@ export type TextItem = {
   /** Tracking négatif type intro (~ -0.04em) */
   tightTracking: boolean
   badgeVariant?: BadgeVariant
+  shadow?: number
   rect: RelRect
   visible: boolean
   locked: boolean
@@ -69,6 +70,7 @@ export type ThumbnailEffects = {
   headShadow: boolean
   headShadowBlur: number
   headShadowOpacity: number
+  purpleWash?: number
 }
 
 export type ThumbnailTemplate = {
@@ -81,6 +83,7 @@ export type ThumbnailTemplate = {
   prop: RelRect & { fit: ImageFit }
   titleBand?: RelRect & { color: string }
   effects?: Partial<ThumbnailEffects>
+  studio?: "signature" | "impact" | "portrait" | "minimal"
 }
 
 export type ThumbnailEditorState = {

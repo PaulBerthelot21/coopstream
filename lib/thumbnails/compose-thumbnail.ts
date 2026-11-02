@@ -99,6 +99,14 @@ function drawBgEffects(
   ctx: CanvasRenderingContext2D,
   effects: ThumbnailEffects,
 ) {
+  const wash = clamp01(effects.purpleWash ?? 0)
+  if (wash > 0) {
+    const tint = ctx.createLinearGradient(0, THUMB_H, THUMB_W, 0)
+    tint.addColorStop(0, `rgba(46,16,101,${wash * .85})`)
+    tint.addColorStop(1, `rgba(139,92,246,${wash * .25})`)
+    ctx.fillStyle = tint
+    ctx.fillRect(0, 0, THUMB_W, THUMB_H)
+  }
   // Grade gauche neutre
   const left = clamp01(effects.leftShade)
   if (left > 0.01) {
@@ -201,6 +209,7 @@ function roundRect(
 }
 
 type DrawTextOpts = {
+  shadow?: number
   fontId: string
   italic: boolean
   uppercase: boolean
@@ -313,9 +322,10 @@ function drawPlainText(
 
     // Même esprit que l’intro : ombre douce, pas de « punch stroke » YouTube
     ctx.save()
-    ctx.shadowColor = "rgba(0,0,0,0.85)"
-    ctx.shadowBlur = outline ? 26 : 18
-    ctx.shadowOffsetY = outline ? 7 : 4
+    const shadow = clamp01(opts.shadow ?? .75)
+    ctx.shadowColor = `rgba(10,2,30,${shadow})`
+    ctx.shadowBlur = (outline ? 34 : 26) * shadow
+    ctx.shadowOffsetY = (outline ? 9 : 6) * shadow
 
     if (hasStroke) {
       ctx.strokeStyle = strokeColor!
@@ -493,6 +503,7 @@ export async function composeThumbnailToCanvas(
       strokeWidth: item.strokeWidth,
       fillMode: item.fillMode ?? "outline",
       tightTracking: item.tightTracking ?? true,
+      shadow: item.shadow,
     })
   }
 }

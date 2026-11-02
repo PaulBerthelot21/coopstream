@@ -50,6 +50,7 @@ export function createTextItem(
     rect: partial?.rect ?? { x: 0.06, y: 0.2, w: 0.45, h: 0.28 },
     visible: partial?.visible ?? true,
     locked: partial?.locked ?? false,
+    shadow: partial?.shadow ?? .75,
   }
 }
 

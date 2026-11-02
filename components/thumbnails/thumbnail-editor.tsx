@@ -3,6 +3,10 @@
 import * as React from "react"
 import {
   Download,
+  Undo2,
+  Redo2,
+  FilePlus2,
+  Check,
   Eye,
   ImageIcon,
   Layers,
@@ -10,7 +14,6 @@ import {
   LockOpen,
   Palette,
   Plus,
-  RefreshCw,
   Scissors,
   Sparkles,
   Trash2,
@@ -19,6 +22,9 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
+import { StudioPreview } from "@/components/thumbnails/studio-preview"
+import { createStudioState, createBlankState } from "@/lib/thumbnails/studio"
+import { readDraft, saveDraft } from "@/lib/thumbnails/draft"
 import { ThumbnailStage } from "@/components/thumbnails/thumbnail-stage"
 import { Button } from "@/components/ui/button"
 import {
@@ -41,12 +47,10 @@ import {
   THUMBNAIL_DEMO_PROPS,
   THUMBNAIL_FONTS,
   THUMBNAIL_TEMPLATES,
-  applyTemplateToState,
   composeThumbnailToCanvas,
   createBadgeItem,
   createTextItem,
   cutoutDarkBackground,
-  defaultEditorState,
   ensureAllThumbnailFonts,
   ensureThumbnailFont,
   exportThumbnailPng,
@@ -81,13 +85,6 @@ function FileOrDemo({
   extra?: React.ReactNode
 }) {
   const inputRef = React.useRef<HTMLInputElement | null>(null)
-  const objectUrlRef = React.useRef<string | null>(null)
-
-  React.useEffect(() => {
-    return () => {
-      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
-    }
-  }, [])
 
   return (
     <div className="space-y-2.5">
@@ -113,10 +110,14 @@ function FileOrDemo({
             const file = e.target.files?.[0]
             e.target.value = ""
             if (!file) return
-            if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
-            const url = URL.createObjectURL(file)
-            objectUrlRef.current = url
-            onUrl(url)
+            if (file.size > 15 * 1024 * 1024) {
+              toast.error("Choisis une image de moins de 15 Mo")
+              return
+            }
+            const reader = new FileReader()
+            reader.onload = () => { if (typeof reader.result === "string") onUrl(reader.result) }
+            reader.onerror = () => toast.error("Image impossible à lire")
+            reader.readAsDataURL(file)
           }}
         />
         {demos.map((d) => (
@@ -145,7 +146,7 @@ function FileOrDemo({
           {currentUrl.startsWith("blob:")
             ? "Fichier local (session)"
             : currentUrl.startsWith("data:")
-              ? "Tête détourée (session)"
+              ? "Image importée · conservée dans le brouillon"
               : currentUrl}
         </div>
       ) : null}
@@ -176,7 +177,14 @@ function TextControls({
         </Button>
       </div>
 
+      {item.kind === "text" && <div className="grid grid-cols-3 gap-2">{[
+        { label: "Contour", color: "transparent", stroke: "#ffffff", mode: "outline" as const },
+        { label: "Blanc", color: "#ffffff", stroke: "transparent", mode: "solid" as const },
+        { label: "Lavande", color: "#d8b4fe", stroke: "transparent", mode: "solid" as const },
+      ].map(style => <button type="button" key={style.label} onClick={() => patch({ color: style.color, stroke: style.stroke, fillMode: style.mode, strokeWidth: style.mode === "outline" ? 2.5 : 0, fontId: "lecalme", italic: true, tightTracking: true })} className="rounded-lg border border-violet-300/20 bg-violet-400/5 px-2 py-3 text-xs font-black uppercase italic text-violet-100 hover:bg-violet-400/15">{style.label}</button>)}</div>}
+      <label className="block text-xs text-muted-foreground">Ombre du texte ({Math.round((item.shadow ?? .75) * 100)}%)<input type="range" min={0} max={1} step={.05} value={item.shadow ?? .75} onChange={e => patch({ shadow: Number(e.target.value) })} className="mt-2 w-full" /></label>
       <Input
+        aria-label="Contenu du texte"
         value={item.text}
         onChange={(e) => patch({ text: e.target.value })}
         placeholder={item.kind === "badge" ? "Label badge" : "Texte"}
@@ -405,13 +413,12 @@ const PANEL_TABS: {
 
 export function ThumbnailEditor() {
   const [state, setState] = React.useState<ThumbnailEditorState>(() =>
-    defaultEditorState(),
+    createStudioState("signature"),
   )
   const [selected, setSelected] = React.useState<SelectedId | null>(() => {
-    const first = defaultEditorState().texts[0]
-    return first?.id ?? "head"
+    return null
   })
-  const [panel, setPanel] = React.useState<PanelTab>("layers")
+  const [panel, setPanel] = React.useState<PanelTab>("media")
   const [exporting, setExporting] = React.useState(false)
   const [cutting, setCutting] = React.useState(false)
   const [previewOpen, setPreviewOpen] = React.useState(false)
@@ -424,96 +431,98 @@ export function ThumbnailEditor() {
     void ensureAllThumbnailFonts()
   }, [])
 
+  const [ready, setReady] = React.useState(false)
+  const [saveStatus, setSaveStatus] = React.useState("Chargement…")
+  const [history, setHistory] = React.useState<ThumbnailEditorState[]>([])
+  const [future, setFuture] = React.useState<ThumbnailEditorState[]>([])
+  const lastSnapshot = React.useRef(state)
+  const skipHistory = React.useRef(false)
+  const [mobilePreview, setMobilePreview] = React.useState(false)
+  const [blankOpen, setBlankOpen] = React.useState(false)
+
   React.useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY)
-      if (!raw) return
-      const parsed = JSON.parse(raw) as Partial<ThumbnailEditorState>
-      setState((prev) => ({
-        ...prev,
-        templateId: parsed.templateId || prev.templateId,
-        effects: parsed.effects
-          ? {
-              ...prev.effects,
-              ...parsed.effects,
-              textVeil:
-                typeof parsed.effects.textVeil === "number"
-                  ? parsed.effects.textVeil
-                  : prev.effects.textVeil,
-            }
-          : prev.effects,
-        layers: parsed.layers
-          ? {
-              background: {
-                ...prev.layers.background,
-                ...parsed.layers.background,
-                rect: {
-                  ...prev.layers.background.rect,
-                  ...(parsed.layers.background?.rect ?? {}),
-                },
-              },
-              head: {
-                ...prev.layers.head,
-                ...parsed.layers.head,
-                rect: {
-                  ...prev.layers.head.rect,
-                  ...(parsed.layers.head?.rect ?? {}),
-                },
-              },
-              prop: {
-                ...prev.layers.prop,
-                ...parsed.layers.prop,
-                rect: {
-                  ...prev.layers.prop.rect,
-                  ...(parsed.layers.prop?.rect ?? {}),
-                },
-              },
-            }
-          : prev.layers,
-        texts:
-          Array.isArray(parsed.texts) && parsed.texts.length > 0
-            ? parsed.texts.map((t) => ({
-                ...t,
-                fillMode: t.fillMode ?? "outline",
-                tightTracking: t.tightTracking ?? true,
-              }))
-            : prev.texts,
-      }))
-      if (Array.isArray(parsed.texts) && parsed.texts[0]) {
-        setSelected(parsed.texts[0].id)
+    let active = true
+    void readDraft().then((draft) => {
+      if (!active) return
+      if (draft?.layers && Array.isArray(draft.texts)) {
+        setState(draft)
+        lastSnapshot.current = draft
+        setSelected(draft.texts[0]?.id ?? null)
+      } else {
+        const raw = window.localStorage.getItem(STORAGE_KEY)
+        if (raw) {
+          const old = JSON.parse(raw) as Partial<ThumbnailEditorState>
+          setState(prev => { const migrated = { ...prev, ...old }; lastSnapshot.current = migrated; return migrated })
+        }
       }
-    } catch {
-      // ignore
-    }
+    }).catch(() => {}).finally(() => { if (active) setReady(true) })
+    return () => { active = false }
   }, [])
 
   React.useEffect(() => {
-    try {
-      window.localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          templateId: state.templateId,
-          effects: state.effects,
-          layers: state.layers,
-          texts: state.texts,
-        }),
-      )
-    } catch {
-      // ignore
+    if (!ready) return
+    setSaveStatus("Enregistrement…")
+    const timer = window.setTimeout(() => {
+      void saveDraft(state).then(() => setSaveStatus("Brouillon enregistré")).catch(() => setSaveStatus("Sauvegarde indisponible"))
+    }, 450)
+    return () => window.clearTimeout(timer)
+  }, [state, ready])
+
+  React.useEffect(() => {
+    if (!ready) return
+    if (skipHistory.current) { skipHistory.current = false; lastSnapshot.current = state; return }
+    const timer = window.setTimeout(() => {
+      if (lastSnapshot.current === state) return
+      const snapshot = lastSnapshot.current
+      setHistory(prev => [...prev.slice(-39), snapshot])
+      setFuture([])
+      lastSnapshot.current = state
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [state, ready])
+
+  const undo = React.useCallback(() => {
+    // Group pointer moves and consecutive keystrokes into one undo step.
+    const pending = lastSnapshot.current !== state
+    const previous = pending ? lastSnapshot.current : history.at(-1)
+    if (!previous) return
+    skipHistory.current = true
+    setFuture(prev => [...prev, state])
+    if (!pending) setHistory(prev => prev.slice(0, -1))
+    setState(previous)
+  }, [history, state])
+  const redo = React.useCallback(() => {
+    const next = future.at(-1)
+    if (!next) return
+    skipHistory.current = true
+    setHistory(prev => [...prev, state])
+    setFuture(prev => prev.slice(0, -1))
+    setState(next)
+  }, [future, state])
+
+  React.useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey)) return
+      const target = event.target as HTMLElement
+      if (target.closest("input,textarea,[contenteditable=true]")) return
+      if (event.key.toLowerCase() === "z") { event.preventDefault(); if (event.shiftKey) redo(); else undo() }
+      if (event.key.toLowerCase() === "y") { event.preventDefault(); redo() }
     }
-  }, [state])
+    window.addEventListener("keydown", key)
+    return () => window.removeEventListener("keydown", key)
+  }, [undo, redo])
 
   React.useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const gen = ++drawGen.current
-    void composeThumbnailToCanvas(canvas, { state })
-      .then(() => {
-        if (gen !== drawGen.current) return
-      })
-      .catch(() => {
-        // ignore
-      })
+    const buffer = document.createElement("canvas")
+    void composeThumbnailToCanvas(buffer, { state }).then(() => {
+      if (gen !== drawGen.current) return
+      canvas.width = buffer.width
+      canvas.height = buffer.height
+      canvas.getContext("2d")?.drawImage(buffer, 0, 0)
+    }).catch(() => {})
   }, [state])
 
   const patch = React.useCallback((partial: Partial<ThumbnailEditorState>) => {
@@ -656,32 +665,22 @@ export function ThumbnailEditor() {
       : null
 
   return (
-    <div className="flex min-h-[calc(100vh-3rem)] flex-col gap-4">
+    <div className="thumbnail-studio flex min-h-[calc(100vh-3rem)] flex-col gap-5">
       {/* Header + actions */}
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border/60 pb-4">
         <div className="min-w-0 space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            Miniatures YouTube
+            Le Calme <span className="font-light text-violet-300">/ Studio</span>
           </h1>
           <p className="text-sm text-muted-foreground">
-            1280×720 · multi-textes · badges · export PNG
+            Ton univers. Tes images. Ta signature.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            size="default"
-            variant="outline"
-            onClick={() => {
-              const next = defaultEditorState()
-              setState(next)
-              setSelected(next.texts[0]?.id ?? "head")
-              setPanel("layers")
-            }}
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Reset
-          </Button>
+          <span role="status" className="mr-2 text-xs text-muted-foreground">{saveStatus}</span>
+          <Button variant="outline" size="icon" aria-label="Annuler" title="Annuler (Ctrl+Z)" onClick={undo} disabled={!history.length && lastSnapshot.current === state}><Undo2 className="h-4 w-4" /></Button>
+          <Button variant="outline" size="icon" aria-label="Rétablir" title="Rétablir (Ctrl+Maj+Z)" onClick={redo} disabled={!future.length}><Redo2 className="h-4 w-4" /></Button>
+          <Button variant="outline" onClick={() => setBlankOpen(true)}><FilePlus2 className="mr-2 h-4 w-4" />Création vierge</Button>
           <Button
             type="button"
             size="default"
@@ -703,44 +702,32 @@ export function ThumbnailEditor() {
         </div>
       </header>
 
-      {/* Presets compact */}
-      <div className="flex flex-wrap gap-2">
-        {THUMBNAIL_TEMPLATES.map((t) => {
-          const isSel = state.templateId === t.id
-          return (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() =>
-                setState((prev) => applyTemplateToState(prev, t.id))
-              }
-              className={[
-                "rounded-full border px-3.5 py-1.5 text-sm transition",
-                isSel
-                  ? "border-primary bg-primary/15 font-medium text-foreground"
-                  : "border-border/70 bg-background/40 text-muted-foreground hover:border-border hover:text-foreground",
-              ].join(" ")}
-              title={t.description}
-            >
-              {t.label}
-            </button>
-          )
-        })}
-      </div>
+      <section aria-label="Modèles prêts à personnaliser" className="space-y-3">
+        <div className="flex items-center justify-between"><h2 className="text-xs font-semibold uppercase tracking-[.18em] text-violet-300">Choisir une composition</h2><span className="text-xs text-muted-foreground">Tes images et tes titres suivent le modèle</span></div>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {THUMBNAIL_TEMPLATES.filter(t => t.studio).map(t => (
+            <TemplateCard key={t.id} id={t.id} label={t.label} description={t.description} active={state.templateId === t.id} onClick={() => {
+              const next = createStudioState(t.id, state)
+              setState(next)
+              setSelected(next.texts[0]?.id ?? null)
+            }} />
+          ))}
+        </div>
+      </section>
 
       {/* Workspace */}
-      <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_440px]">
+      <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         {/* Canvas zone */}
         <section className="flex min-w-0 flex-col gap-3 rounded-2xl border border-border/60 bg-background/50 p-3 sm:p-4">
           <div className="flex items-center justify-between gap-2 px-0.5">
             <div className="text-sm font-medium text-muted-foreground">
-              Canvas · glisser / redimensionner
+              Composition · glisser pour déplacer
             </div>
             <div className="text-[11px] text-muted-foreground">
-              Flèches = nudge · Shift = ×4
+              Flèches : déplacer · Maj : accélérer
             </div>
           </div>
-          <div className="flex flex-1 items-center justify-center">
+          <div className="studio-workspace flex min-h-[340px] flex-1 items-center justify-center rounded-xl p-4 sm:p-8">
             <div className="w-full max-w-[1280px]">
               <ThumbnailStage
                 canvasRef={canvasRef}
@@ -751,6 +738,11 @@ export function ThumbnailEditor() {
               />
             </div>
           </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/5 pt-3">
+            <div className="flex gap-2"><Button size="sm" variant="secondary" onClick={addText}><Plus className="mr-1 h-3 w-3" />Texte</Button><Button size="sm" variant="ghost" onClick={() => setMobilePreview(v => !v)}>{mobilePreview ? "Masquer l’aperçu mobile" : "Vérifier sur mobile"}</Button></div>
+            <span className="text-[11px] text-muted-foreground">1280 × 720 · 16:9</span>
+          </div>
+          {mobilePreview && <div className="mx-auto w-full max-w-[320px] overflow-hidden rounded-xl border border-white/10 bg-[#18131f]"><StudioPreview state={state} /><div className="p-3"><p className="text-sm font-semibold">{state.texts.filter(t => t.kind === "text").map(t => t.text).join(" ") || "Ta prochaine vidéo"}</p><p className="mt-1 text-xs text-white/40">Le Calme · Aperçu de lisibilité</p></div></div>}
         </section>
 
         {/* Side panel */}
@@ -981,6 +973,7 @@ export function ThumbnailEditor() {
 
             {panel === "media" ? (
               <div className="space-y-6">
+                <div className="rounded-xl border border-violet-400/15 bg-violet-400/5 p-3"><p className="text-sm font-medium">Trois changements, une miniature.</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">Choisis ton fond, remplace le visage et écris ton titre. Les réglages avancés restent à portée de main.</p></div>
                 <FileOrDemo
                   label="Fond (ciné / gameplay)"
                   icon={<ImageIcon className="h-4 w-4" />}
@@ -994,7 +987,7 @@ export function ThumbnailEditor() {
                   demos={THUMBNAIL_DEMO_HEADS}
                   currentUrl={state.headUrl}
                   onUrl={(url) => {
-                    patch({ headUrl: url })
+                    patch({ headUrl: url, layers: { ...state.layers, head: { ...state.layers.head, visible: Boolean(url) } } })
                     selectItem("head")
                   }}
                   extra={
@@ -1010,6 +1003,7 @@ export function ThumbnailEditor() {
                     </Button>
                   }
                 />
+                <div className="space-y-3 border-t border-border/50 pt-4"><h3 className="text-sm font-medium">Ton titre</h3>{state.texts.filter(t => t.kind === "text").map((t, i) => <label key={t.id} className="block space-y-1 text-xs text-muted-foreground">Ligne {i + 1}<Input className="mt-1" value={t.text} onChange={e => updateText(t.id, { ...t, text: e.target.value })} /></label>)}{!state.texts.some(t => t.kind === "text") && <Button size="sm" onClick={addText}>Ajouter un titre</Button>}</div>
                 <FileOrDemo
                   label="Élément"
                   icon={<Sparkles className="h-4 w-4" />}
@@ -1035,6 +1029,7 @@ export function ThumbnailEditor() {
 
             {panel === "effects" ? (
               <div className="space-y-5">
+                <label className="block text-xs text-muted-foreground">Ambiance violette ({Math.round((state.effects.purpleWash ?? 0) * 100)}%)<input type="range" min={0} max={1} step={.02} value={state.effects.purpleWash ?? 0} onChange={e => patchEffects({ purpleWash: Number(e.target.value) })} className="mt-2 w-full" /></label>
                 <label className="block text-[12px] text-muted-foreground">
                   Ombre gauche ({Math.round(state.effects.leftShade * 100)}%)
                   <input
@@ -1131,6 +1126,9 @@ export function ThumbnailEditor() {
         </aside>
       </div>
 
+      <Dialog open={blankOpen} onOpenChange={setBlankOpen}>
+        <DialogContent><DialogHeader><DialogTitle>Partir d’une feuille blanche ?</DialogTitle><DialogDescription>Le brouillon actuel sera remplacé. Tu pourras revenir en arrière avec Annuler.</DialogDescription></DialogHeader><DialogFooter><Button variant="outline" onClick={() => setBlankOpen(false)}>Garder ma création</Button><Button onClick={() => { setState(createBlankState()); setSelected(null); setPanel("media"); setBlankOpen(false) }}>Créer une miniature vierge</Button></DialogFooter></DialogContent>
+      </Dialog>
       {/* Preview dialog — rendu propre sans poignées */}
       <Dialog
         open={previewOpen}
@@ -1191,4 +1189,12 @@ export function ThumbnailEditor() {
       </Dialog>
     </div>
   )
+}
+
+function TemplateCard({ id, label, description, active, onClick }: { id: string; label: string; description: string; active: boolean; onClick: () => void }) {
+  const preview = React.useMemo(() => createStudioState(id), [id])
+  return <button type="button" onClick={onClick} aria-pressed={active} className={`group overflow-hidden rounded-xl border text-left transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-violet-300 ${active ? "border-violet-400 bg-violet-500/10 ring-1 ring-violet-400/30" : "border-white/10 bg-white/[.025] hover:border-violet-400/50"}`}>
+    <div className="relative overflow-hidden"><StudioPreview state={preview} />{active && <span className="absolute right-2 top-2 rounded-full bg-violet-500 p-1 text-white"><Check className="h-3 w-3" /></span>}</div>
+    <div className="p-3"><p className="text-sm font-semibold">{label}</p><p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{description}</p></div>
+  </button>
 }
