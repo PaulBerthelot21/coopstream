@@ -32,24 +32,20 @@ export async function drawPosters(ctx: CanvasRenderingContext2D, state: Planning
   const available = height - rowWeights.length * 58 - Math.max(0, rowWeights.length - 1) * gap
   const eventGap = Math.min(24, available / Math.max(1, slots * 4))
   const eventGaps = rowWeights.reduce((sum, count) => sum + (count - 1) * eventGap, 0)
-  const cardHeight = Math.min(Math.max(140, cw / imageRatio), (available - eventGaps) / Math.max(1, slots))
+  const cardHeight = Math.min(Math.max(160, cw / imageRatio + 24), (available - eventGaps) / Math.max(1, slots))
   const rowHeight = (count: number) => 58 + count * cardHeight + (count - 1) * eventGap
 
   function card(event: PlanningEvent, left: number, top: number, cardH: number) {
-    const compact = cardH < 190
     const image = images.get(event.image)
-    const inset = cw < 230 ? 13 : 17
     const artW = cw
-    const artH = cardH
-    const contentX = left + inset
-    const contentW = cw - inset * 2
+    const artH = cardH - Math.min(24, cardH * .15)
     ctx.save()
     ctx.shadowColor = light ? "#17203315" : "#00000055"
     ctx.shadowBlur = 18; ctx.shadowOffsetY = 7
-    rounded(ctx, left, top, cw, cardH, 18)
+    rounded(ctx, left, top, cw, artH, 18)
     ctx.fillStyle = light ? "#ffffff" : "#192337"; ctx.fill()
     ctx.shadowColor = "transparent"
-    rounded(ctx, left, top, cw, cardH, 18); ctx.clip()
+    rounded(ctx, left, top, cw, artH, 18); ctx.clip()
     const backdrop = ctx.createLinearGradient(left, top, left + artW, top + artH)
     backdrop.addColorStop(0, `${accent}60`); backdrop.addColorStop(1, "#10182b")
     ctx.fillStyle = backdrop; ctx.fillRect(left, top, artW, artH)
@@ -67,22 +63,45 @@ export async function drawPosters(ctx: CanvasRenderingContext2D, state: Planning
       ctx.fillStyle = `${accent}40`
       ctx.beginPath(); ctx.arc(left + artW * .8, top + artH * .22, artW * .45, 0, Math.PI * 2); ctx.fill()
     }
-    const hasNote = !compact && Boolean(event.note.trim())
-    const host = channelLabel(event.onOtherChannel ? event.channel : state.creator) || (event.onOtherChannel ? "Chaîne à préciser" : "Ma chaîne")
-    const titleH = compact ? 30 : 42
-    const overlayH = Math.min(cardH, titleH + (hasNote ? 57 : 35))
-    const contentY = top + cardH - overlayH
-    const shade = ctx.createLinearGradient(0, Math.max(top, contentY - 22), 0, top + cardH)
-    shade.addColorStop(0, "#070c1800"); shade.addColorStop(.35, "#070c1870"); shade.addColorStop(1, "#070c18eb")
-    ctx.fillStyle = shade; ctx.fillRect(left, top, artW, artH)
-    fittedText(ctx, event.game.trim() || "Live à préciser", contentX, contentY, contentW, titleH, compact ? 20 : 26, "#ffffff", 850)
-    if (hasNote) fittedText(ctx, event.note, contentX, contentY + titleH + 3, contentW, 18, 13, "#e1e7f2", 500)
-    fittedText(ctx, host, contentX, top + cardH - 23, contentW, 15, 13, "#d1daeb", 600)
     ctx.restore()
-    rounded(ctx, left + .5, top + .5, cw - 1, cardH - 1, 18)
+    rounded(ctx, left + .5, top + .5, cw - 1, artH - 1, 18)
     ctx.strokeStyle = light ? "#17203312" : "#ffffff16"; ctx.lineWidth = 1; ctx.stroke()
+
+    // Two independent badges straddle the lower edge, like the time badge.
+    const host = channelLabel(event.onOtherChannel ? event.channel : state.creator) || (event.onOtherChannel ? "Chaîne à préciser" : "Ma chaîne")
+    const badgeGap = 10
+    const badgeSpace = cw - 16 - badgeGap
+    const hasNote = Boolean(event.note.trim()) && cardH >= 180
+    const title = event.game.trim() || "Live à préciser"
+    function textWidth(value: string, size: number, weight = 750) {
+      ctx.save()
+      ctx.font = `${weight} ${size}px system-ui, sans-serif`
+      const width = Math.ceil(ctx.measureText(value).width) + 16
+      ctx.restore()
+      return width
+    }
+    const titleWidth = Math.max(textWidth(title, 17), hasNote ? textWidth(event.note, 10, 500) : 0)
+    const channelWidth = textWidth(host, 13)
+    const titleW = Math.min(titleWidth, badgeSpace - Math.min(channelWidth, badgeSpace * .4))
+    const channelW = Math.min(channelWidth, badgeSpace - titleW)
+    const titleH = hasNote ? 46 : 32
+    function badge(x: number, width: number, height: number, value: string, size: number, note?: string) {
+      const badgeY = top + artH - height / 2
+      ctx.save()
+      ctx.shadowColor = "#00000040"; ctx.shadowBlur = 12; ctx.shadowOffsetY = 3
+      rounded(ctx, x, badgeY, width, height, 10)
+      ctx.fillStyle = light ? "#ffffff" : "#101827"; ctx.fill()
+      ctx.shadowColor = "transparent"
+      ctx.strokeStyle = `${accent}80`; ctx.lineWidth = 1; ctx.stroke()
+      fittedText(ctx, value, x + 8, badgeY + 6, width - 16, note ? 20 : height - 12, size, fg, 750)
+      if (note) fittedText(ctx, note, x + 8, badgeY + 28, width - 16, 12, 10, muted, 500)
+      ctx.restore()
+    }
+    badge(left + 8, titleW, titleH, title, 17, hasNote ? event.note : undefined)
+    badge(left + cw - channelW - 8, channelW, 32, host, 13)
     // Float above the upper-right edge instead of covering the artwork.
-    const timeW = Math.min(cw - 20, 146)
+    const time = `${event.time} – ${event.endTime}`
+    const timeW = Math.min(cw - 20, textWidth(time, 14))
     const timeX = left + cw - timeW - 8
     ctx.save()
     ctx.shadowColor = "#00000040"; ctx.shadowBlur = 12; ctx.shadowOffsetY = 3
@@ -90,7 +109,7 @@ export async function drawPosters(ctx: CanvasRenderingContext2D, state: Planning
     ctx.fillStyle = light ? "#ffffff" : "#101827"; ctx.fill()
     ctx.shadowColor = "transparent"
     ctx.strokeStyle = `${accent}80`; ctx.lineWidth = 1; ctx.stroke()
-    fittedText(ctx, `${event.time} – ${event.endTime}`, timeX + 8, top - 6, timeW - 16, 16, 14, fg, 750)
+    fittedText(ctx, time, timeX + 8, top - 6, timeW - 16, 16, 14, fg, 750)
     ctx.restore()
   }
 
