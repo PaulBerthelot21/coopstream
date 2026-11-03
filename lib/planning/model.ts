@@ -17,15 +17,27 @@ export function isCalendarDate(value: string) {
   return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value
 }
 
-export const PlanningDaySchema = z.object({
-  status: z.enum(["live", "off", "tba"]),
+export const PlanningEventSchema = z.object({
+  id: z.string().min(1),
   time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).default("22:30"),
   game: z.string().max(70),
   note: z.string().max(90),
+  image: z.string().max(700000).regex(/^(data:image\/jpeg;base64,[A-Za-z0-9+/=]+)?$/).default(""),
+  imageFit: z.enum(["contain", "cover"]).default("contain"),
   onOtherChannel: z.boolean().default(false),
   channel: z.string().max(60).default(""),
 })
+export const PlanningDaySchema = z.preprocess(value => {
+  if (!value || typeof value !== "object") return value
+  const day = value as Record<string, unknown>
+  // Upgrade the original one-live-per-day draft without losing its artwork.
+  if (!Array.isArray(day.events)) return { ...day, events: [{ ...day, id: "first-live" }] }
+  return day
+}, z.object({
+  status: z.enum(["live", "off", "tba"]),
+  events: z.array(PlanningEventSchema).min(1).max(6),
+}))
 export const PlanningSchema = z.object({
   version: z.literal(1),
   title: z.string().max(45),
@@ -35,7 +47,7 @@ export const PlanningSchema = z.object({
   template: z.enum(["essential", "paper", "rebrand"]),
   format: z.enum(["landscape", "portrait", "story"]),
   layout: z.enum(["poster", "vertical", "columns", "timeline"]).default("poster"),
-  eventView: z.enum(["balanced", "timeline"]).default("balanced"),
+  eventView: z.enum(["balanced", "timeline", "posters"]).default("balanced"),
   timelineAxis: z.enum(["horizontal", "vertical"]).default("horizontal"),
   timelineStart: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).default("16:00"),
   timelineEnd: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).default("02:00"),
@@ -45,6 +57,25 @@ export const PlanningSchema = z.object({
 })
 export type PlanningState = z.infer<typeof PlanningSchema>
 export type PlanningDay = z.infer<typeof PlanningDaySchema>
+export type PlanningEvent = z.infer<typeof PlanningEventSchema>
+
+export function newPlanningEvent(): PlanningEvent {
+  const id = typeof crypto.randomUUID === "function" ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, "0")).join("")
+  return { id, time: "20:30", endTime: "22:30", game: "", note: "", image: "", imageFit: "cover", onOtherChannel: false, channel: "" }
+}
+
+export function sortedEvents(day: PlanningDay) {
+  // Early-morning lives belong at the end of a streaming day.
+  const order = (time: string) => { const [h, m] = time.split(":").map(Number); return ((h + 18) % 24) * 60 + m }
+  return [...day.events].sort((a, b) => order(a.time) - order(b.time))
+}
+
+export function planningRows(state: PlanningState) {
+  return state.days.flatMap((day, index) => {
+    if (state.hideOff && day.status === "off") return []
+    return (day.status === "live" ? sortedEvents(day) : day.events.slice(0, 1)).map(event => ({ ...event, status: day.status, index }))
+  })
+}
 
 export function shiftDate(value: string, days: number) {
   const date = new Date(`${value}T12:00:00Z`)
@@ -63,7 +94,7 @@ export function weekLabel(start: string) {
 }
 
 export function emptyDays(): PlanningDay[] {
-  return DAY_NAMES.map(() => ({ status: "tba", time: "20:30", endTime: "22:30", game: "", note: "", onOtherChannel: false, channel: "" }))
+  return DAY_NAMES.map((_, index) => ({ status: "tba", events: [{ ...newPlanningEvent(), id: `day-${index}-first` }] }))
 }
 
 export function channelLabel(value: string) {

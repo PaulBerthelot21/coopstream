@@ -20,7 +20,7 @@ export function fittedText(ctx: CanvasRenderingContext2D, value: string, x: numb
   let size = maxSize
   ctx.font = `${weight} ${size}px system-ui, sans-serif`
   let lines = wrap()
-  while ((lines.length * size * 1.12 > height || lines.some(line => ctx.measureText(line).width > width)) && size > 7) {
+  while ((lines.length * size * 1.12 > height || lines.some(line => ctx.measureText(line).width > width) || (size > 14 && value.trim().split(/\s+/).some(word => ctx.measureText(word).width > width))) && size > 7) {
     size -= .5
     ctx.font = `${weight} ${size}px system-ui, sans-serif`
     lines = wrap()

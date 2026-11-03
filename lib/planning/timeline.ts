@@ -1,4 +1,4 @@
-import { DAY_NAMES, channelLabel, shiftDate, type PlanningDay, type PlanningState } from "./model"
+import { DAY_NAMES, channelLabel, shiftDate, planningRows, sortedEvents, type PlanningEvent, type PlanningState } from "./model"
 
 export function clockMinutes(value: string) {
   const [hours, minutes] = value.split(":").map(Number)
@@ -18,7 +18,7 @@ export function timelineBounds(state: PlanningState) {
   return { start, end, duration: end - start }
 }
 
-function slotBounds(day: PlanningDay, axisStart: number, axisEnd: number) {
+function slotBounds(day: PlanningEvent, axisStart: number, axisEnd: number) {
   let start = clockMinutes(day.time)
   let end = clockMinutes(day.endTime)
   if (end <= start) end += 1440
@@ -30,13 +30,15 @@ export function hiddenTimelineDays(state: PlanningState) {
   const axis = timelineBounds(state)
   return state.days.flatMap((day, index) => {
     if (day.status !== "live") return []
-    const slot = slotBounds(day, axis.start, axis.end)
-    return slot.start < axis.start || slot.end > axis.end ? [DAY_NAMES[index]] : []
+    return day.events.some(event => {
+      const slot = slotBounds(event, axis.start, axis.end)
+      return slot.start < axis.start || slot.end > axis.end
+    }) ? [DAY_NAMES[index]] : []
   })
 }
 
 export function autoTimelineRange(state: PlanningState): Pick<PlanningState, "timelineStart" | "timelineEnd"> {
-  const live = state.days.filter(day => day.status === "live" && day.time !== day.endTime)
+  const live = planningRows(state).filter(day => day.status === "live" && day.time !== day.endTime)
   if (!live.length) return { timelineStart: "16:00", timelineEnd: "02:00" }
   const hasEvening = live.some(day => clockMinutes(day.time) >= 12 * 60)
   const slots = live.map(day => {
@@ -125,41 +127,50 @@ export function drawTimeline(ctx: CanvasRenderingContext2D, state: PlanningState
       label(ctx, day.status === "off" ? "Repos" : "À annoncer", horizontal ? plotX + 15 : dayX, horizontal ? plotY + laneIndex * lane + lane / 2 - 10 : plotY + 18, horizontal ? plotW - 30 : lane - 18, 16, muted, 500)
       return
     }
-    const slot = slotBounds(day, axis.start, axis.end)
-    const visibleStart = Math.max(axis.start, slot.start)
-    const visibleEnd = Math.min(axis.end, slot.end)
-    if (visibleEnd <= visibleStart) return
-    const offset = (visibleStart - axis.start) / axis.duration
-    const duration = (visibleEnd - visibleStart) / axis.duration
-    const cardX = horizontal ? plotX + offset * plotW + 2 : plotX + laneIndex * lane + 7
-    const cardY = horizontal ? plotY + laneIndex * lane + 7 : plotY + offset * plotH + 2
-    const cardW = horizontal ? Math.max(2, duration * plotW - 4) : lane - 14
-    const cardH = horizontal ? lane - 14 : Math.max(2, duration * plotH - 4)
-    ctx.beginPath()
-    ctx.roundRect(cardX, cardY, cardW, cardH, Math.min(10, cardW / 4, cardH / 4))
-    ctx.fillStyle = light ? "#ffffff" : rebrand ? "#302047" : "#202b40"
-    ctx.fill()
-    ctx.strokeStyle = `${accent}bb`
-    ctx.lineWidth = 1.5
-    ctx.stroke()
-    if (cardW < 45 || cardH < 23) return
-    ctx.save()
-    ctx.beginPath(); ctx.rect(cardX + 3, cardY + 3, cardW - 6, cardH - 6); ctx.clip()
-    const padding = cardW < 140 ? 8 : 13
-    const insideW = cardW - padding * 2
-    label(ctx, `${day.time} – ${day.endTime}`, cardX + padding, cardY + 9, insideW, cardW < 160 ? 12 : 14, muted, 650)
-    if (cardH >= 50) label(ctx, day.game.trim() || "Live à préciser", cardX + padding, cardY + 32, insideW, cardW < 150 ? 16 : 22, fg, 850)
-    if (cardH >= 76) {
-      const host = day.onOtherChannel ? `Chez ${channelLabel(day.channel) || "chaîne à préciser"}` : channelLabel(state.creator) || "Ma chaîne"
-      ctx.font = "600 14px system-ui, sans-serif"
-      const pillW = Math.min(insideW, ctx.measureText(host).width + 14)
-      const pillY = cardY + (cardH >= 115 ? 66 : cardH - 26)
-      ctx.beginPath(); ctx.roundRect(cardX + padding, pillY, pillW, 21, 5)
-      ctx.fillStyle = `${accent}28`; ctx.fill()
-      label(ctx, host, cardX + padding + 6, pillY + 3, pillW - 12, 13, fg, 750)
-      if (cardH >= 140 && day.note.trim()) label(ctx, day.note, cardX + padding, pillY + 33, insideW, 13, muted, 500)
-    }
-    ctx.restore()
+    const trackEnds: number[] = []
+    const events = sortedEvents(day).map(event => ({ event, slot: slotBounds(event, axis.start, axis.end) })).sort((a, b) => a.slot.start - b.slot.start).map(item => {
+      let track = trackEnds.findIndex(end => end <= item.slot.start)
+      if (track < 0) track = trackEnds.length
+      trackEnds[track] = item.slot.end
+      return { ...item, track }
+    })
+    const trackLane = lane / Math.max(1, trackEnds.length)
+    events.forEach(({ event: live, slot, track }) => {
+      const visibleStart = Math.max(axis.start, slot.start)
+      const visibleEnd = Math.min(axis.end, slot.end)
+      if (visibleEnd <= visibleStart) return
+      const offset = (visibleStart - axis.start) / axis.duration
+      const duration = (visibleEnd - visibleStart) / axis.duration
+      const cardX = horizontal ? plotX + offset * plotW + 2 : plotX + laneIndex * lane + track * trackLane + 7
+      const cardY = horizontal ? plotY + laneIndex * lane + track * trackLane + 7 : plotY + offset * plotH + 2
+      const cardW = horizontal ? Math.max(2, duration * plotW - 4) : trackLane - 14
+      const cardH = horizontal ? trackLane - 14 : Math.max(2, duration * plotH - 4)
+      ctx.beginPath()
+      ctx.roundRect(cardX, cardY, cardW, cardH, Math.min(10, cardW / 4, cardH / 4))
+      ctx.fillStyle = light ? "#ffffff" : rebrand ? "#302047" : "#202b40"
+      ctx.fill()
+      ctx.strokeStyle = `${accent}bb`
+      ctx.lineWidth = 1.5
+      ctx.stroke()
+      if (cardW < 45 || cardH < 23) return
+      ctx.save()
+      ctx.beginPath(); ctx.rect(cardX + 3, cardY + 3, cardW - 6, cardH - 6); ctx.clip()
+      const padding = cardW < 140 ? 8 : 13
+      const insideW = cardW - padding * 2
+      label(ctx, `${live.time} – ${live.endTime}`, cardX + padding, cardY + 9, insideW, cardW < 160 ? 12 : 14, muted, 650)
+      if (cardH >= 50) label(ctx, live.game.trim() || "Live à préciser", cardX + padding, cardY + 32, insideW, cardW < 150 ? 16 : 22, fg, 850)
+      if (cardH >= 76) {
+        const host = live.onOtherChannel ? `Chez ${channelLabel(live.channel) || "chaîne à préciser"}` : channelLabel(state.creator) || "Ma chaîne"
+        ctx.font = "600 14px system-ui, sans-serif"
+        const pillW = Math.min(insideW, ctx.measureText(host).width + 14)
+        const pillY = cardY + (cardH >= 115 ? 66 : cardH - 26)
+        ctx.beginPath(); ctx.roundRect(cardX + padding, pillY, pillW, 21, 5)
+        ctx.fillStyle = `${accent}28`; ctx.fill()
+        label(ctx, host, cardX + padding + 6, pillY + 3, pillW - 12, 13, fg, 750)
+        if (cardH >= 140 && live.note.trim()) label(ctx, live.note, cardX + padding, pillY + 33, insideW, 13, muted, 500)
+      }
+      ctx.restore()
+    })
   })
   ctx.restore()
 }
