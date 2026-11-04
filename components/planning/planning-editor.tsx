@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { StudioHeader, StudioModeSwitch, type StudioMode } from "@/components/studio/editor-chrome"
-import { CalendarDays, ChevronLeft, ChevronRight, Download, RotateCcw, Radio, Moon, Clock3, Plus, Palette, Eye, MousePointer2, RectangleHorizontal, RectangleVertical, Smartphone, Sun, Gem, ListChecks, Images, EyeOff } from "lucide-react"
+import { CalendarDays, ChevronLeft, ChevronRight, Download, RotateCcw, Radio, Moon, Clock3, Plus, Palette, Eye, MousePointer2, RectangleHorizontal, RectangleVertical, Smartphone, Sun, Gem, ListChecks, Images, EyeOff, PanelLeft, Rows3, Columns3 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,6 +30,8 @@ export function PlanningEditor() {
   const [mode, setMode] = React.useState<StudioMode>("edit")
   const [panel, setPanel] = React.useState<"programme" | "design">("programme")
   const [exporting, setExporting] = React.useState(false)
+  const [exportFormat, setExportFormat] = React.useState<"png" | "jpeg">("png")
+  const [expandedEvents, setExpandedEvents] = React.useState<Record<number, string>>({})
   const [resetOpen, setResetOpen] = React.useState(false)
   const [previewError, setPreviewError] = React.useState("")
   const [importingImage, setImportingImage] = React.useState(false)
@@ -99,9 +101,11 @@ export function PlanningEditor() {
   function addEvent(index: number) {
     const event = newPlanningEvent()
     setState(previous => ({ ...previous, days: previous.days.map((day, i) => i === index && day.events.length < 6 ? { ...day, status: "live", events: [...day.events, event] } : day) }))
+    setExpandedEvents(previous => ({ ...previous, [index]: event.id }))
   }
   function removeEvent(index: number, id: string) {
     setState(previous => ({ ...previous, days: previous.days.map((day, i) => i === index && day.events.length > 1 ? { ...day, events: day.events.filter(event => event.id !== id) } : day) }))
+    setExpandedEvents(previous => ({ ...previous, [index]: state.days[index].events.find(event => event.id !== id)?.id ?? "" }))
   }
   async function uploadImage(index: number, id: string, file: File) {
     setImportingImage(true)
@@ -126,8 +130,8 @@ export function PlanningEditor() {
   return <div className="space-y-4" data-testid="planning-editor">
     <StudioHeader title="Planning des streams" section="Planning" status={saveStatus}>
       <Button variant="outline" disabled={!ready || importingImage || mode === "preview"} onClick={() => setResetOpen(true)}><RotateCcw className="mr-2 h-4 w-4" />Vider la semaine</Button>
-      <Button variant="outline" disabled={exporting || importingImage || !ready || invalidDays.length > 0 || Boolean(previewError)} onClick={() => void download("jpeg")}><Download className="mr-2 h-4 w-4" />Exporter JPG</Button>
-      <Button disabled={exporting || importingImage || !ready || invalidDays.length > 0 || Boolean(previewError)} onClick={() => void download("png")}><Download className="mr-2 h-4 w-4" />{exporting ? "Export…" : "Exporter PNG"}</Button>
+      <div role="group" aria-label="Format d’export" className="inline-flex rounded-lg border border-border/60 bg-card/60 p-1">{([['png', 'PNG'], ['jpeg', 'JPG']] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={exportFormat === value} disabled={exporting} onClick={() => setExportFormat(value)} className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition ${exportFormat === value ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-muted"}`}>{label}</button>)}</div>
+      <Button disabled={exporting || importingImage || !ready || invalidDays.length > 0 || Boolean(previewError)} onClick={() => void download(exportFormat)}><Download className="mr-2 h-4 w-4" />{exporting ? "Export…" : "Exporter"}</Button>
     </StudioHeader>
     <div className="flex flex-wrap items-center justify-between gap-3"><StudioModeSwitch value={mode} onChange={setMode} /><span className="text-xs text-muted-foreground">{state.showDates ? weekLabel(state.weekStart) : "Chaque semaine"} · {liveCount} live{liveCount > 1 ? "s" : ""}</span></div>
     {invalidDays.length > 0 && <p role="alert" className="text-sm text-destructive">Corrige l’heure de fin : {invalidDays.join(", ")}.</p>}
@@ -151,7 +155,11 @@ export function PlanningEditor() {
             { value: "balanced", label: "Équilibré", detail: "Titre, chaîne et horaire.", icon: ListChecks },
             { value: "posters", label: "Cartes visuelles", detail: "Images, titres et horaires par jour.", icon: Images },
           ]} />
-          {state.eventView !== "posters" && <label className="block space-y-2 text-xs text-muted-foreground">Disposition<select aria-label="Disposition du planning" className={controlClass} value={state.layout} onChange={event => patch({ layout: event.target.value as PlanningState["layout"] })}><option value="poster">Affiche</option><option value="vertical">Liste verticale</option><option value="columns">Colonnes</option></select></label>}
+          {state.eventView !== "posters" && <IconChoices label="Disposition" value={state.layout} onChange={layout => patch({ layout })} options={[
+            { value: "poster", label: "Affiche", detail: "Le titre à côté des rendez-vous.", icon: PanelLeft },
+            { value: "vertical", label: "Liste", detail: "Les rendez-vous les uns sous les autres.", icon: Rows3 },
+            { value: "columns", label: "Colonnes", detail: "Une colonne pour chaque jour.", icon: Columns3 },
+          ]} />}
           <button type="button" role="switch" aria-checked={state.hideOff} aria-label="Masquer les jours de repos" onClick={() => patch({ hideOff: !state.hideOff })} className={`flex w-full items-center gap-2.5 rounded-xl border p-3 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${state.hideOff ? "border-primary/50 bg-primary/10" : "border-border/60 bg-background/30 hover:bg-muted/50"}`}>
             <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${state.hideOff ? "bg-primary/15 text-primary" : "bg-muted/60 text-muted-foreground"}`}>{state.hideOff ? <EyeOff className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</span>
             <span className="min-w-0 flex-1"><span className="block text-[11px] font-medium">Masquer les jours de repos</span><span className="mt-1 block text-[10px] text-muted-foreground">{state.hideOff ? "Les jours de repos sont masqués." : "Tous les jours restent visibles."}</span></span>
@@ -176,7 +184,7 @@ export function PlanningEditor() {
             { value: "tba", label: "À annoncer", icon: Clock3 },
           ]} />
           {day.status === "live" ? <div className="space-y-4">
-            {day.events.map((event, index) => <PlanningEventEditor key={event.id} event={event} number={index + 1} dayName={DAY_NAMES[selectedDay].toLowerCase()} creator={state.creator} busy={importingImage} canRemove={day.events.length > 1} onChange={next => updateEvent(selectedDay, event.id, next)} onRemove={() => removeEvent(selectedDay, event.id)} onImage={file => void uploadImage(selectedDay, event.id, file)} />)}
+            {day.events.map((event, index) => <PlanningEventEditor key={event.id} event={event} number={index + 1} dayName={DAY_NAMES[selectedDay].toLowerCase()} creator={state.creator} busy={importingImage} canRemove={day.events.length > 1} open={(expandedEvents[selectedDay] ?? day.events[0].id) === event.id} onToggle={() => setExpandedEvents(previous => ({ ...previous, [selectedDay]: (previous[selectedDay] ?? day.events[0].id) === event.id ? "" : event.id }))} onChange={next => updateEvent(selectedDay, event.id, next)} onRemove={() => removeEvent(selectedDay, event.id)} onImage={file => void uploadImage(selectedDay, event.id, file)} />)}
             <Button variant="outline" className="w-full border-dashed" disabled={day.events.length >= 6 || importingImage} onClick={() => addEvent(selectedDay)}><Plus className="mr-2 h-4 w-4" />Ajouter un live</Button><p className="text-[10px] leading-relaxed text-muted-foreground">Jusqu’à 6 lives par jour, affichés dans l’ordre des horaires. PNG, JPG ou WebP · 20 Mo max par image.</p>
           </div> : <p className="text-xs leading-relaxed text-muted-foreground">{day.status === "off" ? "Une journée sans live, affichée comme repos." : "Passe ce jour en Live pour ajouter tes rendez-vous."}</p>}
         </div> : (

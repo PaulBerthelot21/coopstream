@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import { StudioHeader, StudioModeSwitch, type StudioMode } from "@/components/studio/editor-chrome"
 import {
   Download,
@@ -12,6 +13,11 @@ import {
   Layers,
   Lock,
   LockOpen,
+  Eye,
+  EyeOff,
+  ChevronDown,
+  Settings2,
+  ImagePlus,
   Palette,
   Plus,
   Scissors,
@@ -67,89 +73,31 @@ const STORAGE_KEY = "coopstream-thumbnail-editor-v11"
 
 type PanelTab = "layers" | "edit" | "media" | "effects"
 
-function FileOrDemo({
-  label,
-  icon,
-  demos,
-  currentUrl,
-  onUrl,
-  extra,
-}: {
-  label: string
-  icon: React.ReactNode
-  demos: ReadonlyArray<{ id: string; label: string; url: string }>
-  currentUrl: string | null
-  onUrl: (url: string | null) => void
-  extra?: React.ReactNode
+function FileOrDemo({ label, icon, demos, currentUrl, onUrl, extra }: {
+  label: string; icon: React.ReactNode; demos: ReadonlyArray<{ id: string; label: string; url: string }>
+  currentUrl: string | null; onUrl: (url: string | null) => void; extra?: React.ReactNode
 }) {
-  const inputRef = React.useRef<HTMLInputElement | null>(null)
-
-  return (
-    <div className="space-y-2.5">
-      <div className="flex items-center gap-2 text-sm font-medium">
-        {icon}
-        {label}
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
-          onClick={() => inputRef.current?.click()}
-        >
-          Importer…
-        </Button>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0]
-            e.target.value = ""
-            if (!file) return
-            if (file.size > 15 * 1024 * 1024) {
-              toast.error("Choisis une image de moins de 15 Mo")
-              return
-            }
-            const reader = new FileReader()
-            reader.onload = () => { if (typeof reader.result === "string") onUrl(reader.result) }
-            reader.onerror = () => toast.error("Image impossible à lire")
-            reader.readAsDataURL(file)
-          }}
-        />
-        {demos.map((d) => (
-          <Button
-            key={d.id}
-            type="button"
-            size="sm"
-            variant={currentUrl === d.url ? "default" : "outline"}
-            onClick={() => onUrl(d.url)}
-          >
-            {d.label}
-          </Button>
-        ))}
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          onClick={() => onUrl(null)}
-        >
-          Retirer
-        </Button>
-      </div>
-      {extra}
-      {currentUrl ? (
-        <div className="truncate text-[11px] text-muted-foreground">
-          {currentUrl.startsWith("blob:")
-            ? "Fichier local (session)"
-            : currentUrl.startsWith("data:")
-              ? "Image importée · conservée dans le brouillon"
-              : currentUrl}
-        </div>
-      ) : null}
+  const inputRef = React.useRef<HTMLInputElement>(null)
+  return <section className="space-y-3" aria-label={label}>
+    <h3 className="flex items-center gap-2 text-sm font-medium">{icon}{label}</h3>
+    <div className="overflow-hidden rounded-xl border border-border/60 bg-background/30">
+      {currentUrl && <div className="relative h-28 bg-muted/30"><Image src={currentUrl} alt={`Visuel : ${label}`} fill unoptimized className="object-contain p-2" /></div>}
+      <div className="flex items-center gap-1 bg-muted/20 p-2"><Button type="button" size="sm" variant="ghost" className="min-w-0 flex-1" onClick={() => inputRef.current?.click()}><ImagePlus className="mr-1.5 h-3.5 w-3.5" />{currentUrl ? "Changer" : "Importer une image"}</Button>{currentUrl && <Button type="button" size="sm" variant="ghost" className="h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-destructive" aria-label={`Retirer ${label}`} title={`Retirer ${label}`} onClick={() => onUrl(null)}><Trash2 className="h-3.5 w-3.5" /></Button>}</div>
+      <input ref={inputRef} type="file" accept="image/*" aria-label={`Importer ${label}`} className="hidden" onChange={e => {
+        const file = e.target.files?.[0]; e.target.value = ""; if (!file) return
+        if (file.size > 15 * 1024 * 1024) { toast.error("Choisis une image de moins de 15 Mo"); return }
+        const reader = new FileReader()
+        reader.onload = () => { if (typeof reader.result === "string") onUrl(reader.result) }
+        reader.onerror = () => toast.error("Image impossible à lire")
+        reader.readAsDataURL(file)
+      }} />
     </div>
-  )
+    <details className="group rounded-xl border border-border/50 bg-background/20">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 p-3 text-[11px] font-medium text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">Visuels de démonstration<ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" /></summary>
+      <div className="flex flex-wrap gap-2 px-3 pb-3">{demos.map(demo => <Button key={demo.id} type="button" size="sm" variant={currentUrl === demo.url ? "default" : "outline"} aria-pressed={currentUrl === demo.url} onClick={() => onUrl(demo.url)}>{demo.label}</Button>)}</div>
+    </details>
+    {extra}
+  </section>
 }
 
 function TextControls({
@@ -180,7 +128,7 @@ function TextControls({
         { label: "Blanc", color: "#ffffff", stroke: "transparent", mode: "solid" as const },
         { label: "Lavande", color: "#d8b4fe", stroke: "transparent", mode: "solid" as const },
       ].map(style => <button type="button" key={style.label} onClick={() => patch({ color: style.color, stroke: style.stroke, fillMode: style.mode, strokeWidth: style.mode === "outline" ? 2.5 : 0, fontId: "lecalme", italic: true, tightTracking: true })} className="rounded-lg border border-primary/20 bg-primary/5 px-2 py-3 text-xs font-black uppercase italic text-foreground hover:bg-primary/15">{style.label}</button>)}</div>}
-      <label className="block text-xs text-muted-foreground">Ombre du texte ({Math.round((item.shadow ?? .75) * 100)}%)<input type="range" min={0} max={1} step={.05} value={item.shadow ?? .75} onChange={e => patch({ shadow: Number(e.target.value) })} className="mt-2 w-full" /></label>
+
       <Input
         aria-label="Contenu du texte"
         value={item.text}
@@ -189,6 +137,10 @@ function TextControls({
         className="h-10 text-base"
       />
 
+      <details className="group rounded-xl border border-border/60 bg-background/30">
+        <summary className="flex cursor-pointer list-none items-center gap-2 p-3 text-xs font-medium text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden"><Settings2 className="h-3.5 w-3.5" />Réglages avancés<ChevronDown className="ml-auto h-3.5 w-3.5 transition-transform group-open:rotate-180" /></summary>
+        <div className="space-y-4 border-t border-border/50 p-3">
+      <label className="block text-xs text-muted-foreground">Ombre du texte ({Math.round((item.shadow ?? .75) * 100)}%)<input type="range" min={0} max={1} step={.05} value={item.shadow ?? .75} onChange={e => patch({ shadow: Number(e.target.value) })} className="mt-2 w-full" /></label>
       {item.kind === "badge" ? (
         <div className="space-y-2">
           <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -381,6 +333,8 @@ function TextControls({
           </label>
         </>
       )}
+        </div>
+      </details>
 
       <label className="block text-[11px] text-muted-foreground">
         Taille × {item.sizeScale.toFixed(2)}
@@ -751,23 +705,15 @@ export function ThumbnailEditor() {
                         >
                           {IMAGE_LAYER_LABELS[id]}
                         </button>
-                        <label className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                          <input
-                            type="checkbox"
-                            checked={layer.visible}
-                            onChange={(e) =>
-                              patchImageLayer(id, {
-                                visible: e.target.checked,
-                              })
-                            }
-                          />
-                          Vis.
-                        </label>
+                        <Button type="button" size="sm" variant="ghost" className="h-8 w-8 shrink-0 p-0" aria-pressed={layer.visible} aria-label={`${layer.visible ? "Masquer" : "Afficher"} ${IMAGE_LAYER_LABELS[id]}`} title={layer.visible ? "Masquer le calque" : "Afficher le calque"} onClick={() => patchImageLayer(id, { visible: !layer.visible })}>{layer.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />}</Button>
                         <Button
                           type="button"
                           size="sm"
                           variant="ghost"
                           className="h-8 w-8 p-0"
+                          aria-pressed={layer.locked}
+                          aria-label={`${layer.locked ? "Déverrouiller" : "Verrouiller"} ${IMAGE_LAYER_LABELS[id]}`}
+                          title={layer.locked ? "Déverrouiller le calque" : "Verrouiller le calque"}
                           onClick={() =>
                             patchImageLayer(id, { locked: !layer.locked })
                           }
@@ -862,24 +808,15 @@ export function ThumbnailEditor() {
                                 </>
                               )}
                             </button>
-                            <label className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                              <input
-                                type="checkbox"
-                                checked={t.visible}
-                                onChange={(e) =>
-                                  updateText(t.id, {
-                                    ...t,
-                                    visible: e.target.checked,
-                                  })
-                                }
-                              />
-                              Vis.
-                            </label>
+                            <Button type="button" size="sm" variant="ghost" className="h-8 w-8 shrink-0 p-0" aria-pressed={t.visible} aria-label={`${t.visible ? "Masquer" : "Afficher"} ${t.text || "Texte"}`} title={t.visible ? "Masquer le calque" : "Afficher le calque"} onClick={() => updateText(t.id, { ...t, visible: !t.visible })}>{t.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />}</Button>
                             <Button
                               type="button"
                               size="sm"
                               variant="ghost"
                               className="h-8 w-8 p-0"
+                              aria-pressed={t.locked}
+                              aria-label={`${t.locked ? "Déverrouiller" : "Verrouiller"} ${t.text || "Texte"}`}
+                              title={t.locked ? "Déverrouiller le calque" : "Verrouiller le calque"}
                               onClick={() =>
                                 updateText(t.id, {
                                   ...t,
