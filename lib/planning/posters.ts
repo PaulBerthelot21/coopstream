@@ -20,19 +20,23 @@ export async function drawPosters(ctx: CanvasRenderingContext2D, state: Planning
   const images = new Map(sources.map((src, i) => [src, loaded[i]]))
   const cols = state.format === "landscape" ? Math.max(1, days.length) : 2
   const gap = state.format === "landscape" ? 16 : 20
-  const cw = (width - gap * (cols - 1)) / cols
+  const columnWidth = (width - gap * (cols - 1)) / cols
   const fg = light ? "#172033" : "#f7f9ff"
   const muted = light ? "#707b8d" : "#9daac0"
   const rowWeights = Array.from({ length: Math.ceil(days.length / cols) }, (_, row) => Math.max(...days.slice(row * cols, (row + 1) * cols).map(day => day.status === "live" ? day.events.length : 1)))
   // Use one shared image ratio and card size across the week, rather than
   // stretching a single live to fill its day's entire column.
   const ratios = loaded.map(image => image.naturalWidth / image.naturalHeight).sort((a, b) => a - b)
-  const imageRatio = Math.max(1, Math.min(2, ratios[Math.floor(ratios.length / 2)] ?? 16 / 9))
+  const imageRatio = ratios[Math.floor(ratios.length / 2)] ?? 16 / 9
   const slots = rowWeights.reduce((sum, count) => sum + count, 0)
   const available = height - rowWeights.length * 58 - Math.max(0, rowWeights.length - 1) * gap
   const eventGap = Math.min(24, available / Math.max(1, slots * 4))
   const eventGaps = rowWeights.reduce((sum, count) => sum + (count - 1) * eventGap, 0)
-  const cardHeight = Math.min(Math.max(160, cw / imageRatio + 24), (available - eventGaps) / Math.max(1, slots))
+  const cardHeight = Math.min(Math.max(160, columnWidth / imageRatio + 24), (available - eventGaps) / Math.max(1, slots))
+  // When another live reduces the available height, shrink the width too.
+  // Keeping the artwork ratio avoids exposing blurred bands in contain mode.
+  const artHeight = cardHeight - Math.min(24, cardHeight * .15)
+  const cw = Math.min(columnWidth, artHeight * imageRatio)
   const rowHeight = (count: number) => 58 + count * cardHeight + (count - 1) * eventGap
 
   function card(event: PlanningEvent, left: number, top: number, cardH: number) {
@@ -115,7 +119,7 @@ export async function drawPosters(ctx: CanvasRenderingContext2D, state: Planning
 
   days.forEach((day, pos) => {
     const row = Math.floor(pos / cols)
-    const left = x + (pos % cols) * (cw + gap)
+    const left = x + (pos % cols) * (columnWidth + gap) + (columnWidth - cw) / 2
     const top = y + rowWeights.slice(0, row).reduce((sum, count) => sum + rowHeight(count) + gap, 0)
     ctx.fillStyle = day.status === "live" ? accent : muted
     ctx.beginPath(); ctx.arc(left + 5, top + 12, 4, 0, Math.PI * 2); ctx.fill()
