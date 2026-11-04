@@ -83,7 +83,11 @@ export type ThumbnailTemplate = {
   prop: RelRect & { fit: ImageFit }
   titleBand?: RelRect & { color: string }
   effects?: Partial<ThumbnailEffects>
-  studio?: "signature" | "impact" | "portrait" | "minimal"
+  studio?: "signature" | "impact" | "portrait" | "minimal" | "headline" | "spotlight" | "duel" | "editorial" | "neon" | "panorama" | "poster" | "reaction"
+  studioText?: {
+    align?: TextItem["align"]; accent?: string; italic?: boolean; solidKicker?: boolean; mainScale?: number
+    kicker?: RelRect; main?: RelRect
+  }
 }
 
 export type ThumbnailEditorState = {

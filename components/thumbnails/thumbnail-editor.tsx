@@ -610,10 +610,10 @@ export function ThumbnailEditor() {
       <StudioModeSwitch value={mode} onChange={setMode} />
 
       {/* Workspace */}
-      <div className={`grid min-h-0 flex-1 items-start gap-3 ${mode === "edit" ? "xl:grid-cols-[220px_minmax(0,1fr)_300px]" : "mx-auto w-full max-w-[1200px]"}`}>
+      <div className={`grid min-h-0 flex-1 items-start gap-3 ${mode === "edit" ? "xl:grid-cols-[300px_minmax(0,1fr)_300px]" : "mx-auto w-full max-w-[1200px]"}`}>
       <section aria-label="Modèles prêts à personnaliser" className={`space-y-3 rounded-2xl border border-border/60 bg-card/60 p-3 xl:sticky xl:top-20 ${mode === "preview" ? "hidden" : ""}`}>
         <div className="px-1 py-1"><h2 className="text-[10px] font-semibold uppercase tracking-[.18em] text-muted-foreground">Compositions</h2><p className="mt-1 text-[11px] text-muted-foreground">Tes images et tes titres suivent le modèle.</p></div>
-        <div className="grid grid-cols-2 gap-2 xl:grid-cols-1">
+        <div className="grid grid-cols-2 gap-2 xl:max-h-[calc(100dvh-20rem)] xl:overflow-y-auto xl:pr-1">
           {THUMBNAIL_TEMPLATES.filter(t => t.studio).map(t => (
             <TemplateCard key={t.id} id={t.id} label={t.label} description={t.description} active={state.templateId === t.id} onClick={() => {
               const next = createStudioState(t.id, state)
@@ -1029,8 +1029,8 @@ export function ThumbnailEditor() {
 
 function TemplateCard({ id, label, description, active, onClick }: { id: string; label: string; description: string; active: boolean; onClick: () => void }) {
   const preview = React.useMemo(() => createStudioState(id), [id])
-  return <button type="button" onClick={onClick} aria-pressed={active} className={`group overflow-hidden rounded-xl border text-left transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-primary ${active ? "border-primary bg-primary/10 ring-1 ring-primary/30" : "border-border bg-card hover:border-primary/50"}`}>
+  return <button type="button" onClick={onClick} aria-label={label} title={description} aria-pressed={active} className={`group min-w-0 overflow-hidden rounded-xl border text-left transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-primary ${active ? "border-primary bg-primary/10 ring-1 ring-primary/30" : "border-border bg-card hover:border-primary/50"}`}>
     <div className="relative overflow-hidden"><StudioPreview state={preview} />{active && <span className="absolute right-2 top-2 rounded-full bg-primary p-1 text-primary-foreground"><Check className="h-3 w-3" /></span>}</div>
-    <div className="p-3"><p className="text-sm font-semibold">{label}</p><p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{description}</p></div>
+    <div className="p-2"><p className="truncate text-xs font-semibold">{label}</p><p className="mt-1 line-clamp-2 text-[10px] leading-relaxed text-muted-foreground">{description}</p></div>
   </button>
 }
