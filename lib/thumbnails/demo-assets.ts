@@ -23,6 +23,11 @@ export const THUMBNAIL_DEMO_BACKGROUNDS = [
 
 export const THUMBNAIL_DEMO_HEADS = [
   {
+    id: "head-bryan-look",
+    label: "Bryan · lunettes baissées",
+    url: "/thumbnails/demo/head-bryan-look.png",
+  },
+  {
     id: "head-bryan",
     label: "Bryan (détouré)",
     url: "/thumbnails/demo/head-bryan-hearts.png",

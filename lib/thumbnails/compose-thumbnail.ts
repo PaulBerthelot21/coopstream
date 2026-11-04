@@ -22,6 +22,7 @@ import {
   type TitleStyle,
 } from "@/lib/thumbnails/types"
 import { getThumbnailTemplate } from "@/lib/thumbnails/templates"
+import { portraitBounds } from "@/lib/thumbnails/portrait-bounds"
 
 function clamp01(n: number) {
   return Math.min(1, Math.max(0, n))
@@ -36,24 +37,32 @@ function toPx(r: RelRect) {
   }
 }
 
+const imageCache = new Map<string, Promise<HTMLImageElement>>()
 function loadImage(url: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
+  const cached = imageCache.get(url)
+  if (cached) return cached
+  const promise = new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image()
     img.crossOrigin = "anonymous"
     img.onload = () => resolve(img)
-    img.onerror = () => reject(new Error(`Impossible de charger ${url}`))
+    img.onerror = () => { imageCache.delete(url); reject(new Error(`Impossible de charger ${url}`)) }
     img.src = url
   })
+  if (imageCache.size >= 24) imageCache.delete(imageCache.keys().next().value!)
+  imageCache.set(url, promise)
+  return promise
 }
 
 function fittedDrawBox(
   img: HTMLImageElement,
   rect: RelRect,
   fit: ImageFit,
+  trimPortrait: boolean,
 ) {
   const box = toPx(rect)
-  const iw = img.naturalWidth || img.width
-  const ih = img.naturalHeight || img.height
+  const source = trimPortrait ? portraitBounds(img) : { x: 0, y: 0, width: img.naturalWidth || img.width, height: img.naturalHeight || img.height }
+  const iw = source.width
+  const ih = source.height
   if (!iw || !ih || box.w <= 0 || box.h <= 0) return null
 
   const scale =
@@ -64,8 +73,9 @@ function fittedDrawBox(
   const dw = iw * scale
   const dh = ih * scale
   const dx = box.x + (box.w - dw) / 2
-  const dy = box.y + (box.h - dh) / 2
-  return { box, dx, dy, dw, dh }
+  // Portraits with a cropped torso should meet the bottom of their preset slot.
+  const dy = trimPortrait && fit === "contain" ? box.y + box.h - dh : box.y + (box.h - dh) / 2
+  return { box, dx, dy, dw, dh, source }
 }
 
 function drawFitted(
@@ -74,10 +84,11 @@ function drawFitted(
   rect: RelRect,
   fit: ImageFit,
   shadow?: { blur: number; opacity: number } | null,
+  trimPortrait = false,
 ) {
-  const fitted = fittedDrawBox(img, rect, fit)
+  const fitted = fittedDrawBox(img, rect, fit, trimPortrait)
   if (!fitted) return
-  const { box, dx, dy, dw, dh } = fitted
+  const { box, dx, dy, dw, dh, source } = fitted
 
   ctx.save()
   if (fit === "cover") {
@@ -91,7 +102,7 @@ function drawFitted(
     ctx.shadowOffsetX = Math.round(shadow.blur * 0.15)
     ctx.shadowOffsetY = Math.round(shadow.blur * 0.35)
   }
-  ctx.drawImage(img, dx, dy, dw, dh)
+  ctx.drawImage(img, source.x, source.y, source.width, source.height, dx, dy, dw, dh)
   ctx.restore()
 }
 
@@ -464,7 +475,7 @@ export async function composeThumbnailToCanvas(
             opacity: effects.headShadowOpacity,
           }
         : null
-      drawFitted(ctx, img, head.rect, state.headFit, shadow)
+      drawFitted(ctx, img, head.rect, state.headFit, shadow, true)
     } catch {
       // ignore
     }
