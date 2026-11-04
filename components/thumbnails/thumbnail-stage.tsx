@@ -86,6 +86,7 @@ type Props = {
   selected: SelectedId | null
   onSelect: (id: SelectedId | null) => void
   onRectChange: (id: SelectedId, rect: RelRect) => void
+  preview?: boolean
 }
 
 export function ThumbnailStage({
@@ -94,6 +95,7 @@ export function ThumbnailStage({
   selected,
   onSelect,
   onRectChange,
+  preview = false,
 }: Props) {
   const stageRef = React.useRef<HTMLDivElement | null>(null)
   const dragRef = React.useRef<{
@@ -167,6 +169,7 @@ export function ThumbnailStage({
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (preview) return
       if (!selected) return
       const item = items.find((i) => i.id === selected)
       if (!item || item.locked) return
@@ -186,7 +189,7 @@ export function ThumbnailStage({
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [selected, items, onRectChange])
+  }, [selected, items, onRectChange, preview])
 
   const startDrag = (
     e: React.PointerEvent,
@@ -213,7 +216,8 @@ export function ThumbnailStage({
       ref={stageRef}
       className="relative w-full touch-none select-none overflow-hidden rounded-xl border border-border/60 bg-black/80"
       style={{ aspectRatio: `${THUMB_W} / ${THUMB_H}` }}
-      onPointerDown={() => onSelect(null)}
+      data-testid="thumbnail-stage"
+      onPointerDown={() => { if (!preview) onSelect(null) }}
     >
       <canvas
         ref={canvasRef}
@@ -222,7 +226,7 @@ export function ThumbnailStage({
         className="pointer-events-none absolute inset-0 h-full w-full"
       />
 
-      {items.map((item) => {
+      {!preview && items.map((item) => {
         if (!item.visible) return null
         const isSel = selected === item.id
         const r = item.rect
@@ -289,12 +293,12 @@ export function ThumbnailStage({
         )
       })}
 
-      <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/55 px-2 py-1 text-[10px] text-white/75">
+      {!preview && <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/55 px-2 py-1 text-[10px] text-white/75">
         Glisser · poignées · flèches (Shift = ×4)
         {selected && isImageLayerId(selected as string)
           ? ` · ${IMAGE_LAYER_LABELS[selected as ImageLayerId]}`
           : ""}
-      </div>
+      </div>}
     </div>
   )
 }

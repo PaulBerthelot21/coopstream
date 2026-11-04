@@ -1,8 +1,8 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
-import { ArrowLeft, Download, ImagePlus, Type, Layers, Palette, Undo2, Redo2, Copy, Trash2, Eye, EyeOff, Lock, LockOpen, ChevronUp, ChevronDown, MousePointer2, Crosshair } from "lucide-react"
+import { StudioHeader, StudioModeSwitch, type StudioMode } from "@/components/studio/editor-chrome"
+import { Download, ImagePlus, Type, Layers, Palette, Undo2, Redo2, Copy, Trash2, Eye, EyeOff, Lock, LockOpen, ChevronUp, ChevronDown, MousePointer2, Crosshair } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,7 +27,7 @@ export function BrandingEditor({ kind }: { kind: "banner" | "avatar" }) {
   const [error, setError] = React.useState("")
   const [busy, setBusy] = React.useState(false)
   const [exporting, setExporting] = React.useState(false)
-  const [round, setRound] = React.useState(avatar)
+  const [mode, setMode] = React.useState<StudioMode>("edit")
   const [guides, setGuides] = React.useState(false)
   const [selected, setSelected] = React.useState("background")
   const [tab, setTab] = React.useState<"layers" | "design">("layers")
@@ -41,6 +41,7 @@ export function BrandingEditor({ kind }: { kind: "banner" | "avatar" }) {
   const importInProgress = React.useRef(false)
   const storageKey = `coopstream-studio-${kind}-v1`
   const dimensions = avatar ? { width: 1024, height: 1024 } : BANNER_FORMATS[design.format]
+  const shape = avatar ? design.shape ?? "circle" : "square"
   const activeAsset = design.assets.find(asset => asset.id === selected)
   const textKey = selected === "subtitle" ? "subtitleStyle" : "titleStyle"
   const textStyle = design[textKey] ?? defaultTextStyle(avatar, selected === "subtitle")
@@ -51,7 +52,7 @@ export function BrandingEditor({ kind }: { kind: "banner" | "avatar" }) {
 
   React.useEffect(() => {
     let active = true
-    void readBrandingDraft(storageKey).then(raw => { if (!active) return; const parsed = BrandingSchema.safeParse(raw); if (parsed.success) restore(parsed.data) }).catch(() => {}).finally(() => { if (active) setReady(true) })
+    void readBrandingDraft(storageKey).then(raw => { if (!active) return; const parsed = BrandingSchema.safeParse(raw); if (parsed.success) restore({ ...parsed.data, template: "minimal" }) }).catch(() => {}).finally(() => { if (active) setReady(true) })
     return () => { active = false }
     // Restore once per tool; history methods deliberately operate on refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -68,13 +69,13 @@ export function BrandingEditor({ kind }: { kind: "banner" | "avatar" }) {
   React.useEffect(() => {
     let active = true
     const buffer = document.createElement("canvas")
-    void renderBranding(buffer, design, avatar).then(result => {
+    void renderBranding(buffer, design, avatar, shape).then(result => {
       if (!active || !canvasRef.current) return
       const canvas = canvasRef.current; canvas.width = buffer.width; canvas.height = buffer.height
       canvas.getContext("2d")?.drawImage(buffer, 0, 0); setBoxes(result); setError("")
     }).catch(() => { if (active) setError("Impossible d’afficher une image. Retire-la ou importe-la à nouveau.") })
     return () => { active = false }
-  }, [design, avatar])
+  }, [design, avatar, shape])
 
   async function upload(files: File[], target: "background" | "asset") {
     if (importInProgress.current) return
@@ -133,6 +134,7 @@ export function BrandingEditor({ kind }: { kind: "banner" | "avatar" }) {
     }
   }
   function keyboard(event: React.KeyboardEvent) {
+    if (mode === "preview") return
     const target = event.target as HTMLElement
     if (target.closest("input,textarea,select,[contenteditable=true]")) return
     const key = event.key.toLowerCase(), mod = event.ctrlKey || event.metaKey
@@ -150,9 +152,9 @@ export function BrandingEditor({ kind }: { kind: "banner" | "avatar" }) {
   async function download() {
     setExporting(true)
     try {
-      const canvas = document.createElement("canvas"); await renderBranding(canvas, design, avatar)
+      const canvas = document.createElement("canvas"); await renderBranding(canvas, design, avatar, shape)
       const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error()), "image/png"))
-      const url = URL.createObjectURL(blob), link = document.createElement("a"); link.href = url; link.download = `${avatar ? "photo-profil" : "banniere"}-${canvas.width}x${canvas.height}.png`; link.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+      const url = URL.createObjectURL(blob), link = document.createElement("a"); link.href = url; link.download = `${avatar ? `photo-profil-${shape === "circle" ? "ronde" : shape === "rounded" ? "arrondie" : "carree"}` : "banniere"}-${canvas.width}x${canvas.height}.png`; link.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000)
       toast.success("Visuel exporté en PNG")
     } catch { toast.error("L’export a échoué. Réessaie.") } finally { setExporting(false) }
   }
@@ -161,12 +163,14 @@ export function BrandingEditor({ kind }: { kind: "banner" | "avatar" }) {
   return <div className="space-y-4 outline-none" onKeyDown={keyboard} tabIndex={-1} data-testid="branding-editor">
     <input ref={backgroundInput} type="file" accept="image/png,image/jpeg,image/webp" aria-label="Importer un fond" className="hidden" onChange={e => { const files = Array.from(e.target.files ?? []); e.target.value = ""; void upload(files, "background") }} />
     <input ref={assetInput} type="file" multiple accept="image/png,image/jpeg,image/webp" aria-label="Importer des éléments" className="hidden" onChange={e => { const files = Array.from(e.target.files ?? []); e.target.value = ""; void upload(files, "asset") }} />
-    <header className="flex flex-wrap items-center justify-between gap-4">
-      <div className="flex items-center gap-4"><Link href="/studio" aria-label="Retour au Studio" className="rounded-xl border border-border/60 p-2.5 text-muted-foreground hover:bg-muted"><ArrowLeft className="h-4 w-4" /></Link><div><p className="text-[10px] font-semibold uppercase tracking-[.2em] text-primary">Studio / Identité</p><h1 className="text-xl font-semibold tracking-tight">{avatar ? "Photo de profil" : "Créateur de bannières"}</h1></div></div>
-      <div className="flex items-center gap-2"><span role="status" className="mr-3 hidden text-[11px] text-muted-foreground xl:block">{status}</span><Button variant="outline" size="icon" aria-label="Annuler" title="Annuler · Ctrl Z" disabled={!history.canUndo} onClick={undo}><Undo2 className="h-4 w-4" /></Button><Button variant="outline" size="icon" aria-label="Rétablir" title="Rétablir · Ctrl Maj Z" disabled={!history.canRedo} onClick={redo}><Redo2 className="h-4 w-4" /></Button><Button disabled={!ready || busy || exporting || Boolean(error)} onClick={() => void download()}><Download className="mr-2 h-4 w-4" />{exporting ? "Export…" : "Exporter PNG"}</Button></div>
-    </header>
-    <div className="grid items-start gap-3 xl:grid-cols-[220px_minmax(0,1fr)_260px]">
-      <aside className="overflow-hidden rounded-2xl border border-border/60 bg-card/60 xl:sticky xl:top-20">
+    <StudioHeader title={avatar ? "Photo de profil" : "Créateur de bannières"} section="Identité" status={status}>
+      <Button variant="outline" size="icon" aria-label="Annuler" title="Annuler · Ctrl Z" disabled={!history.canUndo} onClick={undo}><Undo2 className="h-4 w-4" /></Button>
+      <Button variant="outline" size="icon" aria-label="Rétablir" title="Rétablir · Ctrl Maj Z" disabled={!history.canRedo} onClick={redo}><Redo2 className="h-4 w-4" /></Button>
+      <Button disabled={!ready || busy || exporting || Boolean(error)} onClick={() => void download()}><Download className="mr-2 h-4 w-4" />{exporting ? "Export…" : "Exporter PNG"}</Button>
+    </StudioHeader>
+    <div className="flex flex-wrap items-center justify-between gap-3"><StudioModeSwitch value={mode} onChange={setMode} />{avatar && <div role="group" aria-label="Forme du profil" className="inline-flex rounded-xl border border-border/60 bg-card/60 p-1">{([['circle', 'Cercle'], ['rounded', 'Carré arrondi'], ['square', 'Carré']] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={shape === value} onClick={() => patch({ shape: value })} className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition ${shape === value ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-muted"}`}><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-4 w-4 shrink-0">{value === "circle" ? <circle cx="12" cy="12" r="9" /> : <rect x="3" y="3" width="18" height="18" rx={value === "rounded" ? 5 : 0} />}</svg>{label}</button>)}</div>}</div>
+    <div className={`grid items-start gap-3 ${mode === "edit" ? "xl:grid-cols-[220px_minmax(0,1fr)_260px]" : "mx-auto max-w-[1200px]"}`}>
+      <aside className={`overflow-hidden rounded-2xl border border-border/60 bg-card/60 xl:sticky xl:top-20 ${mode === "preview" ? "hidden" : ""}`}>
         <div className="grid grid-cols-2 border-b border-border/60 p-2">{([['layers', 'Calques', Layers], ['design', 'Design', Palette]] as const).map(([id, label, Icon]) => <button key={id} onClick={() => setTab(id)} aria-pressed={tab === id} className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium ${tab === id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}><Icon className="h-3.5 w-3.5" />{label}</button>)}</div>
         {tab === "layers" ? <div className="space-y-4 p-3">
           <div className="grid grid-cols-2 gap-2"><Button size="sm" variant="outline" disabled={busy || design.assets.length >= 8} onClick={() => assetInput.current?.click()}><ImagePlus className="mr-1 h-3.5 w-3.5" />Image</Button><Button size="sm" variant="outline" onClick={() => { if (!design.title) patch({ title: "Ton texte" }); setSelected("title") }}><Type className="mr-1 h-3.5 w-3.5" />Texte</Button></div>
@@ -175,19 +179,19 @@ export function BrandingEditor({ kind }: { kind: "banner" | "avatar" }) {
           <p className="px-1 text-[10px] leading-relaxed text-muted-foreground">Le premier calque apparaît devant les autres. Glisse tes images sur la composition pour les ajouter.</p>
         </div> : <div className="space-y-5 p-4">
           {!avatar && <label className="block space-y-2 text-xs text-muted-foreground">Format<select className={selectStyle} value={design.format} onChange={e => patch({ format: e.target.value as BrandingDesign["format"] })}>{Object.entries(BANNER_FORMATS).map(([key, value]) => <option key={key} value={key}>{value.label}</option>)}</select></label>}
-          <fieldset><legend className="mb-2 text-xs text-muted-foreground">Ambiance</legend><div className="space-y-2">{([['glow', 'Halo'], ['minimal', 'Épuré'], ['diagonal', 'Dynamique']] as const).map(([id, label]) => <button key={id} aria-pressed={design.template === id} onClick={() => patch({ template: id })} className={`flex w-full items-center gap-3 rounded-xl border p-3 text-xs ${design.template === id ? "border-primary bg-primary/10" : "border-border/60 hover:bg-muted"}`}><span className="h-6 w-9 rounded" style={{ background: id === "glow" ? `radial-gradient(at 80% 20%, ${design.accent}, ${design.background})` : id === "diagonal" ? `linear-gradient(130deg, ${design.background} 50%, ${design.accent} 50%)` : design.background }} />{label}</button>)}</div></fieldset>
+          <div><p className="mb-2 text-xs text-muted-foreground">Ambiance</p><div className="flex items-center gap-3 rounded-xl border border-primary/50 bg-primary/10 p-3 text-xs"><span className="h-6 w-9 rounded border border-white/10" style={{ background: design.background }} />Épuré</div></div>
           {([['accent', 'Accent'], ['background', 'Fond']] as const).map(([key, label]) => <label key={key} className="flex items-center justify-between text-xs text-muted-foreground">{label}<input aria-label={label} type="color" value={design[key]} onChange={e => patch({ [key]: e.target.value })} className="h-8 w-12 rounded border border-input bg-transparent p-1" /></label>)}
           {avatar && <label className="flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={design.transparent} onChange={e => patch({ transparent: e.target.checked })} className="accent-primary" />Fond transparent</label>}
         </div>}
       </aside>
-      <section className={`min-w-0 overflow-hidden rounded-2xl border bg-card/40 ${dragOver ? "border-primary ring-2 ring-primary/30" : "border-border/60"}`} onDragOver={e => { e.preventDefault(); if (e.dataTransfer.types.includes("Files")) setDragOver(true) }} onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(false) }} onDrop={e => { e.preventDefault(); setDragOver(false); void upload(Array.from(e.dataTransfer.files), "asset") }}>
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-4 py-3"><span className="inline-flex items-center gap-2 text-xs text-muted-foreground"><MousePointer2 className="h-3.5 w-3.5 text-primary" />{busy ? "Import des images…" : "Sélectionne · déplace · redimensionne"}</span><div className="flex items-center gap-3"><label className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><input type="checkbox" checked={guides} onChange={e => setGuides(e.target.checked)} className="accent-primary" />Repères</label>{avatar && <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><input type="checkbox" checked={round} onChange={e => setRound(e.target.checked)} className="accent-primary" />Vue ronde</label>}<select aria-label="Zoom de l’espace de travail" value={zoom} onChange={e => setZoom(Number(e.target.value))} className="rounded-md border border-border bg-background px-2 py-1 text-[11px]">{[50, 75, 100, 150, 200].map(value => <option key={value} value={value}>{value === 100 ? "Ajuster" : `${value} %`}</option>)}</select></div></div>
-        <BrandingStage canvasRef={canvasRef} boxes={boxes} selected={selected} onSelect={setSelected} onChange={transform} onStart={() => { gestureDesign.current = design; beginGesture() }} onEnd={endGesture} round={round} guides={guides} avatar={avatar} zoom={zoom} />
+      <section className={`min-w-0 overflow-hidden rounded-2xl border bg-card/40 ${dragOver ? "border-primary ring-2 ring-primary/30" : "border-border/60"}`} onDragOver={e => { e.preventDefault(); if (mode === "edit" && e.dataTransfer.types.includes("Files")) setDragOver(true) }} onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(false) }} onDrop={e => { e.preventDefault(); setDragOver(false); if (mode === "edit") void upload(Array.from(e.dataTransfer.files), "asset") }}>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-4 py-3"><span className="inline-flex items-center gap-2 text-xs text-muted-foreground">{mode === "preview" ? <Eye className="h-3.5 w-3.5 text-primary" /> : <MousePointer2 className="h-3.5 w-3.5 text-primary" />}{busy ? "Import des images…" : mode === "preview" ? "Aperçu du rendu final" : "Sélectionne · déplace · redimensionne"}</span><div className="flex items-center gap-3">{mode === "edit" && <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><input type="checkbox" checked={guides} onChange={e => setGuides(e.target.checked)} className="accent-primary" />Repères</label>}<select aria-label="Zoom de l’espace de travail" value={zoom} onChange={e => setZoom(Number(e.target.value))} className="rounded-md border border-border bg-background px-2 py-1 text-[11px]">{[50, 75, 100, 150, 200].map(value => <option key={value} value={value}>{value === 100 ? "Ajuster" : `${value} %`}</option>)}</select></div></div>
+        <BrandingStage canvasRef={canvasRef} boxes={boxes} selected={selected} onSelect={setSelected} onChange={transform} onStart={() => { gestureDesign.current = design; beginGesture() }} onEnd={endGesture} shape={shape} guides={guides} avatar={avatar} zoom={zoom} preview={mode === "preview"} />
         {dragOver && <p className="bg-primary/10 p-3 text-center text-xs text-primary">Dépose tes images pour les ajouter comme éléments</p>}
         {error && <p role="alert" className="px-4 py-3 text-sm text-destructive">{error}</p>}
-        <div className="flex flex-wrap justify-between gap-2 border-t border-border/60 px-4 py-3 text-[10px] text-muted-foreground"><span>{dimensions.width} × {dimensions.height} px · PNG</span><span>Flèches : déplacer · Suppr : retirer · Ctrl D : dupliquer</span></div>
+        <div className="flex flex-wrap justify-between gap-2 border-t border-border/60 px-4 py-3 text-[10px] text-muted-foreground"><span>{dimensions.width} × {dimensions.height} px · PNG</span><span>{mode === "preview" ? avatar && shape !== "square" ? "Découpe appliquée · coins transparents" : "Rendu final sans repères" : "Flèches : déplacer · Suppr : retirer · Ctrl D : dupliquer"}</span></div>
       </section>
-      <aside className="overflow-hidden rounded-2xl border border-border/60 bg-card/60 xl:sticky xl:top-20" aria-label="Propriétés de la sélection">
+      <aside className={`overflow-hidden rounded-2xl border border-border/60 bg-card/60 xl:sticky xl:top-20 ${mode === "preview" ? "hidden" : ""}`} aria-label="Propriétés de la sélection">
         <div className="border-b border-border/60 px-4 py-3"><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-muted-foreground">Propriétés</p><h2 className="mt-1 truncate text-sm font-medium">{activeAsset?.name ?? (selected === "title" ? "Titre" : selected === "subtitle" ? "Signature" : "Arrière-plan")}</h2></div>
         <div className="space-y-5 p-4">
           {isText ? <><label className="block space-y-2 text-xs text-muted-foreground">Texte<Input aria-label="Texte sélectionné" maxLength={selected === "title" ? 60 : 100} value={selected === "title" ? design.title : design.subtitle} onChange={e => patch({ [selected]: e.target.value })} /></label><label className="flex items-center justify-between text-xs text-muted-foreground">Couleur<input aria-label="Couleur du texte" type="color" value={textStyle.color} onChange={e => updateText({ color: e.target.value })} className="h-8 w-12 rounded border border-input bg-transparent p-1" /></label><Slider label="Taille du texte" value={textStyle.size} min={5} max={300} unit=" %" onChange={size => updateText({ size })} /><Slider label="Rotation" value={textStyle.rotation} min={-180} max={180} unit="°" onChange={rotation => updateText({ rotation })} /></> : activeAsset ? <>
@@ -200,6 +204,6 @@ export function BrandingEditor({ kind }: { kind: "banner" | "avatar" }) {
         </div>
       </aside>
     </div>
-    <p className="text-[11px] leading-relaxed text-muted-foreground">{avatar ? "La vue ronde simule le recadrage du profil. Le PNG exporté reste carré et conserve les transparences." : "Les repères et les cadres de sélection ne sont pas exportés. Vérifie le recadrage sur le réseau lors de la mise en ligne."} <span className="xl:hidden">{status}</span></p>
+    <p className="text-[11px] leading-relaxed text-muted-foreground">{avatar ? shape !== "square" ? "La découpe est identique en édition, en aperçu et à l’export. Les coins du PNG sont transparents." : "Export carré : toute la composition est conservée." : "Les repères et les cadres de sélection ne sont pas exportés. Vérifie le recadrage sur le réseau lors de la mise en ligne."} <span className="xl:hidden">{status}</span></p>
   </div>
 }

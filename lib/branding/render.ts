@@ -11,6 +11,7 @@ export type BrandingAsset = {
 }
 
 export type BrandingTextStyle = { x: number; y: number; size: number; rotation: number; color: string }
+export type BrandingShape = "circle" | "rounded" | "square"
 export type BrandingBox = { id: string; label: string; x: number; y: number; width: number; height: number; rotation: number; locked?: boolean }
 export function defaultTextStyle(avatar: boolean, subtitle = false): BrandingTextStyle {
   return { x: 50, y: subtitle ? 58 : avatar ? 50 : 46, size: 100, rotation: 0, color: "#ffffff" }
@@ -23,6 +24,7 @@ export type BrandingDesign = {
   format: keyof typeof BANNER_FORMATS; transparent: boolean
   assets: BrandingAsset[]
   titleStyle?: BrandingTextStyle; subtitleStyle?: BrandingTextStyle
+  shape?: BrandingShape
 }
 
 const imageCache = new Map<string, Promise<HTMLImageElement>>()
@@ -40,7 +42,7 @@ function load(source: string) {
   return result
 }
 
-export async function renderBranding(canvas: HTMLCanvasElement, design: BrandingDesign, avatar: boolean) {
+export async function renderBranding(canvas: HTMLCanvasElement, design: BrandingDesign, avatar: boolean, shape: BrandingShape = "square") {
   const [image, assets] = await Promise.all([
     design.image ? load(design.image) : undefined,
     Promise.all(design.assets.map(async asset => ({ ...asset, source: await load(asset.image) }))),
@@ -95,11 +97,18 @@ export async function renderBranding(canvas: HTMLCanvasElement, design: Branding
     ctx.fillStyle = style.color; ctx.shadowColor = "#00000090"; ctx.shadowBlur = 12
     ctx.fillText(value, 0, 0); ctx.restore()
   }
-  label("title", title, design.titleStyle ?? { ...defaultTextStyle(avatar), y: design.subtitle && !avatar ? 46 : 50 }, titleSize, 900)
+  label("title", title, design.titleStyle ?? defaultTextStyle(avatar), titleSize, 900)
   if (!avatar && design.subtitle) label("subtitle", design.subtitle, design.subtitleStyle ?? defaultTextStyle(avatar, true), Math.min(h * .07, w * .023), 500)
   if (design.template !== "minimal" && (!avatar || !design.transparent)) {
     ctx.fillStyle = design.accent
     ctx.fillRect(w * .43, h * (avatar ? .74 : .67), w * .14, Math.max(4, h * .008))
+  }
+  if (avatar && shape !== "square") {
+    ctx.save(); ctx.globalCompositeOperation = "destination-in"
+    ctx.beginPath()
+    if (shape === "circle") ctx.arc(w / 2, h / 2, Math.min(w, h) / 2, 0, Math.PI * 2)
+    else ctx.roundRect(0, 0, w, h, Math.min(w, h) * .18)
+    ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore()
   }
   return boxes
 }

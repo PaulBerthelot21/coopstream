@@ -1,14 +1,15 @@
 "use client"
 
 import * as React from "react"
-import { CalendarDays, ChevronLeft, ChevronRight, Download, ChevronDown, RotateCcw, Radio, Moon, Clock3, Plus } from "lucide-react"
+import { StudioHeader, StudioModeSwitch, type StudioMode } from "@/components/studio/editor-chrome"
+import { CalendarDays, ChevronLeft, ChevronRight, Download, RotateCcw, Radio, Moon, Clock3, Plus, Palette, Eye, MousePointer2, RectangleHorizontal, RectangleVertical, Smartphone, Sun, Gem, ListChecks, Images, EyeOff } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuthSession } from "@/lib/useAuthSession"
 import { usePrimaryColor } from "@/components/primary-color-provider"
-import { autoTimelineRange, hiddenTimelineDays } from "@/lib/planning/timeline"
+import { IconChoices } from "@/components/studio/icon-choices"
 import { composePlanning, exportPlanning } from "@/lib/planning/compose"
 import { PlanningEventEditor } from "./planning-event-editor"
 import { importPlanningImage } from "@/lib/planning/images"
@@ -25,7 +26,9 @@ export function PlanningEditor() {
   const [state, setState] = React.useState<PlanningState>(defaultPlanning)
   const [ready, setReady] = React.useState(false)
   const [saveStatus, setSaveStatus] = React.useState("Chargement…")
-  const [selectedDay, setSelectedDay] = React.useState(0)
+  const [selectedDay, setSelectedDay] = React.useState(-1)
+  const [mode, setMode] = React.useState<StudioMode>("edit")
+  const [panel, setPanel] = React.useState<"programme" | "design">("programme")
   const [exporting, setExporting] = React.useState(false)
   const [resetOpen, setResetOpen] = React.useState(false)
   const [previewError, setPreviewError] = React.useState("")
@@ -40,7 +43,7 @@ export function PlanningEditor() {
         if (!active) return
         if (raw !== undefined) {
           const parsed = PlanningSchema.safeParse(raw)
-          if (parsed.success) setState({ ...parsed.data, ...(parsed.data.layout === "timeline" ? { layout: "vertical", eventView: "timeline" } : {}) })
+          if (parsed.success) setState({ ...parsed.data, ...(parsed.data.layout === "timeline" ? { layout: "vertical" } : {}), ...(parsed.data.eventView === "timeline" || parsed.data.layout === "timeline" ? { eventView: "balanced" } : {}) })
           else toast.info("Le brouillon n’a pas pu être restauré. Une nouvelle semaine est prête.")
         } else if (localStorage.getItem("coopstream-overlay-preset") === "lecalme-rebrand") {
           setState(previous => ({ ...previous, template: "rebrand" }))
@@ -117,28 +120,67 @@ export function PlanningEditor() {
   }
   const dimensions = PLANNING_FORMATS[state.format]
   const invalidDays = state.days.map((day, i) => day.status === "live" && day.events.some(event => event.time === event.endTime) ? DAY_NAMES[i] : null).filter(Boolean)
-  const outsideAxis = state.eventView === "timeline" ? hiddenTimelineDays(state) : []
   const liveCount = state.days.reduce((count, day) => count + (day.status === "live" ? day.events.length : 0), 0)
 
-  return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[.2em] text-primary">Studio · Planning</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">Ta semaine en live.</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Sept jours, tes rendez-vous, un visuel prêt à partager.</p>
+  const day = selectedDay >= 0 ? state.days[selectedDay] : null
+  return <div className="space-y-4" data-testid="planning-editor">
+    <StudioHeader title="Planning des streams" section="Planning" status={saveStatus}>
+      <Button variant="outline" disabled={!ready || importingImage || mode === "preview"} onClick={() => setResetOpen(true)}><RotateCcw className="mr-2 h-4 w-4" />Vider la semaine</Button>
+      <Button variant="outline" disabled={exporting || importingImage || !ready || invalidDays.length > 0 || Boolean(previewError)} onClick={() => void download("jpeg")}><Download className="mr-2 h-4 w-4" />Exporter JPG</Button>
+      <Button disabled={exporting || importingImage || !ready || invalidDays.length > 0 || Boolean(previewError)} onClick={() => void download("png")}><Download className="mr-2 h-4 w-4" />{exporting ? "Export…" : "Exporter PNG"}</Button>
+    </StudioHeader>
+    <div className="flex flex-wrap items-center justify-between gap-3"><StudioModeSwitch value={mode} onChange={setMode} /><span className="text-xs text-muted-foreground">{state.showDates ? weekLabel(state.weekStart) : "Chaque semaine"} · {liveCount} live{liveCount > 1 ? "s" : ""}</span></div>
+    {invalidDays.length > 0 && <p role="alert" className="text-sm text-destructive">Corrige l’heure de fin : {invalidDays.join(", ")}.</p>}
+    <div className={`grid items-start gap-3 ${mode === "edit" ? "xl:grid-cols-[220px_minmax(0,1fr)_300px]" : "mx-auto max-w-[1200px]"}`}>
+      <aside className={`overflow-hidden rounded-2xl border border-border/60 bg-card/60 xl:sticky xl:top-20 ${mode === "preview" ? "hidden" : ""}`} aria-label="Navigation du planning">
+        <div className="grid grid-cols-2 border-b border-border/60 p-2">{([['programme', 'Semaine', CalendarDays], ['design', 'Design', Palette]] as const).map(([id, label, Icon]) => <button key={id} type="button" aria-pressed={panel === id} onClick={() => setPanel(id)} className={`flex items-center justify-center gap-2 rounded-lg px-2 py-2 text-xs font-medium ${panel === id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}><Icon className="h-3.5 w-3.5" />{label}</button>)}</div>
+        {panel === "programme" ? <div className="space-y-3 p-3">
+          <button type="button" aria-pressed={selectedDay < 0} onClick={() => setSelectedDay(-1)} className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left ${selectedDay < 0 ? "border-primary/50 bg-primary/10" : "border-border/50 hover:bg-muted/60"}`}><CalendarDays className="h-4 w-4 text-primary" /><span><span className="block text-xs font-medium">La semaine</span><span className="text-[10px] text-muted-foreground">Dates, titre & signature</span></span></button>
+          <div aria-label="Programme du lundi au dimanche" className="space-y-1">{state.days.map((entry, index) => {
+            const Icon = entry.status === "live" ? Radio : entry.status === "off" ? Moon : Clock3
+            return <button key={DAY_NAMES[index]} type="button" aria-pressed={selectedDay === index} onClick={() => setSelectedDay(index)} className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition ${selectedDay === index ? "border-primary/50 bg-primary/10" : "border-transparent hover:bg-muted/60"}`}><Icon className={`h-4 w-4 shrink-0 ${entry.status === "live" ? "text-primary" : "text-muted-foreground"}`} /><span className="min-w-0"><span className="block text-xs font-medium">{DAY_NAMES[index]}</span><span className="block truncate text-[10px] text-muted-foreground">{entry.status === "live" ? `${entry.events.length} live${entry.events.length > 1 ? "s" : ""} · ${entry.events[0].time}` : statusLabels[entry.status]}</span></span></button>
+          })}</div><p className="px-1 text-[10px] leading-relaxed text-muted-foreground">Choisis un jour pour modifier ses lives dans le panneau Propriétés.</p>
+        </div> : <div className="space-y-5 p-4">
+          <IconChoices label="Format" value={state.format} onChange={format => patch({ format })} options={[
+            { value: "landscape", label: "Paysage", detail: "16:9 · 1920 × 1080", icon: RectangleHorizontal },
+            { value: "portrait", label: "Publication", detail: "4:5 · 1080 × 1350", icon: RectangleVertical },
+            { value: "story", label: "Story", detail: "9:16 · 1080 × 1920", icon: Smartphone },
+          ]} />
+          <IconChoices label="Ambiance" value={state.template} onChange={template => patch({ template })} options={PLANNING_TEMPLATES.map(template => ({ value: template.id, label: template.label, detail: template.description, icon: template.id === "paper" ? Sun : template.id === "rebrand" ? Gem : Moon }))} />
+          <IconChoices label="Présentation des lives" value={state.eventView} onChange={eventView => patch({ eventView })} options={[
+            { value: "balanced", label: "Équilibré", detail: "Titre, chaîne et horaire.", icon: ListChecks },
+            { value: "posters", label: "Cartes visuelles", detail: "Images, titres et horaires par jour.", icon: Images },
+          ]} />
+          {state.eventView !== "posters" && <label className="block space-y-2 text-xs text-muted-foreground">Disposition<select aria-label="Disposition du planning" className={controlClass} value={state.layout} onChange={event => patch({ layout: event.target.value as PlanningState["layout"] })}><option value="poster">Affiche</option><option value="vertical">Liste verticale</option><option value="columns">Colonnes</option></select></label>}
+          <button type="button" role="switch" aria-checked={state.hideOff} aria-label="Masquer les jours de repos" onClick={() => patch({ hideOff: !state.hideOff })} className={`flex w-full items-center gap-2.5 rounded-xl border p-3 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${state.hideOff ? "border-primary/50 bg-primary/10" : "border-border/60 bg-background/30 hover:bg-muted/50"}`}>
+            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${state.hideOff ? "bg-primary/15 text-primary" : "bg-muted/60 text-muted-foreground"}`}>{state.hideOff ? <EyeOff className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</span>
+            <span className="min-w-0 flex-1"><span className="block text-[11px] font-medium">Masquer les jours de repos</span><span className="mt-1 block text-[10px] text-muted-foreground">{state.hideOff ? "Les jours de repos sont masqués." : "Tous les jours restent visibles."}</span></span>
+            <span aria-hidden="true" className={`flex h-4 w-7 shrink-0 items-center rounded-full p-0.5 transition ${state.hideOff ? "bg-primary" : "bg-muted-foreground/30"}`}><span className={`h-3 w-3 rounded-full bg-white shadow transition-transform ${state.hideOff ? "translate-x-3" : ""}`} /></span>
+          </button>
+        </div>}
+      </aside>
+      <section className="min-w-0 overflow-hidden rounded-2xl border border-border/60 bg-card/40">
+        <div className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-3"><h2 className="inline-flex items-center gap-2 text-xs text-muted-foreground">{mode === "preview" ? <Eye className="h-3.5 w-3.5 text-primary" /> : <MousePointer2 className="h-3.5 w-3.5 text-primary" />}{mode === "preview" ? "Aperçu du rendu final" : "Composition de la semaine"}</h2><span className="text-[10px] text-muted-foreground">{PLANNING_FORMATS[state.format].label.split(" · ")[0]}</span></div>
+        <div className="flex min-h-[420px] items-center justify-center bg-[#090c13] p-5 sm:p-8">
+          <canvas ref={canvasRef} width={dimensions.width} height={dimensions.height} role="img" aria-label="Aperçu du planning de la semaine" className={`h-auto w-full shadow-[0_16px_80px_#0008] ${state.format === "story" ? "max-w-[360px]" : state.format === "portrait" ? "max-w-[460px]" : ""}`} />
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => setResetOpen(true)} disabled={!ready || importingImage}><RotateCcw className="h-4 w-4" />Vider la semaine</Button>
-          <Button variant="outline" disabled={exporting || importingImage || !ready || invalidDays.length > 0} onClick={() => void download("jpeg")}><Download className="h-4 w-4" />Exporter JPG</Button>
-          <Button disabled={exporting || importingImage || !ready || invalidDays.length > 0} onClick={() => void download("png")}><Download className="h-4 w-4" />{exporting ? "Export en cours…" : "Exporter PNG"}</Button>
-        </div>
-      </header>
-
-      {invalidDays.length > 0 && <p role="alert" className="text-sm text-destructive">Corrige l’heure de fin : {invalidDays.join(", ")}.</p>}
-      <div className="grid items-start gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
-        <div className="min-w-0 space-y-5">
-          <section aria-label="Réglages du planning" className="space-y-4 rounded-2xl border border-border/70 bg-card/50 p-5">
+        {previewError && <p role="alert" className="px-4 pb-4 text-sm text-destructive">{previewError}</p>}
+        <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-3 text-[10px] text-muted-foreground"><span>{dimensions.width} × {dimensions.height} px · PNG / JPG</span><span>{mode === "preview" ? "Rendu final sans outils d’édition" : "La mise en page s’adapte à tes rendez-vous"}</span></footer>
+      </section>
+      <aside className={`min-w-0 overflow-hidden rounded-2xl border border-border/60 bg-card/60 xl:sticky xl:top-20 ${mode === "preview" ? "hidden" : ""}`} aria-label="Propriétés du planning">
+        <header className="border-b border-border/60 px-4 py-3"><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-muted-foreground">Propriétés</p><h2 className="mt-1 text-sm font-medium">{day ? DAY_NAMES[selectedDay] : "La semaine"}</h2></header>
+        {day ? <div className="space-y-4 p-4">
+          <IconChoices label={`Statut du ${DAY_NAMES[selectedDay].toLowerCase()}`} value={day.status} columns={3} onChange={status => updateDay(selectedDay, { status })} options={[
+            { value: "live", label: "Live", icon: Radio },
+            { value: "off", label: "Repos", icon: Moon },
+            { value: "tba", label: "À annoncer", icon: Clock3 },
+          ]} />
+          {day.status === "live" ? <div className="space-y-4">
+            {day.events.map((event, index) => <PlanningEventEditor key={event.id} event={event} number={index + 1} dayName={DAY_NAMES[selectedDay].toLowerCase()} creator={state.creator} busy={importingImage} canRemove={day.events.length > 1} onChange={next => updateEvent(selectedDay, event.id, next)} onRemove={() => removeEvent(selectedDay, event.id)} onImage={file => void uploadImage(selectedDay, event.id, file)} />)}
+            <Button variant="outline" className="w-full border-dashed" disabled={day.events.length >= 6 || importingImage} onClick={() => addEvent(selectedDay)}><Plus className="mr-2 h-4 w-4" />Ajouter un live</Button><p className="text-[10px] leading-relaxed text-muted-foreground">Jusqu’à 6 lives par jour, affichés dans l’ordre des horaires. PNG, JPG ou WebP · 20 Mo max par image.</p>
+          </div> : <p className="text-xs leading-relaxed text-muted-foreground">{day.status === "off" ? "Une journée sans live, affichée comme repos." : "Passe ce jour en Live pour ajouter tes rendez-vous."}</p>}
+        </div> : (
+          <section aria-label="Réglages du planning" className="space-y-4 p-4">
             <h2 className="flex items-center gap-2 text-sm font-semibold"><CalendarDays className="h-4 w-4 text-primary" />La semaine</h2>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!state.showDates} onChange={event => patch({ showDates: !event.target.checked })} className="accent-primary" />Sans dates précises</label>
             {state.showDates ? <div className="flex items-center gap-2">
@@ -151,75 +193,10 @@ export function PlanningEditor() {
             <label className="block space-y-1.5 text-xs text-muted-foreground">Chaîne ou signature<Input maxLength={60} value={state.creator} onChange={event => { creatorEdited.current = true; patch({ creator: event.target.value }) }} placeholder="twitch.tv/toncompte" /></label>
             <label className="block space-y-1.5 text-xs text-muted-foreground">Petit message<Input maxLength={100} value={state.subtitle} onChange={event => patch({ subtitle: event.target.value })} placeholder="On se retrouve en live." /></label>
           </section>
-
-          <section aria-label="Programme du lundi au dimanche" className="overflow-hidden rounded-2xl border border-border/70 bg-card/50">
-            <div className="flex items-center justify-between border-b border-border/60 p-5"><h2 className="text-sm font-semibold">Les rendez-vous</h2><span className="text-xs text-muted-foreground">{liveCount} live{liveCount > 1 ? "s" : ""}</span></div>
-            {state.days.map((day, index) => {
-              const active = selectedDay === index
-              const Icon = day.status === "live" ? Radio : day.status === "off" ? Moon : Clock3
-              return <div key={DAY_NAMES[index]} className="border-b border-border/50 last:border-b-0">
-                <button type="button" aria-expanded={active} aria-controls={`planning-day-${index}`} onClick={() => setSelectedDay(active ? -1 : index)} className={`flex w-full items-center gap-3 px-5 py-4 text-left transition hover:bg-muted/40 ${active ? "bg-primary/5" : ""}`}>
-                  <Icon className={`h-4 w-4 shrink-0 ${day.status === "live" ? "text-primary" : "text-muted-foreground"}`} />
-                  <span className="flex-1 text-sm font-medium">{DAY_NAMES[index]}</span>
-                  <span className="max-w-[150px] truncate text-xs text-muted-foreground">{day.status === "live" ? `${day.events.length} live${day.events.length > 1 ? "s" : ""} · ${day.events[0].time}` : statusLabels[day.status]}</span>
-                  <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition ${active ? "rotate-180" : ""}`} />
-                </button>
-                {active && <div id={`planning-day-${index}`} className="space-y-3 px-5 pb-5">
-                  <label className="block space-y-1.5 text-xs text-muted-foreground">Statut du {DAY_NAMES[index].toLowerCase()}<select aria-label={`Statut du ${DAY_NAMES[index].toLowerCase()}`} className={controlClass} value={day.status} onChange={event => updateDay(index, { status: event.target.value as PlanningDay["status"] })}><option value="live">Live</option><option value="off">Repos</option><option value="tba">À annoncer</option></select></label>
-                  {day.status === "live" && <div className="space-y-4">
-                    {day.events.map((event, eventIndex) => <PlanningEventEditor key={event.id} event={event} number={eventIndex + 1} dayName={DAY_NAMES[index].toLowerCase()} creator={state.creator} busy={importingImage} canRemove={day.events.length > 1} onChange={next => updateEvent(index, event.id, next)} onRemove={() => removeEvent(index, event.id)} onImage={file => void uploadImage(index, event.id, file)} />)}
-                    <Button variant="outline" className="w-full border-dashed" disabled={day.events.length >= 6 || importingImage} onClick={() => addEvent(index)}><Plus className="h-4 w-4" />Ajouter un live</Button>
-                    <p className="text-[11px] text-muted-foreground">Jusqu’à 6 lives par jour, affichés dans l’ordre des horaires. PNG, JPG ou WebP · 20 Mo max par image.</p>
-                  </div>}
-                  {day.status === "off" && <p className="text-xs text-muted-foreground">Une journée sans live, affichée comme repos.</p>}
-                </div>}
-              </div>
-            })}
-          </section>
-        </div>
-
-        <section className="min-w-0 space-y-4 xl:sticky xl:top-[72px]">
-          <div className="grid gap-2 sm:grid-cols-3" aria-label="Modèles de planning">
-            {PLANNING_TEMPLATES.map(template => <button type="button" key={template.id} aria-pressed={state.template === template.id} onClick={() => patch({ template: template.id })} className={`rounded-xl border p-4 text-left transition ${state.template === template.id ? "border-primary bg-primary/5" : "border-border/70 bg-card/50 hover:border-primary/40"}`}><p className="text-sm font-semibold">{template.label}</p><p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{template.description}</p></button>)}
-          </div>
-          <section aria-label="Présentation du contenu des jours" className="space-y-2">
-            <h2 className="text-xs font-medium text-muted-foreground">À l’intérieur des jours</h2>
-            <div className="grid gap-2 sm:grid-cols-3">{[
-              { id: "balanced" as const, title: "Équilibré", detail: "Chaîne et horaire côte à côte, dans deux badges dédiés." },
-              { id: "timeline" as const, title: "Agenda horaire", detail: "Des cartes positionnées selon l’heure et la durée du live." },
-              { id: "posters" as const, title: "Cartes visuelles", detail: "Tes lives en cartes : image, titre et horaires, regroupés par jour." },
-            ].map(view => <button key={view.id} type="button" aria-pressed={state.eventView === view.id} onClick={() => patch({ eventView: view.id })} className={`rounded-xl border px-4 py-3 text-left transition ${state.eventView === view.id ? "border-primary bg-primary/5" : "border-border/60 bg-card/50 hover:border-primary/40"}`}><span className="text-sm font-semibold">{view.title}</span><p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{view.detail}</p></button>)}</div>
-          </section>
-          {state.eventView === "posters" && <p className="text-xs text-muted-foreground">Ouvre un jour en Live dans « Les rendez-vous » pour ajouter ses lives et leurs visuels. Le format paysage affiche les jours côte à côte ; les formats publication et story les répartissent sur deux colonnes.</p>}
-          <div className="overflow-hidden rounded-2xl border border-border/70 bg-card/50">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 px-4 py-3">
-              <h2 className="text-sm font-medium">Aperçu du planning</h2>
-              {state.eventView !== "posters" && <select aria-label="Disposition du planning" className={`${controlClass} w-auto max-w-full`} value={state.layout} onChange={event => patch({ layout: event.target.value as PlanningState["layout"] })}><option value="poster">Affiche · titre sur le côté</option><option value="vertical">Liste verticale · titre en haut</option><option value="columns">Colonnes · une carte par jour</option></select>}
-              <select aria-label="Format du planning" className={`${controlClass} w-auto max-w-full`} value={state.format} onChange={event => patch({ format: event.target.value as PlanningState["format"] })}>{Object.entries(PLANNING_FORMATS).map(([id, format]) => <option key={id} value={id}>{format.label}</option>)}</select>
-            </div>
-            {state.eventView === "timeline" && <div className="space-y-3 border-b border-border/60 px-4 py-4">
-              <div className="grid gap-3 sm:grid-cols-3">
-                <label className="space-y-1 text-xs text-muted-foreground">Axe des heures<select aria-label="Axe des heures" className={controlClass} value={state.timelineAxis} onChange={event => patch({ timelineAxis: event.target.value as PlanningState["timelineAxis"] })}><option value="horizontal">Horizontal · heures en haut</option><option value="vertical">Vertical · heures à gauche</option></select></label>
-                <label className="space-y-1 text-xs text-muted-foreground">Début de l’axe<input type="time" className={controlClass} value={state.timelineStart} onChange={event => { if (event.target.value) patch({ timelineStart: event.target.value }) }} /></label>
-                <label className="space-y-1 text-xs text-muted-foreground">Fin de l’axe<input type="time" className={controlClass} value={state.timelineEnd} onChange={event => { if (event.target.value) patch({ timelineEnd: event.target.value }) }} /></label>
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-[11px] text-muted-foreground">La taille des cartes suit la durée du live. Une fin après minuit est comptée le lendemain.</p><Button variant="outline" size="sm" onClick={() => patch(autoTimelineRange(state))}>Adapter l’axe aux lives</Button></div>
-              {outsideAxis.length > 0 && <p role="alert" className="text-xs text-destructive">Hors de l’axe affiché : {outsideAxis.join(", ")}. Adapte les heures pour voir ces créneaux.</p>}
-            </div>}
-            <div className="flex min-h-[300px] items-center justify-center bg-muted/20 p-4 sm:p-6">
-              <canvas ref={canvasRef} width={dimensions.width} height={dimensions.height} role="img" aria-label="Aperçu du planning de la semaine" className={`h-auto w-full rounded-lg shadow-lg ${state.format === "story" ? "max-w-[360px]" : state.format === "portrait" ? "max-w-[460px]" : ""}`} />
-            </div>
-            {previewError && <p role="alert" className="px-4 pb-4 text-sm text-destructive">{previewError}</p>}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 px-4 py-3 text-[11px] text-muted-foreground"><span>{dimensions.width} × {dimensions.height} px · PNG / JPG</span><span role="status">{saveStatus}</span></div>
-          </div>
-          <div className="flex flex-wrap gap-5 rounded-xl border border-border/60 px-4 py-3 text-xs text-muted-foreground">
-            <label className="flex items-center gap-2"><input type="checkbox" checked={state.hideOff} onChange={event => patch({ hideOff: event.target.checked })} className="accent-primary" />Masquer les jours de repos</label>
-          </div>
-          <p className="text-xs leading-relaxed text-muted-foreground">Ton brouillon reste sur ce navigateur. Changer de semaine conserve tes rendez-vous pour préparer la suivante. Ce planning est un visuel à partager ; il ne modifie pas ton planning Twitch.</p>
-        </section>
-      </div>
-
-      <Dialog open={resetOpen} onOpenChange={setResetOpen}><DialogContent><DialogHeader><DialogTitle>Vider les rendez-vous ?</DialogTitle><DialogDescription>Les sept jours repasseront à « À annoncer ». Le modèle, les dates et ta signature seront conservés.</DialogDescription></DialogHeader><DialogFooter><Button variant="outline" onClick={() => setResetOpen(false)}>Garder ma semaine</Button><Button onClick={() => { patch({ days: emptyDays() }); setResetOpen(false) }}>Vider la semaine</Button></DialogFooter></DialogContent></Dialog>
+        )}
+      </aside>
     </div>
-  )
+    <p className="text-[11px] leading-relaxed text-muted-foreground">Ton brouillon reste sur cet appareil. Le planning est un visuel à partager ; il ne modifie pas ton planning Twitch. <span className="xl:hidden">{saveStatus}</span></p>
+    <Dialog open={resetOpen} onOpenChange={setResetOpen}><DialogContent><DialogHeader><DialogTitle>Vider les rendez-vous ?</DialogTitle><DialogDescription>Les sept jours repasseront à « À annoncer ». Le modèle, les dates et ta signature seront conservés.</DialogDescription></DialogHeader><DialogFooter><Button variant="outline" onClick={() => setResetOpen(false)}>Garder ma semaine</Button><Button onClick={() => { patch({ days: emptyDays() }); setResetOpen(false) }}>Vider la semaine</Button></DialogFooter></DialogContent></Dialog>
+  </div>
 }

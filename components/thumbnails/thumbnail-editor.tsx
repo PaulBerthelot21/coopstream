@@ -1,13 +1,13 @@
 "use client"
 
 import * as React from "react"
+import { StudioHeader, StudioModeSwitch, type StudioMode } from "@/components/studio/editor-chrome"
 import {
   Download,
   Undo2,
   Redo2,
   FilePlus2,
   Check,
-  Eye,
   ImageIcon,
   Layers,
   Lock,
@@ -40,8 +40,6 @@ import {
   BADGE_PRESETS,
   IMAGE_LAYER_LABELS,
   IMAGE_LAYER_STACK,
-  THUMB_H,
-  THUMB_W,
   THUMBNAIL_DEMO_BACKGROUNDS,
   THUMBNAIL_DEMO_HEADS,
   THUMBNAIL_DEMO_PROPS,
@@ -421,9 +419,7 @@ export function ThumbnailEditor() {
   const [panel, setPanel] = React.useState<PanelTab>("media")
   const [exporting, setExporting] = React.useState(false)
   const [cutting, setCutting] = React.useState(false)
-  const [previewOpen, setPreviewOpen] = React.useState(false)
-  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null)
-  const [previewBusy, setPreviewBusy] = React.useState(false)
+  const [mode, setMode] = React.useState<StudioMode>("edit")
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
   const drawGen = React.useRef(0)
 
@@ -502,7 +498,7 @@ export function ThumbnailEditor() {
 
   React.useEffect(() => {
     const key = (event: KeyboardEvent) => {
-      if (!(event.ctrlKey || event.metaKey)) return
+      if (mode === "preview" || !(event.ctrlKey || event.metaKey)) return
       const target = event.target as HTMLElement
       if (target.closest("input,textarea,[contenteditable=true]")) return
       if (event.key.toLowerCase() === "z") { event.preventDefault(); if (event.shiftKey) redo(); else undo() }
@@ -510,7 +506,7 @@ export function ThumbnailEditor() {
     }
     window.addEventListener("keydown", key)
     return () => window.removeEventListener("keydown", key)
-  }, [undo, redo])
+  }, [undo, redo, mode])
 
   React.useEffect(() => {
     const canvas = canvasRef.current
@@ -627,21 +623,6 @@ export function ThumbnailEditor() {
     }
   }
 
-  const openPreview = async () => {
-    setPreviewBusy(true)
-    setPreviewOpen(true)
-    try {
-      const canvas = document.createElement("canvas")
-      await composeThumbnailToCanvas(canvas, { state })
-      setPreviewUrl(canvas.toDataURL("image/png"))
-    } catch {
-      toast.error("Prévisualisation impossible")
-      setPreviewOpen(false)
-    } finally {
-      setPreviewBusy(false)
-    }
-  }
-
   const onCutoutHead = async () => {
     if (!state.headUrl) {
       toast.error("Importe d’abord une tête")
@@ -665,46 +646,20 @@ export function ThumbnailEditor() {
       : null
 
   return (
-    <div className="thumbnail-studio flex min-h-[calc(100vh-3rem)] flex-col gap-5">
-      {/* Header + actions */}
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border/60 pb-4">
-        <div className="min-w-0 space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            Miniatures <span className="font-light text-primary">/ Studio</span>
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Ton univers. Tes images. Ta signature.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span role="status" className="mr-2 text-xs text-muted-foreground">{saveStatus}</span>
-          <Button variant="outline" size="icon" aria-label="Annuler" title="Annuler (Ctrl+Z)" onClick={undo} disabled={!history.length && lastSnapshot.current === state}><Undo2 className="h-4 w-4" /></Button>
-          <Button variant="outline" size="icon" aria-label="Rétablir" title="Rétablir (Ctrl+Maj+Z)" onClick={redo} disabled={!future.length}><Redo2 className="h-4 w-4" /></Button>
-          <Button variant="outline" onClick={() => setBlankOpen(true)}><FilePlus2 className="mr-2 h-4 w-4" />Création vierge</Button>
-          <Button
-            type="button"
-            size="default"
-            variant="secondary"
-            onClick={() => void openPreview()}
-          >
-            <Eye className="mr-2 h-4 w-4" />
-            Prévisualiser
-          </Button>
-          <Button
-            type="button"
-            size="default"
-            onClick={() => void onExport()}
-            disabled={exporting}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            {exporting ? "Export…" : "Exporter PNG"}
-          </Button>
-        </div>
-      </header>
+    <div className="thumbnail-studio space-y-4">
+      <StudioHeader title="Miniatures YouTube" section="Miniatures" status={saveStatus}>
+        <Button variant="outline" size="icon" aria-label="Annuler" title="Annuler · Ctrl Z" onClick={undo} disabled={!history.length && lastSnapshot.current === state}><Undo2 className="h-4 w-4" /></Button>
+        <Button variant="outline" size="icon" aria-label="Rétablir" title="Rétablir · Ctrl Maj Z" onClick={redo} disabled={!future.length}><Redo2 className="h-4 w-4" /></Button>
+        <Button variant="outline" onClick={() => setBlankOpen(true)} disabled={mode === "preview"}><FilePlus2 className="mr-2 h-4 w-4" />Création vierge</Button>
+        <Button onClick={() => void onExport()} disabled={exporting || !ready}><Download className="mr-2 h-4 w-4" />{exporting ? "Export…" : "Exporter PNG"}</Button>
+      </StudioHeader>
+      <StudioModeSwitch value={mode} onChange={setMode} />
 
-      <section aria-label="Modèles prêts à personnaliser" className="space-y-3">
-        <div className="flex items-center justify-between"><h2 className="text-xs font-semibold uppercase tracking-[.18em] text-primary">Choisir une composition</h2><span className="text-xs text-muted-foreground">Tes images et tes titres suivent le modèle</span></div>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {/* Workspace */}
+      <div className={`grid min-h-0 flex-1 items-start gap-3 ${mode === "edit" ? "xl:grid-cols-[220px_minmax(0,1fr)_300px]" : "mx-auto w-full max-w-[1200px]"}`}>
+      <section aria-label="Modèles prêts à personnaliser" className={`space-y-3 rounded-2xl border border-border/60 bg-card/60 p-3 xl:sticky xl:top-20 ${mode === "preview" ? "hidden" : ""}`}>
+        <div className="px-1 py-1"><h2 className="text-[10px] font-semibold uppercase tracking-[.18em] text-muted-foreground">Compositions</h2><p className="mt-1 text-[11px] text-muted-foreground">Tes images et tes titres suivent le modèle.</p></div>
+        <div className="grid grid-cols-2 gap-2 xl:grid-cols-1">
           {THUMBNAIL_TEMPLATES.filter(t => t.studio).map(t => (
             <TemplateCard key={t.id} id={t.id} label={t.label} description={t.description} active={state.templateId === t.id} onClick={() => {
               const next = createStudioState(t.id, state)
@@ -715,19 +670,18 @@ export function ThumbnailEditor() {
         </div>
       </section>
 
-      {/* Workspace */}
-      <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+
         {/* Canvas zone */}
-        <section className="flex min-w-0 flex-col gap-3 rounded-2xl border border-border/60 bg-background/50 p-3 sm:p-4">
-          <div className="flex items-center justify-between gap-2 px-0.5">
-            <div className="text-sm font-medium text-muted-foreground">
-              Composition · glisser pour déplacer
+        <section className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-4 py-3">
+            <div className="text-xs text-muted-foreground">
+              {mode === "preview" ? "Aperçu du rendu final" : "Sélectionne · déplace · redimensionne"}
             </div>
             <div className="text-[11px] text-muted-foreground">
-              Flèches : déplacer · Maj : accélérer
+              {mode === "preview" ? "Rendu final sans repères" : "Flèches : déplacer · Maj : accélérer"}
             </div>
           </div>
-          <div className="studio-workspace flex min-h-[340px] flex-1 items-center justify-center rounded-xl p-4 sm:p-8">
+          <div className="flex min-h-[420px] flex-1 items-center justify-center bg-[#090c13] p-5 sm:p-8">
             <div className="w-full max-w-[1280px]">
               <ThumbnailStage
                 canvasRef={canvasRef}
@@ -735,18 +689,19 @@ export function ThumbnailEditor() {
                 selected={selected}
                 onSelect={selectItem}
                 onRectChange={onRectChange}
+                preview={mode === "preview"}
               />
             </div>
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/5 pt-3">
-            <div className="flex gap-2"><Button size="sm" variant="secondary" onClick={addText}><Plus className="mr-1 h-3 w-3" />Texte</Button><Button size="sm" variant="ghost" onClick={() => setMobilePreview(v => !v)}>{mobilePreview ? "Masquer l’aperçu mobile" : "Vérifier sur mobile"}</Button></div>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 px-4 py-3">
+            <div className="flex flex-wrap gap-2"><Button size="sm" variant="secondary" disabled={mode === "preview"} onClick={addText}><Plus className="mr-1 h-3 w-3" />Texte</Button><Button size="sm" variant="ghost" onClick={() => setMobilePreview(v => !v)}>{mobilePreview ? "Masquer l’aperçu mobile" : "Vérifier sur mobile"}</Button></div>
             <span className="text-[11px] text-muted-foreground">1280 × 720 · 16:9</span>
           </div>
-          {mobilePreview && <div className="mx-auto w-full max-w-[320px] overflow-hidden rounded-xl border border-border bg-card"><StudioPreview state={state} /><div className="p-3"><p className="text-sm font-semibold">{state.texts.filter(t => t.kind === "text").map(t => t.text).join(" ") || "Ta prochaine vidéo"}</p><p className="mt-1 text-xs text-muted-foreground">Aperçu de lisibilité</p></div></div>}
+          {mobilePreview && <div className="mx-auto mb-4 w-full max-w-[320px] overflow-hidden rounded-xl border border-border bg-card"><StudioPreview state={state} /><div className="p-3"><p className="text-sm font-semibold">{state.texts.filter(t => t.kind === "text").map(t => t.text).join(" ") || "Ta prochaine vidéo"}</p><p className="mt-1 text-xs text-muted-foreground">Aperçu de lisibilité</p></div></div>}
         </section>
 
         {/* Side panel */}
-        <aside className="flex min-h-[420px] flex-col overflow-hidden rounded-2xl border border-border/60 bg-background/60 xl:sticky xl:top-4 xl:max-h-[calc(100vh-6rem)]">
+        <aside className={`flex min-h-[420px] flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/60 xl:sticky xl:top-20 xl:max-h-[calc(100vh-7rem)] ${mode === "preview" ? "hidden" : ""}`}>
           <div className="grid grid-cols-4 gap-1 border-b border-border/60 p-2">
             {PANEL_TABS.map((tab) => {
               const active = panel === tab.id
@@ -758,7 +713,7 @@ export function ThumbnailEditor() {
                   className={[
                     "flex flex-col items-center gap-1 rounded-lg px-1 py-2 text-[11px] font-medium transition",
                     active
-                      ? "bg-primary/15 text-foreground"
+                      ? "bg-primary/15 text-primary"
                       : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
                   ].join(" ")}
                 >
@@ -785,7 +740,7 @@ export function ThumbnailEditor() {
                         className={[
                           "flex items-center gap-2 rounded-xl border px-2.5 py-2",
                           active
-                            ? "border-sky-400/60 bg-sky-400/10"
+                            ? "border-primary/50 bg-primary/10"
                             : "border-border/60 bg-background/40",
                         ].join(" ")}
                       >
@@ -878,7 +833,7 @@ export function ThumbnailEditor() {
                             className={[
                               "flex items-center gap-2 rounded-xl border px-2.5 py-2",
                               active
-                                ? "border-sky-400/60 bg-sky-400/10"
+                                ? "border-primary/50 bg-primary/10"
                                 : "border-border/60 bg-background/40",
                             ].join(" ")}
                           >
@@ -1126,67 +1081,11 @@ export function ThumbnailEditor() {
         </aside>
       </div>
 
+      <p className="text-[11px] leading-relaxed text-muted-foreground">Les cadres de sélection et les repères ne sont pas exportés. <span className="xl:hidden">{saveStatus}</span></p>
       <Dialog open={blankOpen} onOpenChange={setBlankOpen}>
         <DialogContent><DialogHeader><DialogTitle>Partir d’une feuille blanche ?</DialogTitle><DialogDescription>Le brouillon actuel sera remplacé. Tu pourras revenir en arrière avec Annuler.</DialogDescription></DialogHeader><DialogFooter><Button variant="outline" onClick={() => setBlankOpen(false)}>Garder ma création</Button><Button onClick={() => { setState(createBlankState()); setSelected(null); setPanel("media"); setBlankOpen(false) }}>Créer une miniature vierge</Button></DialogFooter></DialogContent>
       </Dialog>
-      {/* Preview dialog — rendu propre sans poignées */}
-      <Dialog
-        open={previewOpen}
-        onOpenChange={(open) => {
-          setPreviewOpen(open)
-          if (!open) setPreviewUrl(null)
-        }}
-      >
-        <DialogContent className="max-h-[95vh] w-[min(96vw,1320px)] max-w-[1320px] overflow-y-auto sm:max-w-[1320px]">
-          <DialogHeader>
-            <DialogTitle>Prévisualisation</DialogTitle>
-            <DialogDescription>
-              Rendu final {THUMB_W}×{THUMB_H} — sans guides d’édition.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="overflow-hidden rounded-xl border border-border/60 bg-black">
-            {previewBusy || !previewUrl ? (
-              <div
-                className="flex items-center justify-center text-sm text-muted-foreground"
-                style={{ aspectRatio: `${THUMB_W} / ${THUMB_H}` }}
-              >
-                Rendu en cours…
-              </div>
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={previewUrl}
-                alt="Prévisualisation miniature"
-                className="h-auto w-full"
-                width={THUMB_W}
-                height={THUMB_H}
-              />
-            )}
-          </div>
-          <DialogFooter className="sm:justify-between">
-            <p className="text-xs text-muted-foreground">
-              Ce que tu vois = le PNG exporté.
-            </p>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setPreviewOpen(false)}
-              >
-                Fermer
-              </Button>
-              <Button
-                type="button"
-                onClick={() => void onExport()}
-                disabled={exporting}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                {exporting ? "Export…" : "Exporter PNG"}
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
     </div>
   )
 }
