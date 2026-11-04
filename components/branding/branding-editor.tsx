@@ -2,17 +2,17 @@
 
 import * as React from "react"
 import { StudioHeader, StudioModeSwitch, type StudioMode } from "@/components/studio/editor-chrome"
-import { Download, ImagePlus, Type, Layers, Palette, Undo2, Redo2, Copy, Trash2, Eye, EyeOff, Lock, LockOpen, ChevronUp, ChevronDown, MousePointer2, Crosshair } from "lucide-react"
+import { Download, ImagePlus, Type, Layers, Palette, Undo2, Redo2, Copy, Trash2, Eye, EyeOff, Lock, LockOpen, ChevronUp, ChevronDown, MousePointer2, Crosshair, Monitor, RectangleHorizontal, GalleryHorizontal } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { IconChoices } from "@/components/studio/icon-choices"
 import { BANNER_FORMATS, defaultTextStyle, renderBranding, type BrandingDesign, type BrandingAsset, type BrandingBox, type BrandingTextStyle } from "@/lib/branding/render"
 import { BrandingSchema, initialDesign } from "@/lib/branding/model"
 import { readBrandingDraft, saveBrandingDraft } from "@/lib/branding/draft"
 import { BrandingStage } from "./branding-stage"
 import { useDesignHistory } from "./use-design-history"
 
-const selectStyle = "h-9 w-full rounded-lg border border-input bg-background px-3 text-xs"
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n))
 function Slider({ label, value, min, max, step = 1, onChange, unit = "" }: { label: string; value: number; min: number; max: number; step?: number; onChange: (value: number) => void; unit?: string }) {
   return <label className="block space-y-2 text-xs text-muted-foreground"><span className="flex justify-between gap-2"><span>{label}</span><span className="tabular-nums text-foreground">{Math.round(value * 100) / 100}{unit}</span></span><input type="range" min={min} max={max} step={step} value={value} onChange={e => onChange(Number(e.target.value))} className="block w-full accent-primary" /></label>
@@ -178,7 +178,11 @@ export function BrandingEditor({ kind }: { kind: "banner" | "avatar" }) {
           <div className="space-y-1" aria-label="Calques de la composition">{rows.map(row => <button key={row.id} data-testid={`layer-${row.id}`} onClick={() => setSelected(row.id)} aria-pressed={selected === row.id} className={`flex w-full items-center gap-2.5 rounded-xl border p-2.5 text-left transition ${selected === row.id ? "border-primary/50 bg-primary/10" : "border-transparent hover:bg-muted/60"}`}><span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border/50 bg-muted/50">{'asset' in row && row.asset ? <span className="h-full w-full bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url(${row.asset.image})` }} /> : row.id === "background" ? <Palette className="h-4 w-4 text-muted-foreground" /> : <Type className="h-4 w-4 text-muted-foreground" />}</span><span className="min-w-0 flex-1"><span className="block truncate text-xs font-medium">{row.label}</span><span className="block truncate text-[10px] text-muted-foreground">{row.caption}</span></span>{'asset' in row && row.asset?.locked && <Lock className="h-3 w-3 shrink-0 text-muted-foreground" />}</button>)}</div>
           <p className="px-1 text-[10px] leading-relaxed text-muted-foreground">Le premier calque apparaît devant les autres. Glisse tes images sur la composition pour les ajouter.</p>
         </div> : <div className="space-y-5 p-4">
-          {!avatar && <label className="block space-y-2 text-xs text-muted-foreground">Format<select className={selectStyle} value={design.format} onChange={e => patch({ format: e.target.value as BrandingDesign["format"] })}>{Object.entries(BANNER_FORMATS).map(([key, value]) => <option key={key} value={key}>{value.label}</option>)}</select></label>}
+          {!avatar && <IconChoices label="Format" value={design.format} onChange={format => patch({ format })} options={(Object.keys(BANNER_FORMATS) as (keyof typeof BANNER_FORMATS)[]).map(value => ({
+            value, label: BANNER_FORMATS[value].label.split(" · ")[0],
+            detail: `${BANNER_FORMATS[value].width} × ${BANNER_FORMATS[value].height} px`,
+            icon: value === "wide" ? Monitor : value === "compact" ? RectangleHorizontal : GalleryHorizontal,
+          }))} />}
           <div><p className="mb-2 text-xs text-muted-foreground">Ambiance</p><div className="flex items-center gap-3 rounded-xl border border-primary/50 bg-primary/10 p-3 text-xs"><span className="h-6 w-9 rounded border border-white/10" style={{ background: design.background }} />Épuré</div></div>
           {([['accent', 'Accent'], ['background', 'Fond']] as const).map(([key, label]) => <label key={key} className="flex items-center justify-between text-xs text-muted-foreground">{label}<input aria-label={label} type="color" value={design[key]} onChange={e => patch({ [key]: e.target.value })} className="h-8 w-12 rounded border border-input bg-transparent p-1" /></label>)}
           {avatar && <label className="flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={design.transparent} onChange={e => patch({ transparent: e.target.checked })} className="accent-primary" />Fond transparent</label>}
