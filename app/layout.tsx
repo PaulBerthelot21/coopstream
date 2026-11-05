@@ -5,20 +5,22 @@ import { Toaster } from "@/components/ui/sonner";
 import { SiteNav } from "@/components/site-nav";
 import { PrimaryColorProvider } from "@/components/primary-color-provider";
 import { OverlaySettingsProvider } from "@/components/overlay/overlay-settings-provider";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { OverlayPresetProvider } from "@/components/overlay/overlay-preset-provider"
 
-const geistSans = Geist({
+const geistSans = localFont({
+  src: "../public/fonts/geist/geist-latin.woff2",
   variable: "--font-geist-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: "100 900",
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: "../public/fonts/geist/geist-mono-latin.woff2",
   variable: "--font-geist-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: "100 900",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
