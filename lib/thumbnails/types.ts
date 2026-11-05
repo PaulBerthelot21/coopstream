@@ -82,8 +82,9 @@ export type ThumbnailTemplate = {
   head: RelRect & { fit: ImageFit }
   prop: RelRect & { fit: ImageFit }
   titleBand?: RelRect & { color: string }
+  episodePanel?: boolean
   effects?: Partial<ThumbnailEffects>
-  studio?: "signature" | "impact" | "portrait" | "minimal" | "headline" | "spotlight" | "duel" | "editorial" | "neon" | "panorama" | "poster" | "reaction"
+  studio?: "signature" | "impact" | "portrait" | "minimal" | "headline" | "spotlight" | "duel" | "editorial" | "neon" | "panorama" | "poster" | "reaction" | "duclems-reset"
   studioText?: {
     align?: TextItem["align"]; accent?: string; italic?: boolean; solidKicker?: boolean; mainScale?: number
     kicker?: RelRect; main?: RelRect

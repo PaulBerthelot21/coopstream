@@ -87,19 +87,13 @@ export type OverlayPresetOption = {
 export const OVERLAY_PRESET_OPTIONS: OverlayPresetOption[] = [
   {
     id: "default",
-    label: "Default",
+    label: "Par défaut",
     description: "Glass sombre, accents cyan / violet",
     swatch: "linear-gradient(135deg, #0ea5e9 0%, #111827 45%, #8b5cf6 100%)",
   },
   {
-    id: "lecalme",
-    label: "Le Calme",
-    description: "Violet profond, bordure néon",
-    swatch: "linear-gradient(135deg, #4c1d95 0%, #1e1035 50%, #a855f7 100%)",
-  },
-  {
     id: "lecalme-rebrand",
-    label: "Rebrand",
+    label: "Bryan / LeCalme",
     description: "Marbre + chibi, accent pêche",
     swatch: "linear-gradient(135deg, #2a1f5c 0%, #ffc4a8 55%, #1a1035 100%)",
   },

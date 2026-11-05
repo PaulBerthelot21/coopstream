@@ -124,6 +124,12 @@ export const THUMBNAIL_FONTS: ThumbnailFont[] = [
     sample: "CINÉ",
     vibe: "Ciné / luxe",
   },
+  {
+    id: "minercraftory", label: "Minercraftory", family: "Minercraftory",
+    stack: '"Minercraftory", monospace', weight: 400,
+    customCss: `@font-face { font-family: "Minercraftory"; src: url("/fonts/minercraftory/Minercraftory.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }`,
+    sample: "RESET", vibe: "Minecraft / Duclems",
+  },
 ]
 
 export function getThumbnailFont(id: string): ThumbnailFont {

@@ -7,6 +7,7 @@ import { PrimaryColorProvider } from "@/components/primary-color-provider";
 import { OverlaySettingsProvider } from "@/components/overlay/overlay-settings-provider";
 import { Geist, Geist_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { OverlayPresetProvider } from "@/components/overlay/overlay-preset-provider"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,9 +42,11 @@ export default function RootLayout({
           <PrimaryColorProvider>
             <TooltipProvider>
             <OverlaySettingsProvider>
+              <OverlayPresetProvider>
               <SiteNav />
               {children}
               <Toaster />
+              </OverlayPresetProvider>
             </OverlaySettingsProvider>
             </TooltipProvider>
           </PrimaryColorProvider>

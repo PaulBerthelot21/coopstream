@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 
 import { workspaces, workspaceForPath } from "@/lib/workspaces"
+import { PresetSwitch } from "@/components/overlay/preset-switch"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -157,6 +158,7 @@ export function SiteNav() {
                 })}
             </nav>
           </div>
+            <PresetSwitch />
             {isAuthed ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

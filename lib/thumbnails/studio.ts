@@ -4,6 +4,10 @@ import { getThumbnailTemplate } from "./templates"
 import type { ThumbnailEditorState, ThumbnailTemplate } from "./types"
 
 export function studioTexts(template: ThumbnailTemplate, previous: string[] = []) {
+  if (template.studio === "duclems-reset") return [
+    createTextItem({ text: previous[0] ?? "RESET", rect: { x: .06, y: .08, w: .57, h: .2 }, fontId: "minercraftory", italic: false, fillMode: "solid", strokeWidth: 0, shadow: 0, tightTracking: false }),
+    createTextItem({ text: previous[1] ?? "01", rect: { x: .8, y: .7, w: .17, h: .22 }, fontId: "montserrat", italic: false, fillMode: "solid", color: "#657277", strokeWidth: 0, shadow: 0, align: "center", tightTracking: false }),
+  ]
   const r = template.title
   const portrait = template.studio === "portrait"
   const minimal = template.studio === "minimal"
@@ -20,8 +24,9 @@ export function createStudioState(id: string, previous?: ThumbnailEditorState): 
   const template = getThumbnailTemplate(id)
   const base = previous ?? defaultEditorState()
   return { ...base, templateId: template.id, layers: layersFromTemplate(template), headFit: template.head.fit, propFit: template.prop.fit,
-    texts: studioTexts(template, previous?.texts.filter(t => t.kind === "text").map(t => t.text)), titleBand: template.titleBand ? { ...template.titleBand, visible: true } : null,
+    texts: studioTexts(template, previous?.templateId === "duclems-reset" || template.id !== "duclems-reset" ? previous?.texts.filter(t => t.kind === "text").map(t => t.text) : undefined), titleBand: template.titleBand ? { ...template.titleBand, visible: true } : null,
     effects: { ...base.effects, leftShade: .55, textVeil: .65, vignette: .4, headShadow: true, headShadowBlur: 40, headShadowOpacity: .7, purpleWash: .3, ...template.effects },
+    ...(template.episodePanel ? { layers: { ...layersFromTemplate(template), head: { ...layersFromTemplate(template).head, visible: false }, prop: { ...layersFromTemplate(template).prop, visible: false } } } : {}),
   }
 }
 

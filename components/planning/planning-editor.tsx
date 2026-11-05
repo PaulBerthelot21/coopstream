@@ -2,18 +2,19 @@
 
 import * as React from "react"
 import { StudioHeader, StudioModeSwitch, type StudioMode } from "@/components/studio/editor-chrome"
-import { CalendarDays, ChevronLeft, ChevronRight, Download, RotateCcw, Radio, Moon, Clock3, Plus, Palette, Eye, MousePointer2, RectangleHorizontal, RectangleVertical, Smartphone, Sun, Gem, ListChecks, Images, EyeOff, PanelLeft, Rows3, Columns3 } from "lucide-react"
+import { CalendarDays, ChevronLeft, ChevronRight, Download, RotateCcw, Radio, Moon, Clock3, Plus, Palette, Eye, MousePointer2, RectangleHorizontal, RectangleVertical, Smartphone, ListChecks, Images, EyeOff, PanelLeft, Rows3, Columns3 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuthSession } from "@/lib/useAuthSession"
+import { useOverlayPreset } from "@/components/overlay/overlay-preset-provider"
 import { usePrimaryColor } from "@/components/primary-color-provider"
 import { IconChoices } from "@/components/studio/icon-choices"
 import { composePlanning, exportPlanning } from "@/lib/planning/compose"
 import { PlanningEventEditor } from "./planning-event-editor"
 import { importPlanningImage } from "@/lib/planning/images"
-import { DAY_NAMES, PLANNING_FORMATS, PLANNING_TEMPLATES, PlanningSchema, defaultPlanning, emptyDays, newPlanningEvent, isCalendarDate, mondayOf, shiftDate, weekLabel, type PlanningDay, type PlanningEvent, type PlanningState } from "@/lib/planning/model"
+import { DAY_NAMES, PLANNING_FORMATS, PlanningSchema, defaultPlanning, emptyDays, newPlanningEvent, isCalendarDate, mondayOf, shiftDate, weekLabel, type PlanningDay, type PlanningEvent, type PlanningState } from "@/lib/planning/model"
 
 import { readPlanningDraft, savePlanningDraft } from "@/lib/planning/draft"
 const statusLabels = { live: "Live", off: "Repos", tba: "À annoncer" }
@@ -23,7 +24,12 @@ export function PlanningEditor() {
   const { primaryColor } = usePrimaryColor()
   const session = useAuthSession() as { user?: { name?: string } } | null
   const creatorEdited = React.useRef(false)
-  const [state, setState] = React.useState<PlanningState>(defaultPlanning)
+  const { preset } = useOverlayPreset()
+  const [draftState, setState] = React.useState<PlanningState>(defaultPlanning)
+  const state = React.useMemo<PlanningState>(() => ({
+    ...draftState,
+    template: preset === "lecalme-rebrand" ? "rebrand" : "essential",
+  }), [draftState, preset])
   const [ready, setReady] = React.useState(false)
   const [saveStatus, setSaveStatus] = React.useState("Chargement…")
   const [selectedDay, setSelectedDay] = React.useState(-1)
@@ -47,8 +53,6 @@ export function PlanningEditor() {
           const parsed = PlanningSchema.safeParse(raw)
           if (parsed.success) setState({ ...parsed.data, ...(parsed.data.layout === "timeline" ? { layout: "vertical" } : {}), ...(parsed.data.eventView === "timeline" || parsed.data.layout === "timeline" ? { eventView: "balanced" } : {}) })
           else toast.info("Le brouillon n’a pas pu être restauré. Une nouvelle semaine est prête.")
-        } else if (localStorage.getItem("coopstream-overlay-preset") === "lecalme-rebrand") {
-          setState(previous => ({ ...previous, template: "rebrand" }))
         }
       } catch { /* Keep the editor usable when storage is unavailable. */ }
       finally { if (active) setReady(true) }
@@ -150,7 +154,6 @@ export function PlanningEditor() {
             { value: "portrait", label: "Publication", detail: "4:5 · 1080 × 1350", icon: RectangleVertical },
             { value: "story", label: "Story", detail: "9:16 · 1080 × 1920", icon: Smartphone },
           ]} />
-          <IconChoices label="Ambiance" value={state.template} onChange={template => patch({ template })} options={PLANNING_TEMPLATES.map(template => ({ value: template.id, label: template.label, detail: template.description, icon: template.id === "paper" ? Sun : template.id === "rebrand" ? Gem : Moon }))} />
           <IconChoices label="Présentation des lives" value={state.eventView} onChange={eventView => patch({ eventView })} options={[
             { value: "balanced", label: "Équilibré", detail: "Titre, chaîne et horaire.", icon: ListChecks },
             { value: "posters", label: "Cartes visuelles", detail: "Images, titres et horaires par jour.", icon: Images },

@@ -419,7 +419,11 @@ export async function composeThumbnailToCanvas(
   input: ComposeInput,
 ): Promise<void> {
   const template = input.template ?? getThumbnailTemplate(input.state.templateId)
-  const { state } = input
+  const savedState = input.state
+  const firstText = savedState.texts.find(item => item.kind === "text")
+  const state = template.id === "duclems-reset" && firstText?.fontId === "blackops"
+    ? { ...savedState, texts: savedState.texts.map(item => item === firstText ? { ...item, fontId: "minercraftory" } : item) }
+    : savedState
   const effects: ThumbnailEffects = {
     ...DEFAULT_EFFECTS,
     ...(template.effects ?? {}),
@@ -494,6 +498,35 @@ export async function composeThumbnailToCanvas(
     }
   }
 
+  let episodePanel: HTMLCanvasElement | undefined
+  if (template.episodePanel) {
+    // Keep the white artwork separate: the episode digits remove only white,
+    // leaving the original background visible rather than erasing the image.
+    episodePanel = document.createElement("canvas")
+    episodePanel.width = THUMB_W
+    episodePanel.height = THUMB_H
+    const panel = episodePanel.getContext("2d")!
+    panel.fillStyle = "#ffffff"
+    // Reference proportions: 12 px white slash, 14 px open gap,
+    // 117 px white panel, all shifting 77 px over the 290 px height.
+    // One shared slope keeps every edge exactly parallel.
+    const slope = 77 / 525
+    const slashLeft = 443 / 525
+    const slashRight = slashLeft + 12 / 525
+    const panelLeft = slashRight + 14 / 525
+    const panelRight = panelLeft + 117 / 525
+    const rightSlashLeft = panelRight + 14 / 525
+    const rightSlashRight = rightSlashLeft + 12 / 525
+    for (const [left, right] of [[slashLeft, slashRight], [panelLeft, panelRight], [rightSlashLeft, rightSlashRight]]) {
+      const points = [[left, 0], [right, 0], [right - slope, 1], [left - slope, 1]]
+      panel.beginPath()
+      points.forEach(([x, y], index) => index === 0 ? panel.moveTo(x * THUMB_W, y * THUMB_H) : panel.lineTo(x * THUMB_W, y * THUMB_H))
+      panel.closePath()
+      panel.fill()
+    }
+  }
+
+  const episodeNumber = template.episodePanel ? state.texts.filter(item => item.kind === "text")[1] : undefined
   for (const item of state.texts) {
     if (!item.visible) continue
     if (item.kind === "badge") {
@@ -507,16 +540,22 @@ export async function composeThumbnailToCanvas(
       strokeColor: item.stroke,
       maxWidth: 1,
     }
-    drawPlainText(ctx, item.text || "TEXTE", item.rect, style, item.sizeScale, {
+    const cutout = item === episodeNumber && episodePanel
+    const target = cutout ? cutout.getContext("2d")! : ctx
+    target.save()
+    if (cutout) target.globalCompositeOperation = "destination-out"
+    drawPlainText(target, item.text || "TEXTE", item.rect, cutout ? { ...style, color: "#000000", strokeWidth: 0 } : style, item.sizeScale, {
       fontId: item.fontId || "lecalme",
       italic: item.italic,
       uppercase: item.uppercase,
-      strokeWidth: item.strokeWidth,
-      fillMode: item.fillMode ?? "outline",
+      strokeWidth: cutout ? 0 : item.strokeWidth,
+      fillMode: cutout ? "solid" : item.fillMode ?? "outline",
       tightTracking: item.tightTracking ?? true,
-      shadow: item.shadow,
+      shadow: cutout ? 0 : item.shadow,
     })
+    target.restore()
   }
+  if (episodePanel) ctx.drawImage(episodePanel, 0, 0)
 }
 
 export async function exportThumbnailPng(

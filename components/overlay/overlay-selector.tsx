@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useOverlayPreset } from "./overlay-preset-provider"
 import { SOCIAL_PLATFORMS, CHIBI_VARIANTS, parseSocialPlatform, parseChibiVariant } from "@/lib/overlay/live-elements"
 import { Copy, Download } from "lucide-react"
 import { toast } from "sonner"
@@ -9,12 +10,6 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuthSession } from "@/lib/useAuthSession"
-import {
-  OVERLAY_PRESET_OPTIONS,
-  OVERLAY_PRESET_STORAGE_KEY,
-  parseOverlayPreset,
-  type OverlayPreset,
-} from "@/lib/overlay/presets"
 import {
   Card,
   CardContent,
@@ -226,11 +221,9 @@ function safeCopy(text: string) {
 export function OverlaySelector({
   title = "Overlay",
   description = "Choisis quelle source tu veux ajouter dans OBS.",
-  showPresetSelector = false,
 }: {
   title?: string
   description?: string
-  showPresetSelector?: boolean
 }) {
   const [origin, setOrigin] = React.useState<string>("")
   const session = useAuthSession()
@@ -239,7 +232,7 @@ export function OverlaySelector({
 
   const [coopstreamKey, setCoopstreamKey] = React.useState<string>("")
   const [channel, setChannel] = React.useState<string>("")
-  const [preset, setPreset] = React.useState<OverlayPreset>("default")
+  const { preset } = useOverlayPreset()
   const [overlayGroup, setOverlayGroup] = React.useState<OverlayGroupId | "all">("live")
   const [socialPlatform, setSocialPlatform] = React.useState("youtube")
   const [socialHandle, setSocialHandle] = React.useState("")
@@ -266,17 +259,7 @@ export function OverlaySelector({
 
   React.useEffect(() => {
     try {
-      setPreset(parseOverlayPreset(window.localStorage.getItem(OVERLAY_PRESET_STORAGE_KEY) ?? undefined))
       setOverlayGroup(parseOverlayGroup(window.localStorage.getItem(OVERLAY_GROUP_STORAGE)))
-    } catch {
-      // ignore
-    }
-  }, [])
-
-  const selectPreset = React.useCallback((next: OverlayPreset) => {
-    setPreset(next)
-    try {
-      window.localStorage.setItem(OVERLAY_PRESET_STORAGE_KEY, next)
     } catch {
       // ignore
     }
@@ -421,69 +404,6 @@ export function OverlaySelector({
               <Link href="/overlay-test">Écran de test</Link>
             </Button>
           </div>
-          {showPresetSelector ? (
-            <div className="mt-5">
-              <div className="flex items-baseline justify-between gap-3">
-                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Preset
-                </div>
-                <div className="text-[11px] text-muted-foreground">
-                  Mémorisé sur cet appareil · overlays compatibles
-                </div>
-              </div>
-              <div
-                role="radiogroup"
-                aria-label="Preset overlay"
-                className="mt-2.5 grid gap-2 sm:grid-cols-3"
-              >
-                {OVERLAY_PRESET_OPTIONS.map((option) => {
-                  const selected = preset === option.id
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      onClick={() => selectPreset(option.id)}
-                      className={[
-                        "group relative overflow-hidden rounded-xl border px-3 py-3 text-left transition",
-                        selected
-                          ? "border-foreground/40 bg-foreground/[0.06] shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
-                          : "border-border/60 bg-background/40 hover:border-border hover:bg-background/70",
-                      ].join(" ")}
-                    >
-                      <div
-                        className="h-10 w-full rounded-lg ring-1 ring-white/10"
-                        style={{ backgroundImage: option.swatch }}
-                      />
-                      <div className="mt-2.5 flex items-center justify-between gap-2">
-                        <div className="text-sm font-semibold tracking-tight text-foreground">
-                          {option.label}
-                        </div>
-                        <span
-                          className={[
-                            "inline-flex h-4 w-4 items-center justify-center rounded-full border transition",
-                            selected
-                              ? "border-emerald-400/80 bg-emerald-400/90"
-                              : "border-muted-foreground/40 bg-transparent",
-                          ].join(" ")}
-                          aria-hidden
-                        >
-                          {selected ? (
-                            <span className="h-1.5 w-1.5 rounded-full bg-background" />
-                          ) : null}
-                        </span>
-                      </div>
-                      <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
-                        {option.description}
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          ) : null}
-
           <div className="mt-6 flex flex-col gap-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div
@@ -683,7 +603,6 @@ export function OverlaySelector({
                     const relativeHref = (() => {
                       const url = new URL(baseHref, origin || "http://localhost")
                       if (
-                        showPresetSelector &&
                         preset !== "default" &&
                         (o.href === "/overlay-social" || o.href === "/overlay-followers-summary" || o.href === "/overlay-timer" || o.href === "/overlay-background" || o.href === "/overlay-chat" ||
                           o.href === "/overlay-planning" ||

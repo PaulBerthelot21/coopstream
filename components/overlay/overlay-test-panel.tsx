@@ -2,16 +2,11 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useOverlayPreset } from "./overlay-preset-provider"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  OVERLAY_PRESET_OPTIONS,
-  OVERLAY_PRESET_STORAGE_KEY,
-  parseOverlayPreset,
-  type OverlayPreset,
-} from "@/lib/overlay/presets"
 import {
   createOverlayTestEvent,
   OVERLAY_TEST_KINDS,
@@ -30,7 +25,7 @@ const PREVIEW_HREFS: Record<OverlayTestKind, string> = {
 export function OverlayTestPanel() {
   const [displayName, setDisplayName] = React.useState("BryanTest")
   const [coopstreamKey, setCoopstreamKey] = React.useState("")
-  const [preset, setPreset] = React.useState<OverlayPreset>("lecalme-rebrand")
+  const { preset } = useOverlayPreset()
   const [busy, setBusy] = React.useState<OverlayTestKind | null>(null)
   const [origin, setOrigin] = React.useState("")
 
@@ -38,11 +33,7 @@ export function OverlayTestPanel() {
     try {
       setOrigin(window.location.origin)
       setCoopstreamKey(window.localStorage.getItem(COOPSTREAM_KEY_STORAGE) ?? "")
-      setPreset(
-        parseOverlayPreset(
-          window.localStorage.getItem(OVERLAY_PRESET_STORAGE_KEY) ?? undefined,
-        ),
-      )
+
     } catch {
       // ignore
     }
@@ -123,39 +114,6 @@ export function OverlayTestPanel() {
               placeholder="ta clé room"
             />
           </label>
-        </div>
-
-        <div className="mt-4">
-          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            Preset (liens d’ouverture)
-          </div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {OVERLAY_PRESET_OPTIONS.map((option) => {
-              const selected = preset === option.id
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => {
-                    setPreset(option.id)
-                    try {
-                      window.localStorage.setItem(OVERLAY_PRESET_STORAGE_KEY, option.id)
-                    } catch {
-                      // ignore
-                    }
-                  }}
-                  className={[
-                    "rounded-lg border px-3 py-1.5 text-xs font-medium transition",
-                    selected
-                      ? "border-foreground/40 bg-foreground/10 text-foreground"
-                      : "border-border/60 text-muted-foreground hover:text-foreground",
-                  ].join(" ")}
-                >
-                  {option.label}
-                </button>
-              )
-            })}
-          </div>
         </div>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">

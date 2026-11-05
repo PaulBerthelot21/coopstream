@@ -12,6 +12,16 @@ const baseTitleStyle = {
 }
 
 export const THUMBNAIL_TEMPLATES: ThumbnailTemplate[] = [
+  {
+    id: "duclems-reset", studio: "duclems-reset", label: "Duclems - Reset",
+    description: "Fond plein cadre, titre en haut à gauche et numéro sur une bande blanche inclinée.",
+    background: { x: 0, y: 0, w: 1, h: 1 },
+    title: { x: .06, y: .08, w: .57, h: .2, style: { ...baseTitleStyle, strokeWidth: 0 } },
+    head: { x: 0, y: 0, w: 1, h: 1, fit: "contain" },
+    prop: { x: 0, y: 0, w: .2, h: .2, fit: "contain" },
+    episodePanel: true,
+    effects: { purpleWash: 0, textVeil: 0, leftShade: 0, vignette: 0, headShadow: false },
+  },
   ...([
     { id: "signature", label: "Signature", description: "L’esprit de l’intro : contour blanc, titre massif et Bryan à droite.", x: .045, y: .48, w: .55, h: .42, hx: .5, hy: .08, hw: .53, hh: .95 },
     { id: "impact", label: "Impact violet", description: "Un titre lavande et un portrait rapproché pour les moments forts.", x: .045, y: .13, w: .59, h: .5, hx: .48, hy: .2, hw: .58, hh: .9 },
